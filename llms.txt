@@ -1,19 +1,21 @@
-# tarpolyglot
+# `{tarpolyglot}`
 
 `tarpolyglot` adds target constructors that run **Python**, **Julia**,
 and **Rust** as first-class steps of a
-[`targets`](https://docs.ropensci.org/targets/) pipeline, via
+[`{targets}`](https://docs.ropensci.org/targets/) pipeline, via
 [reticulate](https://rstudio.github.io/reticulate/) (Python),
 [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and
 [rextendr](https://extendr.rs/rextendr/) /
 [extendr](https://extendr.rs/) (Rust). Results come back as converted R
-objects or as files tracked on disk, and everything a normal `targets`
-step supports works unchanged: dynamic branching, storage formats,
-resources, cues, `crew` parallelism.
+objects or as files tracked on disk, and everything a normal
+[targets](https://docs.ropensci.org/targets/) step supports works
+unchanged: dynamic branching, storage formats, resources, cues, `crew`
+parallelism.
 
 ## Installation
 
-You can install tarpolyglot from GitHub:
+You can install [tarpolyglot](https://github.com/Pierre9344/tarpolyglot)
+from GitHub:
 
 ``` r
 
@@ -55,7 +57,8 @@ Each mirrors
 [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
 and forwards every argument (`pattern`, `format`, `deployment`,
 `resources`, `cue`, …), so dynamic branching, storage formats,
-`crew`-based parallelism, and other `targets`features all work as usual.
+`crew`-based parallelism, and other
+[targets](https://docs.ropensci.org/targets/)features all work as usual.
 
 ### Example using `tar_target_py`
 
@@ -102,7 +105,8 @@ list(
 )
 ```
 
-We can run and inspect it like any `targets` pipeline:
+We can run and inspect it like any
+[targets](https://docs.ropensci.org/targets/) pipeline:
 
 ``` r
 
@@ -137,7 +141,7 @@ mainly adds toolchain and `crew`-worker build setup plus API symmetry
 (see
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
 
-## Why use tarpolyglot instead of calling the toolchains directly
+## Why use `{tarpolyglot}` instead of calling the toolchains directly
 
 - The interpreter or build setup is handled for you: each step binds
   reticulate, runs
@@ -157,14 +161,18 @@ mainly adds toolchain and `crew`-worker build setup plus API symmetry
   Your selection wins over ambient settings: an explicit environment
   overrides an inherited `RETICULATE_PYTHON` or `JULIA_PROJECT` (for
   example one set by RStudio and inherited by `crew` workers).
-- Every `targets` feature keeps working:
+- Every [targets](https://docs.ropensci.org/targets/) feature keeps
+  working:
   - the constructors forward the full
     [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
     argument set (`format`, `deployment`, `resources`, `cue`, `memory`,
     and so on), so storage formats, cues, and `crew` parallelism behave
-    as usual making tarpolyglot fully compatible with `targets` and
+    as usual making
+    [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) fully
+    compatible with [targets](https://docs.ropensci.org/targets/) and
     `tarchetypes`.
-  - the constructor `input` argument ensure that `targets` detect the
+  - the constructor `input` argument ensure that
+    [targets](https://docs.ropensci.org/targets/) detect the
     dependencies of your polyglot steps.
 - Per-step isolation is one line:
   [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
@@ -193,6 +201,34 @@ file output, script tracking, and the full
 argument set in one call, and keeps the same API as the Python and Julia
 constructors (see
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
+
+## Comparison to `{rixpress}`
+
+I am also aware of [rixpress](https://docs.ropensci.org/rixpress), which
+supports reproducible polyglot pipelines using Nix.
+
+I see [rixpress](https://docs.ropensci.org/rixpress) and
+[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) as addressing
+related needs with different architectures and trade-offs.
+[rixpress](https://docs.ropensci.org/rixpress) delegates pipeline
+execution, dependency management, and environment management to Nix,
+providing strong isolation and reproducibility guarantees.
+
+{tarpolyglot} takes a narrower and less prescriptive approach. It
+remains an extension of {targets} and leaves environment management to
+existing language-specific tools such as virtual environments, Conda,
+uv, Poetry, Juliaup, Julia projects, and rustup.
+
+The intention is not to reproduce the reproducibility guarantees
+provided by Nix. Instead,
+[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) is intended for
+users who want to add multilingual steps incrementally to an existing
+{targets} pipeline, including environments where Nix is unavailable or
+cannot be installed.
+
+This distinction is relevant for my own work because I use a public
+computing cluster with restricted user permissions, and the
+administrators are not currently considering a Nix installation.
 
 ## Where to go next
 
