@@ -8,7 +8,7 @@ and **Rust** as first-class steps of a
 [rextendr](https://extendr.rs/rextendr/) /
 [extendr](https://extendr.rs/) (Rust). Results come back as converted R
 objects or as files tracked on disk, and everything a normal `targets`
-step supports works unchanged: dynamic branching, storage formats,
+target supports works unchanged: dynamic branching, storage formats,
 resources, cues, `crew` parallelism.
 
 ## Installation
