@@ -1,0 +1,49 @@
+url: https://pierre9344.github.io/tarpolyglot/
+
+template:
+  bootstrap: 5
+
+
+
+reference:
+- title: Package overview
+  contents:
+  - tarpolyglot-package
+
+- title: Target constructors
+  desc: >
+    Build a targets step that runs Python, Julia, or Rust. The non-`_raw` forms
+    use non-standard evaluation on `name`/`pattern` for direct use in `_targets.R`;
+    the `_raw` forms take a string `name` for use inside targets factories.
+  contents:
+  - tar_target_py
+  - tar_target_py_raw
+  - tar_target_jl
+  - tar_target_jl_raw
+  - tar_target_rs
+  - tar_target_rs_raw
+
+- title: Helpers
+  desc: >
+    Supply a step's code inline, track a script file as a dependency, and a crew controller preconfigured for per-step interpreter isolation.
+  contents:
+  - tar_code
+  - tar_target_path
+  - polyglot_controller
+
+- title: Step workers
+  desc: >
+    Worker functions the constructors call at pipeline run time. Documented because the constructor pages link to them; you do not normally call them directly.
+  contents:
+  - run_py_step
+  - run_jl_step
+  - run_rs_step
+
+articles:
+- title: Guides
+  navbar: ~
+  contents:
+  - get_started
+  - python
+  - julia
+  - rust

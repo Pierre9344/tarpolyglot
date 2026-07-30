@@ -1,0 +1,117 @@
+# Rust step worker (extendr model). Unlike the subprocess approach, this compiles the Rust `#[extendr]` functions in `script` with rextendr::rust_source() and exposes them as R functions in the step environment; a post-R script then calls those functions (with the upstream `inputs` bound alongside) and returns the target value. There is no pre-R script for Rust: inputs are used directly from the post-script.
+#
+# Windows note: rextendr requires the Rust GNU toolchain (to match R's mingw ABI). Set it as the rustup default, or pass `toolchain = "stable-x86_64-pc-windows-gnu"` (which sets RUSTUP_TOOLCHAIN for the build).
+
+# extendr's build script must find R (for R_HOME and version) and the toolchain (cargo, and on Windows the Rtools linker). Bare non-interactive R sessions and crew workers often don't have these on PATH, so we set them up best-effort for the build and restore afterwards. Returns a zero-arg restore function.
+.tp_with_rust_build_env <- function() {
+  old_rhome <- Sys.getenv("R_HOME", unset = NA)
+  old_path <- Sys.getenv("PATH")
+  restore <- function() {
+    if (is.na(old_rhome)) Sys.unsetenv("R_HOME") else Sys.setenv(R_HOME = old_rhome)
+    Sys.setenv(PATH = old_path)
+  }
+
+  if (is.na(old_rhome) || !nzchar(old_rhome)) Sys.setenv(R_HOME = R.home())
+
+  add <- c(R.home("bin"), file.path(R.home("bin"), "x64"))
+  cargo <- file.path(.tp_user_home(), ".cargo", "bin")
+  add <- c(add, cargo)
+  if (.Platform$OS.type == "windows") {
+    rt <- Sys.getenv("RTOOLS45_HOME", unset = "")
+    for (d in c(if (nzchar(rt)) file.path(rt, "usr", "bin"),
+                "C:/rtools45/usr/bin", "C:/rtools44/usr/bin")) {
+      if (dir.exists(d)) { add <- c(add, d); break }
+    }
+  }
+  add <- add[dir.exists(add)]
+  if (length(add)) {
+    Sys.setenv(PATH = paste(c(add, old_path), collapse = .Platform$path.sep))
+  }
+  restore
+}
+
+#' Execute a Rust step (worker behind tar_target_rs)
+#'
+#' Compiles the `#[extendr]` functions in a Rust script with [rextendr::rust_source()], exposing them as R functions in a fresh environment, then evaluates an R **post-script** in that environment where you call those functions and return the result. Upstream `inputs` are bound in the same environment. This is the function the target built by [tar_target_rs()] calls; it is exported so the call resolves at run time, but package users should not call it directly.
+#'
+#' Unlike Python/Julia there is **no pre-script** for Rust and no live interpreter: `rust_source()` compiles a dynamic library and R calls into it with real type conversion (via [extendr](https://extendr.rs/)). A Rust toolchain and `cargo` must be reachable (this function puts R, cargo, and on Windows Rtools on `PATH` for the build itself); on Windows use the GNU toolchain.
+#'
+#' @inheritParams tarpolyglot-shared-params
+#' @param script Path to the Rust script containing `#[extendr]` functions (required).
+#' @param post_script Path to an R script evaluated after compilation. The compiled Rust functions and the named `inputs` are in scope; its last expression is the target value (object mode), or it returns a character vector of file paths (file mode). Required for object mode.
+#' @param dependencies,features,profile Passed to [rextendr::rust_source()]: crate `dependencies` (named list), Cargo `features`, and build `profile` (e.g. `"dev"` or `"release"`).
+#' @param toolchain Optional rustup toolchain (e.g. `"stable-x86_64-pc-windows-gnu"`); sets `RUSTUP_TOOLCHAIN` for the build. Default `NULL` uses the rustup default toolchain.
+#'
+#' @return The value of the post-script (object mode) or a character vector of normalised file paths (file mode).
+#' @seealso [tar_target_rs()], [run_py_step()], [run_jl_step()]
+#' @export
+#' @examples
+#' \dontrun{
+#' # Normally invoked by tar_target_rs(); shown here as a direct call.
+#' # scripts/square.rs defines a #[extendr] fn square(x); post.R ends on square(x).
+#' run_rs_step(
+#'   script = "scripts/square.rs",
+#'   inputs = list(x = 21),
+#'   post_script = "scripts/post.R"
+#' )
+#' }
+run_rs_step <- function(script,
+                        post_script = NULL,
+                        inputs = list(),
+                        output = "object",
+                        files = NULL,
+                        dependencies = NULL,
+                        features = NULL,
+                        profile = NULL,
+                        toolchain = NULL) {
+  output <- .tp_match_output(output)
+  .tp_assert_script(script, "script", must_exist = TRUE)
+
+  e <- new.env(parent = globalenv())
+  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
+
+  # Make sure the extendr build can find R and the toolchain (restored after).
+  restore_env <- .tp_with_rust_build_env()
+  on.exit(restore_env(), add = TRUE)
+
+  # Optional per-build toolchain (restored afterwards).
+  if (!is.null(toolchain)) {
+    old_tc <- Sys.getenv("RUSTUP_TOOLCHAIN", unset = NA)
+    Sys.setenv(RUSTUP_TOOLCHAIN = as.character(toolchain))
+    on.exit({
+      if (is.na(old_tc)) Sys.unsetenv("RUSTUP_TOOLCHAIN") else
+        Sys.setenv(RUSTUP_TOOLCHAIN = old_tc)
+    }, add = TRUE)
+  }
+
+  # 1. Compile the #[extendr] functions and expose them in `e`. We pass the Rust as `code=` (rextendr's `file=` path does not wrap the module / wrapper generator the way `code=` does), so a plain script of `#[extendr]` functions works and the extendr prelude is added for you. The source is either read from the script file or supplied inline via tar_code().
+  code <- if (inherits(script, "tp_source")) script$code else
+    paste(readLines(script, warn = FALSE), collapse = "\n")
+  args <- list(code = code, env = e, quiet = TRUE)
+  if (!is.null(dependencies)) args$dependencies <- dependencies
+  if (!is.null(features)) args$features <- features
+  if (!is.null(profile)) args$profile <- profile
+  do.call(rextendr::rust_source, args)
+
+  # 2. Post-R script uses the compiled functions (and inputs) to build the value.
+  if (identical(output, "file")) {
+    paths <- if (!is.null(post_script)) {
+      .tp_assert_script(post_script, "post_script", must_exist = TRUE)
+      .tp_eval_script(post_script, e)
+    } else {
+      files
+    }
+    if (is.null(paths)) {
+      stop("output = \"file\" needs a `post_script` returning paths, or `files`.",
+        call. = FALSE)
+    }
+    return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
+  }
+
+  if (is.null(post_script)) {
+    stop("output = \"object\" needs a `post_script` that calls the compiled Rust ",
+      "function(s) and returns a value.", call. = FALSE)
+  }
+  .tp_assert_script(post_script, "post_script", must_exist = TRUE)
+  .tp_eval_script(post_script, e)
+}

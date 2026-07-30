@@ -1,0 +1,15 @@
+# Generated manually; keep in sync with DESCRIPTION (e.g. cffr::cff_write()).
+cff-version: 1.2.0
+message: "If you use tarpolyglot, please cite it as below."
+type: software
+title: "tarpolyglot: Run Python, Julia, and Rust Inside 'targets' Pipeline Steps"
+version: 0.1.0
+abstract: "Adds target constructors that make it easy to use Python, Julia, and Rust inside a 'targets' pipeline using 'reticulate', 'JuliaCall', and 'rextendr'."
+authors:
+  - family-names: Solomon
+    given-names: Pierre
+    email: pierre.solomon@laposte.net
+    orcid: "https://orcid.org/0000-0001-7187-2664"
+repository-code: "https://github.com/Pierre9344/tarpolyglot"
+url: "https://github.com/Pierre9344/tarpolyglot"
+license: MIT

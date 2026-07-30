@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-15 0 330 330" role="img">
+  <title>tarpolyglot</title>
+  <path d="M150 15 L280 90 L280 240 L150 315 L20 240 L20 90 Z" fill="#2E7CD6" stroke="#0d1b2a" stroke-width="12" stroke-linejoin="round"/>
+  <g transform="translate(150 165) scale(0.95) translate(-150 -165)">
+    <text x="150" y="99" text-anchor="middle" textLength="196" lengthAdjust="spacingAndGlyphs" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="34" fill="#0d1b2a">tarpolyglot</text>
+    <g stroke="#0d1b2a" stroke-width="5">
+      <line x1="72" y1="195" x2="140" y2="195"/>
+      <line x1="140" y1="195" x2="222" y2="150"/>
+      <line x1="140" y1="195" x2="240" y2="195"/>
+      <line x1="140" y1="195" x2="222" y2="240"/>
+    </g>
+    <g transform="translate(115 170) scale(0.5)">
+      <circle cx="50" cy="50" r="33" fill="#fff" stroke="#111" stroke-width="6"/>
+      <line x1="50" y1="6" x2="50" y2="94" stroke="#111" stroke-width="5"/>
+      <line x1="6" y1="50" x2="94" y2="50" stroke="#111" stroke-width="5"/>
+      <circle cx="50" cy="50" r="18" fill="none" stroke="#111" stroke-width="5"/>
+      <circle cx="50" cy="50" r="7" fill="#E5342B"/>
+    </g>
+    <g transform="translate(50 173) scale(0.44)">
+      <circle cx="50" cy="50" r="40" fill="#fff" stroke="#8a9199" stroke-width="3"/>
+      <text x="50" y="69" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="52" fill="#276DC3">R</text>
+    </g>
+    <circle cx="222" cy="150" r="22" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
+    <g transform="translate(204 132) scale(0.36)">
+      <path fill="#3776AB" d="M49.5 10 C36 10 37 16 37 16 L37 27 L50 27 L50 31 L29 31 C29 31 20 30 20 44 C20 58 28 57 28 57 L34 57 L34 48 C34 40 41 39 41 39 L58 39 C58 39 65 39 65 32 L65 18 C65 18 66 10 49.5 10 Z"/>
+      <circle cx="41" cy="19" r="3.2" fill="#fff"/>
+      <g transform="rotate(180 50 50)">
+        <path fill="#FFD43B" d="M49.5 10 C36 10 37 16 37 16 L37 27 L50 27 L50 31 L29 31 C29 31 20 30 20 44 C20 58 28 57 28 57 L34 57 L34 48 C34 40 41 39 41 39 L58 39 C58 39 65 39 65 32 L65 18 C65 18 66 10 49.5 10 Z"/>
+        <circle cx="41" cy="19" r="3.2" fill="#fff"/>
+      </g>
+    </g>
+    <circle cx="240" cy="195" r="22" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
+    <g transform="translate(222 177) scale(0.36)">
+      <circle cx="50" cy="30" r="17" fill="#9558B2"/>
+      <circle cx="33" cy="63" r="17" fill="#CB3C33"/>
+      <circle cx="67" cy="63" r="17" fill="#389826"/>
+    </g>
+    <circle cx="222" cy="240" r="22" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
+    <g transform="translate(204 222) scale(0.36)">
+      <g fill="#111">
+        <rect x="46" y="3" width="8" height="13" rx="2"/>
+        <g transform="rotate(45 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+        <g transform="rotate(90 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+        <g transform="rotate(135 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+        <g transform="rotate(180 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+        <g transform="rotate(225 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+        <g transform="rotate(270 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+        <g transform="rotate(315 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+      </g>
+      <circle cx="50" cy="50" r="33" fill="none" stroke="#111" stroke-width="9"/>
+      <text x="50" y="66" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="40" fill="#111">R</text>
+    </g>
+  </g>
+</svg>

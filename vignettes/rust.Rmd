@@ -1,0 +1,198 @@
+---
+title: "Using Rust inside targets"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using Rust inside targets}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+This vignette covers running **Rust** as `targets` steps with [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/). A Rust step is deliberately different from a Python or Julia one: there is **no live interpreter**. Instead the `#[extendr]` functions in your script are *compiled* into a dynamic library and exposed as ordinary R functions, which an R **post-script** then calls. For a gentler tour start with `vignette("get_started")`.
+
+Code blocks are illustrative and **not executed** when the vignette builds (compiling Rust needs a toolchain).
+
+## Do you need `tar_target_rs()`?
+
+Often not, and it is worth being honest about when it earns its keep. Unlike Python and Julia, a Rust step has no live interpreter and no data hand-off to abstract away: `rextendr::rust_source()` compiles your `#[extendr]` functions and hands them back as ordinary R functions. For the simple case you can call it directly inside a plain `tar_target()`, keeping every native `targets` convenience (automatic dependency detection, inline R, a single file):
+
+```r
+library(targets)
+
+list(
+  tar_target(petal_length, iris$Petal.Length),
+
+  tar_target(petal_z, {
+    rextendr::rust_source("rs/scale.rs")   # compiles zscore() and puts it in scope
+    zscore(petal_length)                   # petal_length is auto-detected as a dependency
+  })
+)
+```
+
+This is the recommended starting point when your Rust toolchain is already discoverable, which is the usual situation for local and interactive runs. `tar_target_rs()` is a convenience wrapper that becomes worth it when you want one or more of the following:
+
+* **Robust builds in bare or `crew` worker processes.** `tar_target_rs()` puts R, `cargo`, and (on Windows) Rtools on `PATH` and sets `R_HOME` for the compilation; a plain `tar_target()` does not, so a Rust build in a fresh worker often fails to find the toolchain unless you arrange that yourself.
+* **Per-step toolchain selection** through `toolchain =`, which sets `RUSTUP_TOOLCHAIN` for that build only.
+* **File output, script tracking, and the full `tar_target_raw()` argument set** bundled in one call (`output = "file"`, `tar_target_path()`, `pattern`, `resources`, `cue`, and so on).
+* **API symmetry** with `tar_target_py()` and `tar_target_jl()`, so a polyglot pipeline reads the same way across all three languages.
+
+If none of those apply, the plain `tar_target()` above is simpler and gives up nothing. The rest of this vignette documents `tar_target_rs()` for when they do.
+
+## The two constructors
+
+* `tar_target_rs()`: bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
+* `tar_target_rs_raw()`: string `name`, for use inside targets factories.
+
+Both return a single `targets` target and forward every `targets::tar_target_raw()` argument.
+
+## How a Rust step differs
+
+* **No pre-script.** There is no foreign session to push variables into. The `inputs` are bound directly in the **post-script**, where you call the compiled functions with them.
+* **The post-script is where the work happens.** After compilation, the Rust functions are in scope in the post-script's environment (alongside `inputs`). Its last expression is the target value (object mode); it returns file paths (file mode).
+* **Real type conversion** (via extendr), not JSON, but return values still have to be R-representable, or use `output = "file"`.
+
+## Arguments
+
+| Argument | Meaning |
+|---|---|
+| `script` | Path to the Rust file with `#[extendr]` functions (**required**). |
+| `post_script` | R script run after compilation; the compiled functions and `inputs` are in scope. Required for object mode. |
+| `inputs` | Named vector mapping in-step names to upstream targets, e.g. `c(x = "value")`. |
+| `output` | `"object"` (default) or `"file"`. |
+| `files` | Paths to return when there is no post-script (file mode). |
+| `dependencies` | Crate dependencies as a named list, passed to `rextendr::rust_source()`. |
+| `features` | Cargo features, passed to `rextendr::rust_source()`. |
+| `profile` | Build profile (e.g. `"dev"` or `"release"`). |
+| `toolchain` | Optional rustup toolchain (e.g. `"stable-x86_64-pc-windows-gnu"`); sets `RUSTUP_TOOLCHAIN` for the build. |
+
+As with the other languages, `script` and `post_script` may be a literal path or a `tar_target_path("name")` reference to track the file.
+
+## Installing Rust and rextendr
+
+1. Install the Rust toolchain with [rustup](https://rust-lang.org/tools/install/). **On Windows, use the GNU toolchain** so it matches R's mingw ABI:
+
+    ```sh
+    rustup toolchain install stable-x86_64-pc-windows-gnu
+    rustup default stable-x86_64-pc-windows-gnu
+    ```
+
+2. Install rextendr and check it works:
+
+    ```r
+    install.packages("rextendr")
+    rextendr::rust_source(code = "#[extendr] fn double(x: f64) -> f64 { x * 2.0 }")
+    double(21)   # 42
+    ```
+
+`run_rs_step()` puts R, `cargo`, and (on Windows) Rtools on `PATH` for the build itself, so a Rust step usually works even in a bare `crew` worker, but the toolchain must be installed.
+
+## Object output (iris example)
+
+`rs/scale.rs`: one `#[extendr]` function:
+
+```rust
+#[extendr]
+fn zscore(x: Vec<f64>) -> Vec<f64> {
+    let n = x.len() as f64;
+    let mean = x.iter().sum::<f64>() / n;
+    let sd = (x.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n).sqrt();
+    x.iter().map(|v| (v - mean) / sd).collect()
+}
+```
+
+`R/scale_post.R`: the compiled `zscore()` and the input `petal` are in scope:
+
+```r
+# `petal` is bound from inputs = c(petal = "petal_length").
+scaled <- zscore(petal)
+data.frame(petal = petal, z = scaled)   # last expression = target value
+```
+
+`_targets.R`:
+
+```r
+library(targets)
+library(tarpolyglot)
+
+list(
+  tar_target(petal_length, iris$Petal.Length),
+
+  tar_target_rs(
+    name = petal_z,
+    script = "rs/scale.rs",
+    inputs = c(petal = "petal_length"),
+    post_script = "R/scale_post.R"
+  )
+)
+```
+
+## File output
+
+```r
+tar_target_rs(
+  name = rs_file,
+  script = "rs/write.rs",            # a fn that writes a file and returns its path
+  inputs = c(x = "value"),
+  post_script = "R/rs_files_post.R", # returns the path(s)
+  output = "file"
+)
+```
+
+## Crate dependencies, features, profile
+
+Pass extra crates through `dependencies` (a named list), and build options through `features` / `profile`:
+
+```r
+tar_target_rs(
+  name = parsed,
+  script = "rs/parse.rs",            # uses serde_json
+  inputs = c(txt = "raw_json"),
+  post_script = "R/parse_post.R",
+  dependencies = list(`serde_json` = "1"),
+  profile = "release"
+)
+```
+
+## Dynamic branching
+
+Like the other constructors, `inputs` are real dependencies, so `pattern` branches them (and `crew` spreads the branches):
+
+```r
+list(
+  tar_target(groups, split(iris$Petal.Length, iris$Species), iteration = "list"),
+  tar_target_rs(
+    name = z_by_group,
+    script = "rs/scale.rs",
+    inputs = c(petal = "groups"),
+    post_script = "R/scale_post.R",
+    pattern = map(groups),
+    iteration = "list"
+  )
+)
+```
+
+## Windows toolchain note
+
+rextendr requires the Rust **GNU** toolchain on Windows (to match R's mingw ABI). Either set it as the rustup default (shown above) or pass it per step:
+
+```r
+tar_target_rs(
+  name = petal_z,
+  script = "rs/scale.rs",
+  inputs = c(petal = "petal_length"),
+  post_script = "R/scale_post.R",
+  toolchain = "stable-x86_64-pc-windows-gnu"   # sets RUSTUP_TOOLCHAIN for the build
+)
+```
+
+## Trade-offs vs Python/Julia
+
+Because a Rust step compiles rather than using a live interpreter:
+
+* **No interpreter-per-session or global-state issues.** Each step compiles and loads its own library, so different steps can freely use different crates/toolchains in the same session.
+* **Compilation cost instead of interpreter start-up.** The first build compiles the extendr crate and your code (tens of seconds); cargo caches artefacts, so re-runs are faster.
+
+See `?tar_target_rs` and `?run_rs_step` for the full argument reference, and `vignette("get_started")` for how Rust steps fit alongside Python/Julia and `crew`.
