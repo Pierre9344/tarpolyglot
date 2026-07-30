@@ -4,6 +4,7 @@
 <!-- badges: start -->
 
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![R-CMD-check](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 # tarpolyglot <img src="man/figures/logo.png" align="right" height="120"/>
