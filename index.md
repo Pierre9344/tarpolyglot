@@ -1,0 +1,230 @@
+# tarpolyglot
+
+`tarpolyglot` adds target constructors that run **Python**, **Julia**,
+and **Rust** as first-class steps of a
+[`targets`](https://docs.ropensci.org/targets/) pipeline, via
+[reticulate](https://rstudio.github.io/reticulate/) (Python),
+[JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and
+[rextendr](https://extendr.rs/rextendr/) /
+[extendr](https://extendr.rs/) (Rust). Results come back as converted R
+objects or as files tracked on disk, and everything a normal `targets`
+target supports works unchanged: dynamic branching, storage formats,
+resources, cues, `crew` parallelism.
+
+## Installation
+
+You can install tarpolyglot from GitHub:
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("Pierre9344/tarpolyglot", build_vignettes = TRUE, dependencies = TRUE)
+```
+
+You also need a working toolchain for whichever language(s) you plan to
+use: Python, Julia, and/or Rust. Each is independent and only needed if
+you use the matching constructor
+([`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)).
+See
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
+for the full setup instructions (Python via reticulate/uv, Julia via
+[juliaup](https://github.com/JuliaLang/juliaup), Rust via
+[rustup](https://rust-lang.org/tools/install/): use the **GNU**
+toolchain on Windows so it matches R’s ABI).
+
+## The three constructors
+
+- [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
+  /
+  [`tar_target_py_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py_raw.md):
+  Python, via reticulate.
+- [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
+  /
+  [`tar_target_jl_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.md):
+  Julia, via JuliaCall.
+- [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
+  /
+  [`tar_target_rs_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.md):
+  Rust, via rextendr/extendr.
+
+Each mirrors
+[`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+/
+[`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+and forwards every argument (`pattern`, `format`, `deployment`,
+`resources`, `cue`, …), so dynamic branching, storage formats,
+`crew`-based parallelism, and other `targets`features all work as usual.
+
+### Example using `tar_target_py`
+
+A minimal pipeline: an R target feeds a Python step, which returns a
+value that a downstream R target uses.
+
+`scripts/pre.R`:
+
+``` r
+
+to_py <- list(x = x)   # `x` is bound from inputs = c(x = "values")
+```
+
+`scripts/mean.py`:
+
+``` python
+# `x` is handed over by the pre-script; assign `result` for R to read.
+result = {"mean": sum(x) / len(x), "n": len(x)}
+```
+
+`_targets.R`:
+
+``` r
+
+library(targets)
+library(tarpolyglot)
+
+# Recommended default: run each step in its own worker process so every
+# Python/Julia step gets a fresh interpreter. See the "crew" vignette.
+tar_option_set(controller = polyglot_controller(workers = 1L))
+
+list(
+  tar_target(values, c(2, 4, 6, 8)),
+
+  tar_target_py(
+    name = py_mean,
+    script = "scripts/mean.py",
+    inputs = c(x = "values"),
+    pre_script = "scripts/pre.R",
+    retrieve = "result"           # returns the Python `result` dict as an R list
+  ),
+
+  tar_target(report, sprintf("mean = %.1f over n = %d", py_mean$mean, py_mean$n))
+)
+```
+
+We can run and inspect it like any `targets` pipeline:
+
+``` r
+
+targets::tar_make()
+targets::tar_read(py_mean)   # $mean 5  $n 4
+targets::tar_read(report)    # "mean = 5.0 over n = 4"
+```
+
+Here the `retrieve` argument is used to extract a value from the python
+environment using `reticulate` type conversion. It is also possible to
+use a post-python R script to extract one or more values from the python
+session (e.g. save multiple object as a list, or format the output in
+R). In the post script, the python session is represented by the
+`py`object. It is also possible tu use the `py_get` helper function to
+extract some variable. Both are created by the steps constructor.
+
+### Julia and Rust similarity and differences
+
+A Julia step is identical apart from the constructor and helper names:
+use
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+a `.jl` script, `to_jl` in the pre-script, and `jl_get()` in a
+post-script. A Rust step has no pre-script: compile `#[extendr]`
+functions and call them from the post-script. For Rust in particular, a
+plain
+[`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+calling
+[`rextendr::rust_source()`](https://extendr.github.io/rextendr/reference/rust_source.html)
+is often enough;
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
+mainly adds toolchain and `crew`-worker build setup plus API symmetry
+(see
+[`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
+
+## Why use tarpolyglot instead of calling the toolchains directly
+
+- The interpreter or build setup is handled for you: each step binds
+  reticulate, runs
+  [`JuliaCall::julia_setup()`](https://rdrr.io/pkg/JuliaCall/man/julia_setup.html),
+  or prepares the extendr build, so you do not repeat that plumbing in
+  every step.
+- You move data across the R boundary declaratively: wire upstream
+  targets in with `inputs`, push R objects into the foreign session with
+  `to_py` / `to_jl` in a pre-script, and read results back with
+  `py_get()` / `jl_get()` / `jl_call()` or the `retrieve` / `files`
+  shortcuts.
+- Easy selection of environment and language version selection as
+  arguments: choose a Python interpreter or environment (`python`,
+  `env` + `env_manager` for system / virtualenv / venv / uv / poetry /
+  conda, or `python_version`), or a Julia install and project
+  (`julia_version`, `julia_home`, `julia_project`, `julia_packages`).
+  Your selection wins over ambient settings: an explicit environment
+  overrides an inherited `RETICULATE_PYTHON` or `JULIA_PROJECT` (for
+  example one set by RStudio and inherited by `crew` workers).
+- Every `targets` feature keeps working:
+  - the constructors forward the full
+    [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+    argument set (`format`, `deployment`, `resources`, `cue`, `memory`,
+    and so on), so storage formats, cues, and `crew` parallelism behave
+    as usual making tarpolyglot fully compatible with `targets` and
+    `tarchetypes`.
+  - the constructor `input` argument ensure that `targets` detect the
+    dependencies of your polyglot steps.
+- Per-step isolation is one line:
+  [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
+  (a `crew` controller with `tasks_max = 1`) gives each step a fresh
+  interpreter in its own process. This is the only way around reticulate
+  and JuliaCall binding a single interpreter per session.
+- You do not need to adopt a separate build tool like the `rixpress` R
+  package does with Nix which is convenient for Windows computer or
+  public computing cluster on which you can’t install Nix as a user.
+
+The gains above are largest for **Python and Julia**, where a live
+interpreter has to be bound and data marshalled across the R boundary on
+every step. **Rust is different**:
+[`rextendr::rust_source()`](https://extendr.github.io/rextendr/reference/rust_source.html)
+compiles your `#[extendr]` functions and hands them back as ordinary R
+functions, so there is no interpreter to bind and no conversion layer to
+abstract, and for simple cases a plain
+[`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+calling `rust_source()` already works.
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
+is still worth using because it puts R, `cargo`, and (on Windows) Rtools
+on `PATH` and sets `R_HOME` so the build succeeds in a bare or `crew`
+worker, lets you pick a toolchain per step with `toolchain`, bundles
+file output, script tracking, and the full
+[`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+argument set in one call, and keeps the same API as the Python and Julia
+constructors (see
+[`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
+
+## Where to go next
+
+- [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md):
+  installation and a first pipeline, plus `crew`-based parallelism and
+  per-step isolation (running foreign steps on their own controller
+  while ordinary R targets stay on the main process or a different
+  controller), and the limitations to know before building a large
+  pipeline (one interpreter per session, what can be returned, and
+  more).
+- [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md):
+  Python steps in depth: the three-script model, object vs file output,
+  dynamic branching, and choosing an environment.
+- [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md):
+  the same for Julia (`julia_version`, `julia_project`,
+  `julia_packages`).
+- [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md):
+  Rust steps via rextendr/extendr.
+- [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
+  [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+  [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
+  for their respective documentations.
+
+## AI Disclosure
+
+This package was developed with assistance from Claude Code (Opus 4.8)
+to improve the functions and the first version of their documentation.
+All code and documentations were checked by the maintainer before
+release.
+
+## Citation
+
+To cite `tarpolyglot`, run `citation("tarpolyglot")` in R, or see the
+[`CITATION.cff`](https://pierre9344.github.io/tarpolyglot/CITATION.cff)
+file (also surfaced by GitHub’s “Cite this repository” button).

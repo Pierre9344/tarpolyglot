@@ -1,0 +1,267 @@
+# Using Julia inside targets
+
+This vignette is the reference for running **Julia** scripts as
+`targets` steps with
+[JuliaCall](https://github.com/JuliaInterop/JuliaCall): every
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
+argument, how to choose the Julia install and project, and the common
+use cases. It mirrors
+[`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md):
+the *shape* of a Julia step is identical to a Python one, only the
+bridge and the environment arguments differ. For a gentler tour start
+with
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md).
+
+Code blocks are illustrative and **not executed** when the vignette
+builds.
+
+## The two constructors
+
+- [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md):
+  bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
+- [`tar_target_jl_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.md):
+  string `name`, for use inside targets factories.
+
+Both return a single `targets` target and forward **every**
+[`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+argument (`pattern`, `format`, `iteration`, `deployment`, `resources`,
+`cue`, …).
+
+## Arguments
+
+### Scripts, data, and output
+
+These behave exactly as for Python (see
+[`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md)):
+
+| Argument | Meaning |
+|----|----|
+| `script` | Path to the Julia script to run (**required**). Runs in the `Main` module. |
+| `pre_script` | Optional R script run **before** the Julia script. Assign a named list `to_jl` to push objects into `Main`. |
+| `post_script` | Optional R script run **after** the Julia script. `jl_get()` and `jl_call()` are available; its last expression is the value (object mode) or file paths (file mode). |
+| `inputs` | Named vector mapping in-step names to upstream targets, e.g. `c(df = "prepared")`. |
+| `output` | `"object"` (default) or `"file"`. |
+| `retrieve` | Julia variable name(s) to return when there is no post-script (object mode). |
+| `files` | Paths to return when there is no post-script (file mode). |
+
+As with Python, any of `script` / `pre_script` / `post_script` may be a
+literal path or a `tar_target_path("name")` reference to track the file.
+
+### Choosing the Julia install / project
+
+| Argument | Meaning |
+|----|----|
+| `julia_version` | A version string (e.g. `"1.11"`), resolved to a [juliaup](https://github.com/JuliaLang/juliaup)-managed install. Used when `julia_home` is not given. |
+| `julia_home` | The directory containing the `julia` executable. Defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`. |
+| `julia_project` | A Julia project environment (folder with `Project.toml` / `Manifest.toml`) to `Pkg.activate()`. When `NULL`, Julia’s default global environment (`@v#.#`) is used. |
+| `julia_packages` | Character vector of packages to `using` before running the script. |
+
+## The three-script model
+
+     upstream targets ─► pre_script (R) ─► script (.jl) ─► post_script (R) ─► target value
+                         builds `to_jl`     computes         reads jl_get("name") /
+                                            `result`         jl_call(fn, ...)
+
+1.  **`script`**: the Julia file, run in `Main`.
+2.  **`pre_script`**: the `inputs` are already bound by name. Assign a
+    named list `to_jl`; each element is `julia_assign()`ed as a variable
+    in `Main`.
+3.  **`post_script`**: JuliaCall has no `py`-style proxy, so you read
+    variables back through `jl_get("name")` (a shortcut for
+    `JuliaCall::julia_eval("name")`) and call Julia functions with
+    `jl_call` (an alias of
+    [`JuliaCall::julia_call()`](https://rdrr.io/pkg/JuliaCall/man/call.html)).
+
+## Object output
+
+`jl/stats.jl`:
+
+``` julia
+# `x` was pushed from R by the pre-script.
+seq = isa(x, AbstractVector) ? x : [x]
+result = Dict("sum" => sum(seq), "n" => length(seq), "mean" => sum(seq) / length(seq))
+```
+
+`R/pre_push.R`:
+
+``` r
+
+to_jl <- list(x = x)   # `x` came from inputs = c(x = "prepared_x")
+```
+
+`R/post_result.R`:
+
+``` r
+
+res <- jl_get("result")
+data.frame(sum = res$sum, n = res$n, mean = res$mean)   # last expression = value
+```
+
+`_targets.R`:
+
+``` r
+
+library(targets)
+library(tarpolyglot)
+
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+
+  # (a) return a Julia variable directly with `retrieve` (no post-script)
+  tar_target_jl(
+    name = jl_direct,
+    script = "jl/stats.jl",
+    inputs = c(x = "prepared_x"),
+    pre_script = "R/pre_push.R",
+    retrieve = "result"
+  ),
+
+  # (b) reshape the result in a post-script
+  tar_target_jl(
+    name = jl_prepost,
+    script = "jl/stats.jl",
+    inputs = c(x = "prepared_x"),
+    pre_script = "R/pre_push.R",
+    post_script = "R/post_result.R"
+  )
+)
+```
+
+## File output
+
+``` r
+
+tar_target_jl(
+  name = jl_file,
+  script = "jl/write.jl",            # writes a file, stores its path in `out_path`
+  inputs = c(x = "prepared_x"),
+  pre_script = "R/pre_push.R",
+  post_script = "R/post_files.R",    # returns jl_get("out_path")
+  output = "file"
+)
+```
+
+## Dynamic branching (iris example)
+
+``` r
+
+list(
+  tar_target(iris_groups, split(iris, iris$Species), iteration = "list"),
+  tar_target_jl(
+    name = fit_by_group,
+    script = "jl/fit.jl",
+    inputs = c(df = "iris_groups"),
+    pre_script = "R/pre_push_jl.R",  # to_jl <- list(df = df)
+    retrieve = "result",
+    pattern = map(iris_groups),      # one branch per species
+    iteration = "list"
+  )
+)
+```
+
+## Choosing the Julia install and project
+
+### Use case 1: Julia on PATH (default)
+
+Set nothing; JuliaCall discovers the `julia` on `PATH` and uses the
+global environment.
+
+``` r
+
+tar_target_jl(
+  name = probe,
+  script = "jl/probe.jl",
+  retrieve = "result"
+)
+```
+
+### Use case 2: a specific juliaup version
+
+``` r
+
+tar_target_jl(
+  name = fit,
+  script = "jl/fit.jl",
+  julia_version = "1.11",            # resolved via juliaup
+  retrieve = "result"
+)
+```
+
+### Use case 3: an explicit Julia home
+
+If discovery fails (e.g. a fresh install not yet on `PATH`, or the
+Windows juliaup shim), point at the `bin` directory. You can set it once
+globally:
+
+``` r
+
+options(tarpolyglot.julia_home = "C:/Users/me/.julia/juliaup/.../bin")
+```
+
+or per step:
+
+``` r
+
+tar_target_jl(
+  name = fit,
+  script = "jl/fit.jl",
+  julia_home = "C:/Users/me/.julia/juliaup/.../bin",
+  retrieve = "result"
+)
+```
+
+### Use case 4: a pinned project (recommended)
+
+For reproducibility, activate a Julia **project** with a committed
+`Manifest.toml`, and `using` the packages the script needs:
+
+``` r
+
+tar_target_jl(
+  name = solve,
+  script = "jl/solve.jl",
+  julia_project = "julia/MyEnv",     # folder with Project.toml + Manifest.toml
+  julia_packages = c("LinearAlgebra", "Statistics"),
+  retrieve = "result"
+)
+```
+
+The requested project takes priority over an ambient `JULIA_PROJECT`
+environment variable (e.g. one inherited by `crew` workers): it is
+cleared for the duration of the Julia binding, so your explicit
+`julia_project` (or the global environment you get when none is given)
+wins.
+
+> **One interpreter per session.** JuliaCall binds a single Julia per R
+> session, so all Julia targets that run in the same session share one
+> project and set of loaded packages. To use different projects in one
+> pipeline, run those targets on separate `crew` workers (see
+> [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)).
+
+## Tracking scripts as dependencies
+
+``` r
+
+list(
+  tar_target(fit_jl, "jl/fit.jl", format = "file"),
+
+  tar_target_jl(
+    name = fit,
+    script = tar_target_path("fit_jl"),   # re-runs when jl/fit.jl changes
+    inputs = c(x = "data"),
+    retrieve = "result"
+  )
+)
+```
+
+## Conversion caveats
+
+- Julia is **1-indexed** (unlike Python).
+- Check the JuliaCall conversion rules for which R/Julia types
+  round-trip; for anything that does not, use file mode.
+
+See
+[`?tar_target_jl`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
+and
+[`?run_jl_step`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md)
+for the full argument reference.
