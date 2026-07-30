@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 
 # tarpolyglot <img src="man/figures/logo.png" align="right" height="120"/>
 
-`tarpolyglot` adds target constructors that run **Python**, **Julia**, and **Rust** as first-class steps of a [`targets`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal `targets` target supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
+`tarpolyglot` adds target constructors that run **Python**, **Julia**, and **Rust** as first-class steps of a [`targets`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal `targets` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
 
 ## Installation
 
