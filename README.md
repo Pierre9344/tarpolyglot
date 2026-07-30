@@ -7,13 +7,13 @@
 [![R-CMD-check](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-# tarpolyglot <img src="man/figures/logo.png" align="right" height="120"/>
+# `{tarpolyglot}` <img src="man/figures/logo.png" align="right" height="120"/>
 
-`tarpolyglot` adds target constructors that run **Python**, **Julia**, and **Rust** as first-class steps of a [`targets`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal `targets` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
+`tarpolyglot` adds target constructors that run **Python**, **Julia**, and **Rust** as first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal `{targets}` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
 
 ## Installation
 
-You can install tarpolyglot from GitHub:
+You can install `{tarpolyglot}` from GitHub:
 
 ``` r
 # install.packages("remotes")
@@ -28,7 +28,7 @@ You also need a working toolchain for whichever language(s) you plan to use: Pyt
 - `tar_target_jl()` / `tar_target_jl_raw()`: Julia, via JuliaCall.
 - `tar_target_rs()` / `tar_target_rs_raw()`: Rust, via rextendr/extendr.
 
-Each mirrors `targets::tar_target()` / `targets::tar_target_raw()` and forwards every argument (`pattern`, `format`, `deployment`, `resources`, `cue`, ...), so dynamic branching, storage formats, `crew`-based parallelism, and other `targets`features all work as usual.
+Each mirrors `targets::tar_target()` / `targets::tar_target_raw()` and forwards every argument (`pattern`, `format`, `deployment`, `resources`, `cue`, ...), so dynamic branching, storage formats, `crew`-based parallelism, and other `{targets}`features all work as usual.
 
 ### Example using `tar_target_py`
 
@@ -72,7 +72,7 @@ list(
 )
 ```
 
-We can run and inspect it like any `targets` pipeline:
+We can run and inspect it like any `{targets}` pipeline:
 
 ``` r
 targets::tar_make()
@@ -86,18 +86,30 @@ Here the `retrieve` argument is used to extract a value from the python environm
 
 A Julia step is identical apart from the constructor and helper names: use `tar_target_jl()`, a `.jl` script, `to_jl` in the pre-script, and `jl_get()` in a post-script. A Rust step has no pre-script: compile `#[extendr]` functions and call them from the post-script. For Rust in particular, a plain `tar_target()` calling `rextendr::rust_source()` is often enough; `tar_target_rs()` mainly adds toolchain and `crew`-worker build setup plus API symmetry (see `vignette("rust")`).
 
-## Why use tarpolyglot instead of calling the toolchains directly
+## Why use `{tarpolyglot}` instead of calling the toolchains directly
 
 - The interpreter or build setup is handled for you: each step binds reticulate, runs `JuliaCall::julia_setup()`, or prepares the extendr build, so you do not repeat that plumbing in every step.
 - You move data across the R boundary declaratively: wire upstream targets in with `inputs`, push R objects into the foreign session with `to_py` / `to_jl` in a pre-script, and read results back with `py_get()` / `jl_get()` / `jl_call()` or the `retrieve` / `files` shortcuts.
 - Easy selection of environment and language version selection as arguments: choose a Python interpreter or environment (`python`, `env` + `env_manager` for system / virtualenv / venv / uv / poetry / conda, or `python_version`), or a Julia install and project (`julia_version`, `julia_home`, `julia_project`, `julia_packages`). Your selection wins over ambient settings: an explicit environment overrides an inherited `RETICULATE_PYTHON` or `JULIA_PROJECT` (for example one set by RStudio and inherited by `crew` workers).
-- Every `targets` feature keeps working:
-  - the constructors forward the full `targets::tar_target_raw()` argument set (`format`, `deployment`, `resources`, `cue`, `memory`, and so on), so storage formats, cues, and `crew` parallelism behave as usual making tarpolyglot fully compatible with `targets` and `tarchetypes`.
-  - the constructor `input` argument ensure that `targets` detect the dependencies of your polyglot steps.
+- Every `{targets}` feature keeps working:
+  - the constructors forward the full `targets::tar_target_raw()` argument set (`format`, `deployment`, `resources`, `cue`, `memory`, and so on), so storage formats, cues, and `crew` parallelism behave as usual making `{tarpolyglot}` fully compatible with `{targets}` and `tarchetypes`.
+  - the constructor `input` argument ensure that `{targets}` detect the dependencies of your polyglot steps.
 - Per-step isolation is one line: `polyglot_controller()` (a `crew` controller with `tasks_max = 1`) gives each step a fresh interpreter in its own process. This is the only way around reticulate and JuliaCall binding a single interpreter per session.
 - You do not need to adopt a separate build tool like the `rixpress` R package does with Nix which is convenient for Windows computer or public computing cluster on which you can't install Nix as a user.
 
 The gains above are largest for **Python and Julia**, where a live interpreter has to be bound and data marshalled across the R boundary on every step. **Rust is different**: `rextendr::rust_source()` compiles your `#[extendr]` functions and hands them back as ordinary R functions, so there is no interpreter to bind and no conversion layer to abstract, and for simple cases a plain `tar_target()` calling `rust_source()` already works. `tar_target_rs()` is still worth using because it puts R, `cargo`, and (on Windows) Rtools on `PATH` and sets `R_HOME` so the build succeeds in a bare or `crew` worker, lets you pick a toolchain per step with `toolchain`, bundles file output, script tracking, and the full `targets::tar_target_raw()` argument set in one call, and keeps the same API as the Python and Julia constructors (see `vignette("rust")`).
+
+## Comparison to `{rixpress}`
+
+I am also aware of `{rixpress}`, which supports reproducible polyglot pipelines using Nix.
+
+I see `{rixpress}` and `{tarpolyglot}` as addressing related needs with different architectures and trade-offs. `{rixpress}` delegates pipeline execution, dependency management, and environment management to Nix, providing strong isolation and reproducibility guarantees.
+
+{tarpolyglot} takes a narrower and less prescriptive approach. It remains an extension of {targets} and leaves environment management to existing language-specific tools such as virtual environments, Conda, uv, Poetry, Juliaup, Julia projects, and rustup.
+
+The intention is not to reproduce the reproducibility guarantees provided by Nix. Instead, `{tarpolyglot}` is intended for users who want to add multilingual steps incrementally to an existing {targets} pipeline, including environments where Nix is unavailable or cannot be installed.
+
+This distinction is relevant for my own work because I use a public computing cluster with restricted user permissions, and the administrators are not currently considering a Nix installation.
 
 ## Where to go next
 
