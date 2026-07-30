@@ -82,6 +82,22 @@ targets::tar_read(report)    # "mean = 5.0 over n = 4"
 
 Here the `retrieve` argument is used to extract a value from the python environment using `reticulate` type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the `py`object. It is also possible tu use the `py_get` helper function to extract some variable. Both are created by the steps constructor.
 
+### Inline code with `tar_code()`
+
+The `script`, `pre_script`, and `post_script` arguments do not have to point at a file on disk. Wrap code in `tar_code()` to write it directly in `_targets.R` instead: an R `{ }` block supplies inline R for a `pre_script` or `post_script`, and a character string supplies inline source for the foreign `script` (Python, Julia, or Rust) or for an R pre/post-script. The Python example above can be written entirely inline:
+
+``` r
+tar_target_py(
+  name = py_mean,
+  inputs = c(x = "values"),
+  pre_script = tar_code({ to_py <- list(x = x) }),
+  script = tar_code("result = {'mean': sum(x) / len(x), 'n': len(x)}"),
+  retrieve = "result"
+)
+```
+
+Multi-line strings work too and are dedented, so you can indent the code to line up with the surrounding `_targets.R` while Python's own block indentation is preserved. Inline code is embedded in the target's command, so `{targets}` hashes it and re-runs the step whenever you edit it (a literal file-path string is untracked unless you wrap it in `tar_target_path()`).
+
 ### Julia and Rust similarity and differences
 
 A Julia step is identical apart from the constructor and helper names: use `tar_target_jl()`, a `.jl` script, `to_jl` in the pre-script, and `jl_get()` in a post-script. A Rust step has no pre-script: compile `#[extendr]` functions and call them from the post-script. For Rust in particular, a plain `tar_target()` calling `rextendr::rust_source()` is often enough; `tar_target_rs()` mainly adds toolchain and `crew`-worker build setup plus API symmetry (see `vignette("rust")`).

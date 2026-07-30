@@ -7,7 +7,7 @@
 tar_code(x)
 }
 \arguments{
-\item{x}{Inline code: an R \code{{ }} block, or an expression/variable/literal that
+\item{x}{Inline code: an R \code{{...}} block, or an expression/variable/literal that
 yields a single character string of source code.}
 }
 \value{
@@ -20,12 +20,7 @@ Use in place of a file-path string (or a \code{\link[=tar_target_path]{tar_targe
 supply the code inline instead of pointing at a file.
 }
 \details{
-The capture rule is: \strong{an R \code{{ }} block is inline R (an expression); anything that
-evaluates to a single string is inline source code.} Which language a string is
-interpreted as follows from the slot it sits in -- the foreign \code{script} slot means
-Python/Julia/Rust source; a \code{pre_script}/\code{post_script} slot means R source. An R
-\code{{ }} block is only valid in the R slots (\code{pre_script}/\code{post_script}); passing one
-as the foreign \code{script} is an error.
+\code{tar_code()} accepts two forms. An R \code{{...}} block is captured as inline R code and is only valid in an R slot (\code{pre_script} or \code{post_script}); passing a block as the foreign \code{script} is an error. Anything that evaluates to a single character string is treated as inline source code, and its language follows from the slot it fills: the foreign \code{script} slot is Python, Julia, or Rust source, while a \code{pre_script} or \code{post_script} slot is R source.
 
 Multi-line strings are supported and preserved verbatim, then \strong{dedented}: the
 common leading-whitespace margin shared by all lines is stripped (and leading/
@@ -41,14 +36,26 @@ which is untracked).
 }
 \examples{
 \dontrun{
-list(
-  tarpolyglot::tar_target_py(
-    name        = m,
-    inputs      = c(x = "prepared_x"),
-    pre_script  = tar_code({ to_py <- list(x = x) }),   # inline R
-    script      = tar_code("result = float(sum(x))"),   # inline Python
-    post_script = tar_code({ py_get("result") })
-  )
+# Inline R (pre/post) plus a one-line inline Python `script`:
+tarpolyglot::tar_target_py(
+  name        = m,
+  inputs      = c(x = "prepared_x"),
+  pre_script  = tar_code({ to_py <- list(x = x) }),   # inline R
+  script      = tar_code("result = float(sum(x))"),   # inline Python
+  post_script = tar_code({ py_get("result") })
+)
+
+# Multi-line inline Python. Indent the code to line up with `_targets.R`;
+# tar_code() dedents it, so Python's own block indentation stays correct.
+tarpolyglot::tar_target_py(
+  name   = pos_sum,
+  inputs = c(x = "prepared_x"),
+  script = tar_code(r"(
+    result = 0
+    for v in x:
+        if v > 0:
+            result += v
+  )")
 )
 }
 }
