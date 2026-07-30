@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Pierre9344/tarpolyglot/blob/v0.1.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Pierre9344/tarpolyglot/blob/main/DESCRIPTION)
 
 Solomon P (2026). *tarpolyglot: Run Python, Julia, and Rust Inside
 'targets' Pipeline Steps*. R package version 0.1.0,
