@@ -62,7 +62,7 @@ supply the code inline instead of pointing at a file.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Inline code: an R <code><a href="https://rdrr.io/r/base/Paren.html" class="external-link">{ }</a></code> block, or an expression/variable/literal that
+<dd><p>Inline code: an R <code>{...}</code> block, or an expression/variable/literal that
 yields a single character string of source code.</p></dd>
 
 </dl></div>
@@ -72,12 +72,7 @@ yields a single character string of source code.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The capture rule is: <strong>an R <code><a href="https://rdrr.io/r/base/Paren.html" class="external-link">{ }</a></code> block is inline R (an expression); anything that
-evaluates to a single string is inline source code.</strong> Which language a string is
-interpreted as follows from the slot it sits in – the foreign <code>script</code> slot means
-Python/Julia/Rust source; a <code>pre_script</code>/<code>post_script</code> slot means R source. An R
-<code><a href="https://rdrr.io/r/base/Paren.html" class="external-link">{ }</a></code> block is only valid in the R slots (<code>pre_script</code>/<code>post_script</code>); passing one
-as the foreign <code>script</code> is an error.</p>
+    <p><code>tar_code()</code> accepts two forms. An R <code>{...}</code> block is captured as inline R code and is only valid in an R slot (<code>pre_script</code> or <code>post_script</code>); passing a block as the foreign <code>script</code> is an error. Anything that evaluates to a single character string is treated as inline source code, and its language follows from the slot it fills: the foreign <code>script</code> slot is Python, Julia, or Rust source, while a <code>pre_script</code> or <code>post_script</code> slot is R source.</p>
 <p>Multi-line strings are supported and preserved verbatim, then <strong>dedented</strong>: the
 common leading-whitespace margin shared by all lines is stripped (and leading/
 trailing blank lines dropped), so code you indent to line up with the surrounding
@@ -97,14 +92,26 @@ which is untracked).</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    name        <span class="op">=</span> <span class="va">m</span>,</span></span>
-<span class="r-in"><span>    inputs      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    pre_script  <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="op">{</span> <span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span>,   <span class="co"># inline R</span></span></span>
-<span class="r-in"><span>    script      <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="st">"result = float(sum(x))"</span><span class="op">)</span>,   <span class="co"># inline Python</span></span></span>
-<span class="r-in"><span>    post_script <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="op">{</span> <span class="fu">py_get</span><span class="op">(</span><span class="st">"result"</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Inline R (pre/post) plus a one-line inline Python `script`:</span></span></span>
+<span class="r-in"><span><span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  name        <span class="op">=</span> <span class="va">m</span>,</span></span>
+<span class="r-in"><span>  inputs      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pre_script  <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="op">{</span> <span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span>,   <span class="co"># inline R</span></span></span>
+<span class="r-in"><span>  script      <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="st">"result = float(sum(x))"</span><span class="op">)</span>,   <span class="co"># inline Python</span></span></span>
+<span class="r-in"><span>  post_script <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="op">{</span> <span class="fu">py_get</span><span class="op">(</span><span class="st">"result"</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Multi-line inline Python. Indent the code to line up with `_targets.R`;</span></span></span>
+<span class="r-in"><span><span class="co"># tar_code() dedents it, so Python's own block indentation stays correct.</span></span></span>
+<span class="r-in"><span><span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  name   <span class="op">=</span> <span class="va">pos_sum</span>,</span></span>
+<span class="r-in"><span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  script <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="st">r"(</span></span></span>
+<span class="r-in"><span><span class="st">    result = 0</span></span></span>
+<span class="r-in"><span><span class="st">    for v in x:</span></span></span>
+<span class="r-in"><span><span class="st">        if v &gt; 0:</span></span></span>
+<span class="r-in"><span><span class="st">            result += v</span></span></span>
+<span class="r-in"><span><span class="st">  )"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

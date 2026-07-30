@@ -123,6 +123,37 @@ R). In the post script, the python session is represented by the
 `py`object. It is also possible tu use the `py_get` helper function to
 extract some variable. Both are created by the steps constructor.
 
+### Inline code with `tar_code()`
+
+The `script`, `pre_script`, and `post_script` arguments do not have to
+point at a file on disk. Wrap code in
+[`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
+to write it directly in `_targets.R` instead: an R
+[`{ }`](https://rdrr.io/r/base/Paren.html) block supplies inline R for a
+`pre_script` or `post_script`, and a character string supplies inline
+source for the foreign `script` (Python, Julia, or Rust) or for an R
+pre/post-script. The Python example above can be written entirely
+inline:
+
+``` r
+
+tar_target_py(
+  name = py_mean,
+  inputs = c(x = "values"),
+  pre_script = tar_code({ to_py <- list(x = x) }),
+  script = tar_code("result = {'mean': sum(x) / len(x), 'n': len(x)}"),
+  retrieve = "result"
+)
+```
+
+Multi-line strings work too and are dedented, so you can indent the code
+to line up with the surrounding `_targets.R` while Python’s own block
+indentation is preserved. Inline code is embedded in the target’s
+command, so [targets](https://docs.ropensci.org/targets/) hashes it and
+re-runs the step whenever you edit it (a literal file-path string is
+untracked unless you wrap it in
+[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)).
+
 ### Julia and Rust similarity and differences
 
 A Julia step is identical apart from the constructor and helper names:
