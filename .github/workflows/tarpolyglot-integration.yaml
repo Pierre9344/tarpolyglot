@@ -25,6 +25,19 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # ubuntu-latest is Ubuntu 24.04, where CRAN JuliaCall 0.17.6 segfaults
+          # (a libunwind bug, JuliaCall #265/#282); the "Install JuliaCall with the
+          # Ubuntu libunwind fixes" step below pins a patched revision to work
+          # around it. This combination passes here.
+          #
+          # Ubuntu 26.04 does NOT have that segfault: CRAN JuliaCall works there
+          # unpatched, verified locally in WSL (Ubuntu 26.04). We tried switching
+          # this job to the `ubuntu-26.04` GitHub-hosted runner to drop the pinned
+          # JuliaCall, but that run FAILED on GitHub Actions (ubuntu-26.04 is still
+          # a Preview image, no Actions SLA) even though the same OS version is
+          # green under WSL. So the failure is specific to the GitHub-hosted
+          # preview runner, not to Ubuntu 26.04 itself. Stay on ubuntu-latest until
+          # ubuntu-latest becomes 26.04 (then the pinned-JuliaCall step can go).
           - {os: ubuntu-latest}
           - {os: windows-latest}
 
