@@ -1,9 +1,5 @@
 # Changelog
 
-## tarpolyglot (development version)
-
-#### New features
-
 ## tarpolyglot 0.1.0
 
 First release. `tarpolyglot` adds `targets` constructors that run
