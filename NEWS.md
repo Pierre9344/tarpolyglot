@@ -1,3 +1,19 @@
+# tarpolyglot 0.2.0
+
+### New features
+
+* New dynamic-branching pattern helpers mirror the `targets` patterns (`map()`, `cross()`, `slice()`, ...). Used unquoted in `pattern` on `tar_target_rs()` / `tar_target_rs_raw()`, they compile the Rust crate a single time in a companion `<step name>_rust_lib` target and reuse that compiled library across every branch (each branch reloads it in milliseconds), instead of recompiling the crate in every branch as the plain `targets` patterns do. On the other constructors (`tar_target_py()`, `tar_target_jl()`, or `tar_target()`) each helper falls back to its plain `targets` equivalent, so the same pattern code branches every language.
+  * `tarpolyglot_map()`: equivalent to `map()`
+  * `tarpolyglot_cross()`: equivalent to `cross()`
+  * `tarpolyglot_slice()`: equivalent to `slice()`
+  * `tarpolyglot_head()`: equivalent to `head()`
+  * `tarpolyglot_tail()`: equivalent to `tail()`
+  * `tarpolyglot_sample()`: equivalent to `sample()`
+
+### Bug fixes
+
+* Inline Julia code supplied through `tar_code()` now runs correctly when it spans multiple top-level statements (for example a `function` definition followed by a call). It is evaluated as a Julia script rather than as a single expression, so it no longer raises `ParseError("extra token after end of expression")`. Inline Python and Rust were unaffected.
+
 # tarpolyglot 0.1.0
 
 First release. `tarpolyglot` adds `targets` constructors that run Python, Julia, and Rust as pipeline steps.

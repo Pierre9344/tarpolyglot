@@ -52,7 +52,7 @@ tar_target_rs_raw(
 
 \item{toolchain}{Optional rustup toolchain (e.g. \code{"stable-x86_64-pc-windows-gnu"}); sets \code{RUSTUP_TOOLCHAIN} for the build.}
 
-\item{pattern}{Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. \code{quote(map(x))}), forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}.}
+\item{pattern}{Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. \code{quote(map(x))}), forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}. Use \code{quote(tarpolyglot_map(x))} to compile the crate once and reuse it across branches (see \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}).}
 
 \item{packages, library}{Character vectors of R packages (and library paths) to load for the target, forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}.}
 
@@ -63,13 +63,15 @@ tar_target_rs_raw(
 \item{error, memory, garbage_collection, deployment, priority, resources, storage, retrieval, cue, description}{Standard \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}} execution/behaviour arguments, forwarded unchanged.}
 }
 \value{
-A \code{targets} target object.
+A \code{targets} target object. When \code{pattern} uses \code{\link[=tarpolyglot_map]{tarpolyglot_map()}} it is instead a list of two targets: the \verb{<name>_rust_lib} compile target and the branched \verb{<name>} target.
 }
 \description{
 Character-based constructor mirroring \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}} for Rust, for use inside targets factories. Returns a single \code{targets} target whose command compiles the \verb{#[extendr]} functions in \code{script} with \code{\link[rextendr:rust_source]{rextendr::rust_source()}} and then evaluates an R \strong{post-script} that calls those functions (with the upstream \code{inputs} in scope) and returns the value. See \code{\link[=run_rs_step]{run_rs_step()}} for the contract. For direct use in \verb{_targets.R}, see \code{\link[=tar_target_rs]{tar_target_rs()}}.
 }
 \details{
 Unlike Python/Julia there is \strong{no pre-script} for Rust: inputs are used directly in the post-script alongside the compiled functions. A Rust toolchain and \code{cargo} are required; on Windows use the GNU toolchain (see \code{vignette("rust")}).
+
+Under dynamic branching, \code{pattern = map(...)} recompiles the crate in every branch (Rust has no live interpreter to reuse). Passing a tarpolyglot pattern helper instead (\code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=tarpolyglot_cross]{tarpolyglot_cross()}}, \code{\link[=tarpolyglot_slice]{tarpolyglot_slice()}}, \code{\link[=tarpolyglot_head]{tarpolyglot_head()}}, \code{\link[=tarpolyglot_tail]{tarpolyglot_tail()}}, \code{\link[=tarpolyglot_sample]{tarpolyglot_sample()}}) compiles the crate \strong{once} in a companion target named \verb{<name>_rust_lib} and reuses it across all branches; the constructor then returns \emph{both} targets as a list. See \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}.
 }
 \examples{
 \dontrun{
@@ -82,5 +84,5 @@ tarpolyglot::tar_target_rs_raw(
 }
 }
 \seealso{
-\code{\link[=tar_target_rs]{tar_target_rs()}}, \code{\link[=run_rs_step]{run_rs_step()}}, \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}, \code{\link[=tar_target_jl_raw]{tar_target_jl_raw()}}
+\code{\link[=tar_target_rs]{tar_target_rs()}}, \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=run_rs_step]{run_rs_step()}}, \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}, \code{\link[=tar_target_jl_raw]{tar_target_jl_raw()}}
 }

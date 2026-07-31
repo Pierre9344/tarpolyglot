@@ -52,7 +52,7 @@ tar_target_rs(
 
 \item{toolchain}{Optional rustup toolchain (e.g. \code{"stable-x86_64-pc-windows-gnu"}); sets \code{RUSTUP_TOOLCHAIN} for the build.}
 
-\item{pattern}{Optional dynamic-branching pattern, unquoted (e.g. \code{map(x)}).}
+\item{pattern}{Optional dynamic-branching pattern, unquoted (e.g. \code{map(x)}). Use \code{tarpolyglot_map(x)} to compile the crate once and reuse it across branches (see \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}).}
 
 \item{packages, library}{Character vectors of R packages (and library paths) to load for the target, forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}.}
 
@@ -63,7 +63,7 @@ tar_target_rs(
 \item{error, memory, garbage_collection, deployment, priority, resources, storage, retrieval, cue, description}{Standard \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}} execution/behaviour arguments, forwarded unchanged.}
 }
 \value{
-A \code{targets} target object.
+A \code{targets} target object. When \code{pattern} uses \code{\link[=tarpolyglot_map]{tarpolyglot_map()}} it is instead a list of two targets: the \verb{<name>_rust_lib} compile target and the branched \verb{<name>} target.
 }
 \description{
 Non-standard-evaluation constructor mirroring \code{\link[targets:tar_target]{targets::tar_target()}} for Rust: pass a bare \code{name} and unquoted \code{pattern}, for direct use in \verb{_targets.R}. Compiles the \verb{#[extendr]} functions in \code{script} with \code{\link[rextendr:rust_source]{rextendr::rust_source()}} and calls them from the R \code{post_script}. Delegates to \code{\link[=tar_target_rs_raw]{tar_target_rs_raw()}}; see it and \code{\link[=run_rs_step]{run_rs_step()}} for the full reference. The Python/Julia twins are \code{\link[=tar_target_py]{tar_target_py()}} / \code{\link[=tar_target_jl]{tar_target_jl()}}.
@@ -81,5 +81,5 @@ list(
 }
 }
 \seealso{
-\code{\link[=tar_target_rs_raw]{tar_target_rs_raw()}}, \code{\link[=run_rs_step]{run_rs_step()}}, \code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}
+\code{\link[=tar_target_rs_raw]{tar_target_rs_raw()}}, \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=run_rs_step]{run_rs_step()}}, \code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}
 }

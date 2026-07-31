@@ -16,11 +16,21 @@ reference:
   - tar_target_rs_raw
 - title: Helpers
   desc: |
-    Supply a step's code inline, track a script file as a dependency, and a crew controller preconfigured for per-step interpreter isolation.
+    Supply a step's code inline, track a script file as a dependency, branch while compiling Rust once, and a crew controller preconfigured for per-step interpreter isolation.
   contents:
   - tar_code
   - tar_target_path
   - polyglot_controller
+- title: Branching patterns
+  desc: |
+    Dynamic-branching pattern helpers that mirror the `targets` patterns but compile the Rust crate once per pattern (in a `<name>_rust_lib` target) and reuse it across branches. On the Python/Julia constructors they fall back to the plain `targets` pattern.
+  contents:
+  - tarpolyglot_map
+  - tarpolyglot_cross
+  - tarpolyglot_slice
+  - tarpolyglot_head
+  - tarpolyglot_tail
+  - tarpolyglot_sample
 - title: Step workers
   desc: |
     Worker functions the constructors call at pipeline run time. Documented because the constructor pages link to them; you do not normally call them directly.
@@ -28,6 +38,8 @@ reference:
   - run_py_step
   - run_jl_step
   - run_rs_step
+  - compile_rs_lib
+  - run_rs_step_prebuilt
 articles:
 - title: Guides
   navbar: ~

@@ -94,6 +94,13 @@ run_rs_step <- function(script,
   do.call(rextendr::rust_source, args)
 
   # 2. Post-R script uses the compiled functions (and inputs) to build the value.
+  .tp_rs_finish(e, post_script, output, files)
+}
+
+# Shared tail of the Rust workers: with the compiled functions and `inputs`
+# already bound in `e`, evaluate the R post-script and produce the target value
+# (object mode) or a character vector of normalised file paths (file mode).
+.tp_rs_finish <- function(e, post_script, output, files) {
   if (identical(output, "file")) {
     paths <- if (!is.null(post_script)) {
       .tp_assert_script(post_script, "post_script", must_exist = TRUE)
@@ -114,4 +121,136 @@ run_rs_step <- function(script,
   }
   .tp_assert_script(post_script, "post_script", must_exist = TRUE)
   .tp_eval_script(post_script, e)
+}
+
+#' Compile a Rust step once for reuse across branches (worker behind tarpolyglot_map)
+#'
+#' Compiles the `#[extendr]` functions in a Rust script with [rextendr::rust_source()] and returns a self-contained bundle (the compiled shared library plus its generated R wrappers) that [run_rs_step_prebuilt()] can reload in any branch without recompiling. This is the function the companion `<name>_rust_lib` target built by `tar_target_rs(..., pattern = tarpolyglot_map(...))` calls; it is exported so the call resolves at run time, but package users should not call it directly.
+#'
+#' The bundle embeds the library bytes, so it travels with the target's value to any worker or machine, and reloading is a `dyn.load()` (near-instant) rather than a fresh `cargo` build. See [tarpolyglot_map()] for the motivation and [run_rs_step()] for the per-branch (recompiling) alternative.
+#'
+#' @inheritParams run_rs_step
+#'
+#' @return An object of class `tp_rust_lib`: a list with the library `basename`, the raw library `bytes`, and the generated wrapper `objs` (named list of R functions).
+#' @seealso [tarpolyglot_map()], [run_rs_step_prebuilt()], [tar_target_rs()]
+#' @keywords internal
+#' @export
+#' @examples
+#' \dontrun{
+#' # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+#' lib <- compile_rs_lib(script = "scripts/square.rs")
+#' }
+compile_rs_lib <- function(script,
+                           dependencies = NULL,
+                           features = NULL,
+                           profile = NULL,
+                           toolchain = NULL) {
+  .tp_assert_script(script, "script", must_exist = TRUE)
+
+  restore_env <- .tp_with_rust_build_env()
+  on.exit(restore_env(), add = TRUE)
+
+  if (!is.null(toolchain)) {
+    old_tc <- Sys.getenv("RUSTUP_TOOLCHAIN", unset = NA)
+    Sys.setenv(RUSTUP_TOOLCHAIN = as.character(toolchain))
+    on.exit({
+      if (is.na(old_tc)) Sys.unsetenv("RUSTUP_TOOLCHAIN") else
+        Sys.setenv(RUSTUP_TOOLCHAIN = old_tc)
+    }, add = TRUE)
+  }
+
+  code <- if (inherits(script, "tp_source")) script$code else
+    paste(readLines(script, warn = FALSE), collapse = "\n")
+
+  # Note which DLLs are already loaded, so we can single out the one rust_source
+  # is about to build (its path is a fresh temp file).
+  loaded_before <- vapply(getLoadedDLLs(), function(d) d[["path"]], character(1))
+
+  e <- new.env(parent = globalenv())
+  args <- list(code = code, env = e, quiet = TRUE)
+  if (!is.null(dependencies)) args$dependencies <- dependencies
+  if (!is.null(features)) args$features <- features
+  if (!is.null(profile)) args$profile <- profile
+  do.call(rextendr::rust_source, args)
+
+  # Locate the freshly compiled extendr library. rextendr names it `rextendr<N>`
+  # (registered DLL name and file basename), and the generated wrappers call it
+  # via `.Call(..., PACKAGE = "rextendr<N>")`, so reproducing this exact basename
+  # on reload is what makes those wrappers resolve.
+  info <- getLoadedDLLs()
+  paths <- vapply(info, function(d) d[["path"]], character(1))
+  dnames <- vapply(info, function(d) d[["name"]], character(1))
+  is_extendr <- (grepl("^rextendr[0-9]+$", dnames) |
+    grepl("^(lib)?rextendr[0-9]+\\.(dll|so|dylib)$", basename(paths))) &
+    !(paths %in% loaded_before)
+  hits <- which(is_extendr)
+  if (!length(hits)) {
+    stop("Could not locate the compiled extendr library after rust_source().",
+      call. = FALSE)
+  }
+  dll_path <- paths[[hits[length(hits)]]]
+
+  bytes <- readBin(dll_path, what = "raw", n = file.info(dll_path)$size)
+  objs <- stats::setNames(lapply(ls(e), function(n) get(n, envir = e)), ls(e))
+
+  structure(
+    list(basename = basename(dll_path), bytes = bytes, objs = objs),
+    class = "tp_rust_lib"
+  )
+}
+
+#' Run a Rust step from a pre-compiled library (worker behind tarpolyglot_map)
+#'
+#' Reloads a compiled Rust library produced by [compile_rs_lib()] (writing the embedded shared library to a temporary file and `dyn.load()`-ing it, then binding the generated wrapper functions), then evaluates the R **post-script** exactly as [run_rs_step()] does, with the compiled functions and the named `inputs` in scope. This is the function each branch target built by `tar_target_rs(..., pattern = tarpolyglot_map(...))` calls; it is exported so the call resolves at run time, but package users should not call it directly.
+#'
+#' No Rust toolchain is needed here: reloading is a `dyn.load()`, not a build. See [tarpolyglot_map()] for the overall design.
+#'
+#' @inheritParams run_rs_step
+#' @param lib A `tp_rust_lib` bundle from [compile_rs_lib()] (supplied by the companion `<name>_rust_lib` target).
+#'
+#' @return The value of the post-script (object mode) or a character vector of normalised file paths (file mode).
+#' @seealso [tarpolyglot_map()], [compile_rs_lib()], [run_rs_step()]
+#' @keywords internal
+#' @export
+#' @examples
+#' \dontrun{
+#' # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+#' lib <- compile_rs_lib(script = "scripts/square.rs")
+#' run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
+#' }
+run_rs_step_prebuilt <- function(lib,
+                                 post_script = NULL,
+                                 inputs = list(),
+                                 output = "object",
+                                 files = NULL) {
+  output <- .tp_match_output(output)
+  if (!inherits(lib, "tp_rust_lib")) {
+    stop("`lib` must be a compiled library object from compile_rs_lib().",
+      call. = FALSE)
+  }
+
+  # Materialise the embedded library under a stable path and dyn.load it, unless
+  # a DLL registered under the same module name is already loaded in this
+  # process. The basename must match the compiled module so its generated
+  # wrappers (which `.Call(..., PACKAGE = "rextendr<N>")`) resolve. Skipping when
+  # already loaded means a worker running several branches loads it once, and the
+  # non-crew case (where the compile target ran in this same process) does not
+  # try to load a second copy under the same name.
+  regname <- tools::file_path_sans_ext(lib$basename)
+  loaded_names <- vapply(getLoadedDLLs(), function(d) d[["name"]], character(1))
+  if (!(regname %in% loaded_names)) {
+    dir <- file.path(tempdir(), "tarpolyglot-rustlib")
+    dir.create(dir, showWarnings = FALSE, recursive = TRUE)
+    path <- file.path(dir, lib$basename)
+    if (!file.exists(path) || file.info(path)$size != length(lib$bytes)) {
+      writeBin(lib$bytes, path)
+    }
+    dyn.load(path)
+  }
+
+  e <- new.env(parent = globalenv())
+  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
+  for (nm in names(lib$objs)) assign(nm, lib$objs[[nm]], envir = e)
+
+  .tp_rs_finish(e, post_script, output, files)
 }

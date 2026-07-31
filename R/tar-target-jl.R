@@ -11,7 +11,7 @@
 #' @param post_script Optional path to an R script run after the Julia script. See [run_jl_step()]; helpers `jl_get()` and `jl_call()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
 #' @param julia_version Optional Julia version to select (e.g. `"1.11"`), used when `julia_home` is not given; resolved to a juliaup-managed install. Forwarded to [run_jl_step()]. Default `NULL` uses the computer/global Julia.
 #' @param julia_home,julia_project,julia_packages Julia environment selection, forwarded to [run_jl_step()]. `julia_home` is the directory containing the julia executable (defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`). `julia_project` is a Julia project environment to `Pkg.activate()`. `julia_packages` is a character vector of packages to `using` before the script.
-#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()].
+#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_jl()], [run_jl_step()], [tar_target_py_raw()]
@@ -96,7 +96,7 @@ tar_target_jl_raw <- function(name,
   targets::tar_target_raw(
     name = name,
     command = command,
-    pattern = pattern,
+    pattern = .tp_pattern(pattern)$pattern,
     packages = packages,
     library = library,
     deps = deps,

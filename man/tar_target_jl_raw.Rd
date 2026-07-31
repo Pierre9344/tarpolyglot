@@ -58,7 +58,7 @@ tar_target_jl_raw(
 
 \item{julia_home, julia_project, julia_packages}{Julia environment selection, forwarded to \code{\link[=run_jl_step]{run_jl_step()}}. \code{julia_home} is the directory containing the julia executable (defaults to \code{getOption("tarpolyglot.julia_home")}; when unset and no \code{julia_version}, JuliaCall discovers Julia on \code{PATH}). \code{julia_project} is a Julia project environment to \code{Pkg.activate()}. \code{julia_packages} is a character vector of packages to \code{using} before the script.}
 
-\item{pattern}{Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. \code{quote(map(x))}), forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}.}
+\item{pattern}{Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. \code{quote(map(x))}), forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}. The \code{\link[=tarpolyglot_map]{tarpolyglot_map()}} family is also accepted and behaves identically to the plain \code{targets} patterns here (they only differ on the Rust constructor).}
 
 \item{packages, library}{Character vectors of R packages (and library paths) to load for the target, forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}.}
 

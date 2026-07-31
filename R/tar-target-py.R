@@ -12,7 +12,7 @@
 #' @param script Path to the Python script to run (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a [tar_target_path()] reference to an upstream target (typically `format = "file"`), which makes this step re-run whenever that file changes.
 #' @param pre_script Optional path to an R script run before the Python script. See [run_py_step()]; assign a named list `to_py` to hand objects to Python. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
 #' @param post_script Optional path to an R script run after the Python script. See [run_py_step()]; helpers `py` and `py_get()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
-#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()].
+#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_py()], [run_py_step()], [tar_target_jl_raw()]
@@ -98,7 +98,7 @@ tar_target_py_raw <- function(name,
   targets::tar_target_raw(
     name = name,
     command = command,
-    pattern = pattern,
+    pattern = .tp_pattern(pattern)$pattern,
     packages = packages,
     library = library,
     deps = deps,

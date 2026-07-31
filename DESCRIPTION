@@ -1,7 +1,7 @@
 Package: tarpolyglot
 Type: Package
 Title: Run Python, Julia, and Rust Inside 'targets' Pipeline Steps
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
     person(
       given = "Pierre",

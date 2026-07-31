@@ -24,3 +24,22 @@ test_that("run_rs_step compiles #[extendr] fns and returns via post-script", {
   expect_equal(res$sum, 10)
   expect_equal(res$n, 4)
 })
+
+test_that("compile_rs_lib() builds a reusable bundle that run_rs_step_prebuilt reloads", {
+  script <- withr::local_tempfile(fileext = ".rs")
+  writeLines("#[extendr]\nfn square(x: f64) -> f64 { x * x }", script)
+  post <- withr::local_tempfile(fileext = ".R")
+  writeLines("square(x)", post)
+
+  # Compile once.
+  lib <- compile_rs_lib(script)
+  expect_s3_class(lib, "tp_rust_lib")
+  expect_true(is.raw(lib$bytes) && length(lib$bytes) > 0)
+  expect_true("square" %in% names(lib$objs))
+
+  # Reuse it several times with different inputs (this is what each branch does),
+  # with no further compilation.
+  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 10)), 100)
+  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 20)), 400)
+  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 30)), 900)
+})
