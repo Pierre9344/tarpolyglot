@@ -107,7 +107,10 @@ tar_target_rs(
 
 - pattern:
 
-  Optional dynamic-branching pattern, unquoted (e.g. `map(x)`).
+  Optional dynamic-branching pattern, unquoted (e.g. `map(x)`). Use
+  `tarpolyglot_map(x)` to compile the crate once and reuse it across
+  branches (see
+  [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)).
 
 - packages, library:
 
@@ -138,11 +141,15 @@ tar_target_rs(
 
 ## Value
 
-A `targets` target object.
+A `targets` target object. When `pattern` uses
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+it is instead a list of two targets: the `<name>_rust_lib` compile
+target and the branched `<name>` target.
 
 ## See also
 
 [`tar_target_rs_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.md),
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
 [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md),
 [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
 [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)

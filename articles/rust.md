@@ -230,6 +230,118 @@ list(
 )
 ```
 
+Plain `map(groups)` here recompiles the crate in **every** branch: a
+Rust step has no live interpreter to reuse, so each branch runs `cargo`
+from scratch. With many branches that repeated compilation is the
+dominant cost.
+
+## Compile the Rust code only once across branches
+
+`tarpolyglot` provides dynamic-branching pattern helpers that mirror the
+`targets` patterns but compile the Rust crate a **single time** and
+reuse it across all branches. Each is named after its `targets`
+equivalent:
+
+| tarpolyglot helper | `targets` pattern |
+|----|----|
+| [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md) | `map()` |
+| [`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md) | `cross()` |
+| [`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md) | `slice()` |
+| [`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md) | [`head()`](https://rdrr.io/r/utils/head.html) |
+| [`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md) | [`tail()`](https://rdrr.io/r/utils/head.html) |
+| [`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md) | [`sample()`](https://rdrr.io/r/base/sample.html) |
+
+Use one exactly where you would use the plain pattern:
+
+``` r
+
+list(
+  tar_target(groups, split(iris$Petal.Length, iris$Species), iteration = "list"),
+  tar_target_rs(
+    name = z_by_group,
+    script = "rs/scale.rs",
+    inputs = c(petal = "groups"),
+    post_script = "R/scale_post.R",
+    pattern = tarpolyglot_map(groups),   # was map(groups): now compiles once
+    iteration = "list"
+  )
+)
+```
+
+On a Rust step,
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+expands that single constructor call into **two** targets:
+
+- `z_by_group_rust_lib`: compiles the crate once (this target is not
+  branched). Its value is the compiled library, embedded so any `crew`
+  worker can reload it without a toolchain.
+- `z_by_group`: branches over `groups` as before, but each branch
+  reloads the pre-compiled library (a
+  [`dyn.load()`](https://rdrr.io/r/base/dynload.html), in milliseconds)
+  instead of recompiling.
+
+You still write one
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md);
+the companion `<name>_rust_lib` target appears automatically in the
+pipeline (visible in
+[`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html)),
+and `targets` recompiles it only when the Rust source changes. So
+`pattern = tarpolyglot_map(x)` turns `N x compile` into `1 x compile`
+plus `N` near-instant reloads.
+
+The other pattern helpers behave the same way, differing only in which
+branches `targets` builds
+([`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md)
+for all combinations of several inputs,
+[`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md)
+/
+[`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md)
+/
+[`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md)
+/
+[`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md)
+for a subset). The plain `targets` patterns (`map()`, `cross()`, and so
+on) keep working unchanged; the `tarpolyglot_*` helpers are simply the
+opt-in that adds compile-once on Rust.
+
+### They fall back to the plain pattern on Python and Julia
+
+The same helpers are accepted by
+[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
+and
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+where they are rewritten to the plain `targets` pattern: Python and
+Julia reuse a live interpreter, so there is nothing to compile and
+nothing to reuse.
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+on a Python step is therefore exactly `map()`. This lets one pipeline
+branch every language with the same helper:
+
+``` r
+
+list(
+  tar_target(vals, c(10, 20, 30)),
+  # Python: behaves exactly as map(vals).
+  tar_target_py(
+    name = py_b, script = "py/sq.py", inputs = c(x = "vals"),
+    pre_script = "R/push.R", retrieve = "result",
+    pattern = tarpolyglot_map(vals)
+  ),
+  # Rust: compiles once in py_b's sibling rs_b_rust_lib, reuses across branches.
+  tar_target_rs(
+    name = rs_b, script = "rs/square.rs", inputs = c(x = "vals"),
+    post_script = "R/post.R",
+    pattern = tarpolyglot_map(vals)
+  )
+)
+```
+
+The `tarpolyglot_*` helpers are recognised only inside the tarpolyglot
+constructors. A plain
+[`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+does not know them, so there you use the native `map()` / `cross()` / …
+directly (a plain step has no foreign code to compile anyway).
+
 ## Windows toolchain note
 
 rextendr requires the Rust **GNU** toolchain on Windows (to match R’s

@@ -28,8 +28,9 @@ targets factories.
 
 ## Helpers
 
-Supply a step’s code inline, track a script file as a dependency, and a
-crew controller preconfigured for per-step interpreter isolation.
+Supply a step’s code inline, track a script file as a dependency, branch
+while compiling Rust once, and a crew controller preconfigured for
+per-step interpreter isolation.
 
 - [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
   : Inline code for a tarpolyglot step
@@ -41,6 +42,26 @@ crew controller preconfigured for per-step interpreter isolation.
 
 - [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
   : A crew controller preconfigured for polyglot isolation
+
+## Branching patterns
+
+Dynamic-branching pattern helpers that mirror the `targets` patterns but
+compile the Rust crate once per pattern (in a `<name>_rust_lib` target)
+and reuse it across branches. On the Python/Julia constructors they fall
+back to the plain `targets` pattern.
+
+- [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+  : Dynamic-branching map that compiles Rust once
+- [`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md)
+  : Dynamic-branching cross that compiles Rust once
+- [`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md)
+  : Dynamic-branching slice that compiles Rust once
+- [`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md)
+  : Dynamic-branching head that compiles Rust once
+- [`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md)
+  : Dynamic-branching tail that compiles Rust once
+- [`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md)
+  : Dynamic-branching sample that compiles Rust once
 
 ## Step workers
 
@@ -54,3 +75,9 @@ them directly.
   : Execute a Julia step (worker behind tar_target_jl)
 - [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md)
   : Execute a Rust step (worker behind tar_target_rs)
+- [`compile_rs_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md)
+  : Compile a Rust step once for reuse across branches (worker behind
+  tarpolyglot_map)
+- [`run_rs_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)
+  : Run a Rust step from a pre-compiled library (worker behind
+  tarpolyglot_map)

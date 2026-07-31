@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,7 +35,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Target that runs a Rust script (raw / factory form)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/v0.1.0/R/tar-target-rs.R" class="external-link"><code>R/tar-target-rs.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/R/tar-target-rs.R" class="external-link"><code>R/tar-target-rs.R</code></a></small>
       <div class="d-none name"><code>tar_target_rs_raw.Rd</code></div>
     </div>
 
@@ -114,7 +114,7 @@
 
 
 <dt id="arg-pattern">pattern<a class="anchor" aria-label="anchor" href="#arg-pattern"></a></dt>
-<dd><p>Optional <span class="pkg">targets</span> dynamic-branching pattern as a language object (e.g. <code>quote(map(x))</code>), forwarded to <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code>.</p></dd>
+<dd><p>Optional <span class="pkg">targets</span> dynamic-branching pattern as a language object (e.g. <code>quote(map(x))</code>), forwarded to <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code>. Use <code>quote(tarpolyglot_map(x))</code> to compile the crate once and reuse it across branches (see <code><a href="tarpolyglot_map.html">tarpolyglot_map()</a></code>).</p></dd>
 
 
 <dt id="arg-packages-library">packages, library<a class="anchor" aria-label="anchor" href="#arg-packages-library"></a></dt>
@@ -135,15 +135,16 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>targets</code> target object.</p>
+    <p>A <code>targets</code> target object. When <code>pattern</code> uses <code><a href="tarpolyglot_map.html">tarpolyglot_map()</a></code> it is instead a list of two targets: the <code>&lt;name&gt;_rust_lib</code> compile target and the branched <code>&lt;name&gt;</code> target.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Unlike Python/Julia there is <strong>no pre-script</strong> for Rust: inputs are used directly in the post-script alongside the compiled functions. A Rust toolchain and <code>cargo</code> are required; on Windows use the GNU toolchain (see <code><a href="../articles/rust.html">vignette("rust")</a></code>).</p>
+<p>Under dynamic branching, <code>pattern = map(...)</code> recompiles the crate in every branch (Rust has no live interpreter to reuse). Passing a tarpolyglot pattern helper instead (<code><a href="tarpolyglot_map.html">tarpolyglot_map()</a></code>, <code><a href="tarpolyglot_cross.html">tarpolyglot_cross()</a></code>, <code><a href="tarpolyglot_slice.html">tarpolyglot_slice()</a></code>, <code><a href="tarpolyglot_head.html">tarpolyglot_head()</a></code>, <code><a href="tarpolyglot_tail.html">tarpolyglot_tail()</a></code>, <code><a href="tarpolyglot_sample.html">tarpolyglot_sample()</a></code>) compiles the crate <strong>once</strong> in a companion target named <code>&lt;name&gt;_rust_lib</code> and reuses it across all branches; the constructor then returns <em>both</em> targets as a list. See <code><a href="tarpolyglot_map.html">tarpolyglot_map()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="tar_target_rs.html">tar_target_rs()</a></code>, <code><a href="run_rs_step.html">run_rs_step()</a></code>, <code><a href="tar_target_py_raw.html">tar_target_py_raw()</a></code>, <code><a href="tar_target_jl_raw.html">tar_target_jl_raw()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="tar_target_rs.html">tar_target_rs()</a></code>, <code><a href="tarpolyglot_map.html">tarpolyglot_map()</a></code>, <code><a href="run_rs_step.html">run_rs_step()</a></code>, <code><a href="tar_target_py_raw.html">tar_target_py_raw()</a></code>, <code><a href="tar_target_jl_raw.html">tar_target_jl_raw()</a></code></p></div>
     </div>
 
     <div class="section level2">

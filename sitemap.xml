@@ -11,11 +11,13 @@
 <url><loc>https://pierre9344.github.io/tarpolyglot/authors.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/index.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/news/index.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/index.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_py_step.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_code.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.html</loc></url>
@@ -26,5 +28,11 @@
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-package.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-shared-params.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.html</loc></url>
 </urlset>
 

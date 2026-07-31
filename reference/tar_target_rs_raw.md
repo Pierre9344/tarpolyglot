@@ -108,6 +108,9 @@ tar_target_rs_raw(
   Optional targets dynamic-branching pattern as a language object (e.g.
   `quote(map(x))`), forwarded to
   [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html).
+  Use `quote(tarpolyglot_map(x))` to compile the crate once and reuse it
+  across branches (see
+  [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)).
 
 - packages, library:
 
@@ -138,7 +141,10 @@ tar_target_rs_raw(
 
 ## Value
 
-A `targets` target object.
+A `targets` target object. When `pattern` uses
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+it is instead a list of two targets: the `<name>_rust_lib` compile
+target and the branched `<name>` target.
 
 ## Details
 
@@ -148,9 +154,24 @@ toolchain and `cargo` are required; on Windows use the GNU toolchain
 (see
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
 
+Under dynamic branching, `pattern = map(...)` recompiles the crate in
+every branch (Rust has no live interpreter to reuse). Passing a
+tarpolyglot pattern helper instead
+([`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
+[`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md),
+[`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md),
+[`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md),
+[`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md),
+[`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md))
+compiles the crate **once** in a companion target named
+`<name>_rust_lib` and reuses it across all branches; the constructor
+then returns *both* targets as a list. See
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md).
+
 ## See also
 
 [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md),
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
 [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md),
 [`tar_target_py_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py_raw.md),
 [`tar_target_jl_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.md)

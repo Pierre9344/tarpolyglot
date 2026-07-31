@@ -8,16 +8,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Pierre9344/tarpolyglot/blob/v0.1.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Pierre9344/tarpolyglot/blob/main/DESCRIPTION)
 
 Solomon P (2026). *tarpolyglot: Run Python, Julia, and Rust Inside
-'targets' Pipeline Steps*. R package version 0.1.0,
+'targets' Pipeline Steps*. R package version 0.2.0,
 <https://github.com/Pierre9344/tarpolyglot>.
 
     @Manual{,
       title = {tarpolyglot: Run Python, Julia, and Rust Inside 'targets' Pipeline Steps},
       author = {Pierre Solomon},
       year = {2026},
-      note = {R package version 0.1.0},
+      note = {R package version 0.2.0},
       url = {https://github.com/Pierre9344/tarpolyglot},
     }
