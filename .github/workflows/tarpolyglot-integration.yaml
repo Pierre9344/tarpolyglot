@@ -19,86 +19,141 @@ concurrency:
 jobs:
   integration:
     runs-on: ${{ matrix.config.os }}
-
     name: integration ${{ matrix.config.os }}
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          # Linux = easiest baseline for all three toolchains.
           - {os: ubuntu-latest}
-          # Windows = the important Rust case: rextendr needs the GNU toolchain.
           - {os: windows-latest}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
+      R_KEEP_PKG_SOURCE: "yes"
       TARPOLYGLOT_INTEGRATION: "true"
+      JULIA_NUM_THREADS: "1"
 
     steps:
       - uses: actions/checkout@v6
 
-      # --- R + package dependencies (Imports + Suggests, plus test runners) ---
+      # --- R and Pandoc ---
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/actions/setup-r@v2
         with:
-          r-version: release
+          # Pin the version so this integration job does not change underneath us.
+          r-version: "4.6.1"
           use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      # --- Python (reticulate) ---
+      # v6 uses the Node.js 24 action runtime.
+      - uses: actions/setup-python@v6
         with:
-          extra-packages: any::testthat, any::pkgload
-          needs: check
-
-      # --- Python (reticulate). Point reticulate at this exact interpreter. ---
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Point reticulate at the setup Python
-        shell: bash
-        run: echo "RETICULATE_PYTHON=$(python -c 'import sys; print(sys.executable)')" >> "$GITHUB_ENV"
+        shell: Rscript {0}
+        run: |
+          python <- Sys.which("python")
+          if (!nzchar(python)) stop("python is not on PATH")
+          python <- normalizePath(python, winslash = "/", mustWork = TRUE)
+          cat("RETICULATE_PYTHON=", python, "\n",
+              sep = "", file = Sys.getenv("GITHUB_ENV"), append = TRUE)
+          cat("RETICULATE_PYTHON =", python, "\n")
 
-      # --- Julia (JuliaCall discovers it on PATH). ---
-      - uses: julia-actions/setup-julia@v2
+      # --- Julia (JuliaCall discovers it on PATH) ---
+      # v3 uses the Node.js 24 action runtime. Pin the latest Julia 1.10 LTS patch.
+      - uses: julia-actions/setup-julia@v3
         with:
-          # LTS, not '1' (newest): JuliaCall's Julia-side setup segfaults while
-          # installing its deps on Julia 1.12. 1.10 (LTS) is stable with JuliaCall.
-          version: '1.10'
+          version: "1.10.11"
 
-      # --- Rust (rextendr/extendr). Default stable on Linux; GNU on Windows to
-      #     match R's mingw ABI. run_rs_step puts R_HOME / cargo / Rtools on PATH. ---
+      # --- Rust (rextendr/extendr) ---
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Use the Rust GNU toolchain on Windows
+      # rextendr keeps the normal MSVC host toolchain on Windows, but requires the
+      # GNU compilation target to match R/Rtools' MinGW ABI.
+      - name: Add the Rust GNU target on Windows
         if: runner.os == 'Windows'
-        shell: bash
+        shell: pwsh
+        run: rustup target add x86_64-pc-windows-gnu
+
+      # --- R package dependencies ---
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::testthat
+            any::pkgload
+            any::remotes
+          needs: check
+
+      # CRAN currently provides JuliaCall 0.17.6, which predates the Ubuntu 24.04
+      # libunwind fixes. This pinned upstream revision contains both fixes:
+      #   - preload Julia's bundled libunwind in the parent R process (#265)
+      #   - pass that preload to Julia child processes (#282)
+      # Do not replace this with an LD_PRELOAD of the system libstdc++ library.
+      - name: Install JuliaCall with the Ubuntu libunwind fixes
+        shell: Rscript {0}
         run: |
-          rustup toolchain install stable-x86_64-pc-windows-gnu
-          rustup default stable-x86_64-pc-windows-gnu
-          rustc -vV
+          remotes::install_github(
+            "JuliaInterop/JuliaCall@947d1f3",
+            dependencies = FALSE,
+            upgrade = "never",
+            build_vignettes = FALSE,
+            force = TRUE
+          )
 
-      # --- JuliaCall + R can segfault on Linux from a libstdc++ mismatch between
-      #     Julia's bundled copy and the system one R was built against. Preload
-      #     the system libstdc++ so both use it (documented JuliaCall workaround). ---
-      - name: Work around the JuliaCall/libstdc++ segfault on Linux
-        if: runner.os == 'Linux'
-        run: echo "LD_PRELOAD=$(gcc -print-file-name=libstdc++.so.6)" >> "$GITHUB_ENV"
+          desc <- packageDescription("JuliaCall")
+          cat("JuliaCall version:", desc$Version, "\n")
+          cat(
+            "JuliaCall revision:",
+            if (is.null(desc$RemoteSha)) "<not recorded>" else desc$RemoteSha,
+            "\n"
+          )
 
-      # --- Diagnose Julia / JuliaCall in isolation (verbose), so a setup or
-      #     version problem surfaces here with full output rather than buried in
-      #     the test runner (the tests otherwise skip on a setup failure). ---
+      - name: Toolchain diagnostics
+        shell: Rscript {0}
+        run: |
+          cat("R:", R.version.string, "\n")
+          cat("Platform:", R.version$platform, "\n")
+          cat("Python:", Sys.which("python"), "\n")
+          cat("Julia:", Sys.which("julia"), "\n")
+          cat("Rustc:", Sys.which("rustc"), "\n")
+          cat("Cargo:", Sys.which("cargo"), "\n")
+
+          system2("python", "--version")
+          system2("julia", "--version")
+          system2("rustc", "-vV")
+          system2("cargo", "--version")
+          system2("rustup", c("target", "list", "--installed"))
+
+          if (requireNamespace("rextendr", quietly = TRUE)) {
+            rextendr::rust_sitrep()
+          }
+
+      # Diagnose JuliaCall separately, so an integration failure is not hidden in
+      # the test runner. rebuild=TRUE ensures RCall.jl is built for this exact R.
       - name: Julia / JuliaCall diagnostics
         shell: Rscript {0}
         run: |
           cat("julia on PATH:", Sys.which("julia"), "\n")
           system2("julia", "--version")
-          JuliaCall::julia_setup(installJulia = FALSE, verbose = TRUE)
-          cat("JuliaCall julia_eval(1 + 1) =", JuliaCall::julia_eval("1 + 1"), "\n")
+          cat(
+            "JuliaCall:",
+            as.character(packageVersion("JuliaCall")),
+            "\n"
+          )
 
-      # --- Run the whole test suite, including the now-live integration tests. ---
+          JuliaCall::julia_setup(
+            installJulia = FALSE,
+            rebuild = TRUE,
+            verbose = TRUE
+          )
+
+          result <- JuliaCall::julia_eval("1 + 1")
+          cat("JuliaCall julia_eval(1 + 1) =", result, "\n")
+
+      # --- Run the complete test suite, including live integration tests ---
       - name: Run tests (incl. live integration)
         shell: Rscript {0}
         run: |
@@ -106,9 +161,15 @@ jobs:
           cat("RETICULATE_PYTHON       =", Sys.getenv("RETICULATE_PYTHON"), "\n")
           cat("julia                   =", Sys.which("julia"), "\n")
           cat("cargo                   =", Sys.which("cargo"), "\n")
-          # Fail loudly if a toolchain is missing, so the live tests can never
-          # silently skip and leave a false-green job.
-          if (!nzchar(Sys.getenv("RETICULATE_PYTHON"))) stop("RETICULATE_PYTHON not set")
-          if (!nzchar(Sys.which("julia"))) stop("julia not on PATH")
-          if (!nzchar(Sys.which("cargo"))) stop("cargo not on PATH")
-          testthat::test_local(".", stop_on_failure = TRUE, reporter = "progress")
+
+          if (!nzchar(Sys.getenv("RETICULATE_PYTHON"))) {
+            stop("RETICULATE_PYTHON is not set")
+          }
+          if (!nzchar(Sys.which("julia"))) stop("julia is not on PATH")
+          if (!nzchar(Sys.which("cargo"))) stop("cargo is not on PATH")
+
+          testthat::test_local(
+            ".",
+            stop_on_failure = TRUE,
+            reporter = "progress"
+          )
