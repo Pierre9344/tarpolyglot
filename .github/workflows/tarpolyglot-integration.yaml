@@ -25,7 +25,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: ubuntu-latest}
+          # ubuntu-26.04 is a Preview image (no Actions SLA), but CRAN JuliaCall
+          # works on it, unlike ubuntu-latest (24.04) which needs the libunwind fix.
+          - {os: ubuntu-26.04}
           - {os: windows-latest}
 
     env:
