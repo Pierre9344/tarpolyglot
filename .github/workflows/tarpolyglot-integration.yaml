@@ -1,0 +1,94 @@
+# Live polyglot integration tests. Unlike R-CMD-check.yaml (which never runs the
+# env-gated tests), this installs real Python, Julia, and Rust toolchains and sets
+# TARPOLYGLOT_INTEGRATION=true so the reticulate / JuliaCall / rextendr round-trips
+# in tests/testthat/test-integration-*.R and test-inline-*.R actually execute.
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+  workflow_dispatch:
+
+name: tarpolyglot-integration.yaml
+
+permissions: read-all
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ${{ matrix.config.os }}
+
+    name: integration ${{ matrix.config.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          # Linux = easiest baseline for all three toolchains.
+          - {os: ubuntu-latest}
+          # Windows = the important Rust case: rextendr needs the GNU toolchain.
+          - {os: windows-latest}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      TARPOLYGLOT_INTEGRATION: "true"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # --- R + package dependencies (Imports + Suggests, plus test runners) ---
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::pkgload
+          needs: check
+
+      # --- Python (reticulate). Point reticulate at this exact interpreter. ---
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Point reticulate at the setup Python
+        shell: bash
+        run: echo "RETICULATE_PYTHON=$(python -c 'import sys; print(sys.executable)')" >> "$GITHUB_ENV"
+
+      # --- Julia (JuliaCall discovers it on PATH). ---
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      # --- Rust (rextendr/extendr). Default stable on Linux; GNU on Windows to
+      #     match R's mingw ABI. run_rs_step puts R_HOME / cargo / Rtools on PATH. ---
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Use the Rust GNU toolchain on Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu
+          rustup default stable-x86_64-pc-windows-gnu
+          rustc -vV
+
+      # --- Run the whole test suite, including the now-live integration tests. ---
+      - name: Run tests (incl. live integration)
+        shell: Rscript {0}
+        run: |
+          cat("TARPOLYGLOT_INTEGRATION =", Sys.getenv("TARPOLYGLOT_INTEGRATION"), "\n")
+          cat("RETICULATE_PYTHON       =", Sys.getenv("RETICULATE_PYTHON"), "\n")
+          cat("julia                   =", Sys.which("julia"), "\n")
+          cat("cargo                   =", Sys.which("cargo"), "\n")
+          # Fail loudly if a toolchain is missing, so the live tests can never
+          # silently skip and leave a false-green job.
+          if (!nzchar(Sys.getenv("RETICULATE_PYTHON"))) stop("RETICULATE_PYTHON not set")
+          if (!nzchar(Sys.which("julia"))) stop("julia not on PATH")
+          if (!nzchar(Sys.which("cargo"))) stop("cargo not on PATH")
+          testthat::test_local(".", stop_on_failure = TRUE, reporter = "progress")
