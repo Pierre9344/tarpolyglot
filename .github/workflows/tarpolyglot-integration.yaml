@@ -64,7 +64,9 @@ jobs:
       # --- Julia (JuliaCall discovers it on PATH). ---
       - uses: julia-actions/setup-julia@v2
         with:
-          version: '1'
+          # LTS, not '1' (newest): JuliaCall's Julia-side setup segfaults while
+          # installing its deps on Julia 1.12. 1.10 (LTS) is stable with JuliaCall.
+          version: '1.10'
 
       # --- Rust (rextendr/extendr). Default stable on Linux; GNU on Windows to
       #     match R's mingw ABI. run_rs_step puts R_HOME / cargo / Rtools on PATH. ---

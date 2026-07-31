@@ -156,9 +156,15 @@ run_jl_step <- function(script,
     }
   }
 
-  # 3. Run the Julia script (in Main): a file on disk, or inline source.
+  # 3. Run the Julia script (in Main): a file on disk, or inline source. Inline
+  # code is written to a temp .jl and `julia_source()`d, exactly like a file, so
+  # multi-statement scripts parse correctly (`julia_command()` only accepts a
+  # single expression, so it fails on e.g. a function definition plus a call).
   if (inherits(script, "tp_source")) {
-    JuliaCall::julia_command(script$code)
+    tmp <- tempfile(fileext = ".jl")
+    on.exit(unlink(tmp), add = TRUE)
+    writeLines(script$code, tmp)
+    JuliaCall::julia_source(tmp)
   } else {
     JuliaCall::julia_source(script)
   }
