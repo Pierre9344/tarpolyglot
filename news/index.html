@@ -35,23 +35,35 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/v0.1.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="tarpolyglot-development-version">tarpolyglot (development version)<a class="anchor" aria-label="anchor" href="#tarpolyglot-development-version"></a></h2>
+<div class="section level4">
+<h4 id="new-features-development-version">New features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h4>
+</div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="tarpolyglot-010">tarpolyglot 0.1.0<a class="anchor" aria-label="anchor" href="#tarpolyglot-010"></a></h2>
 <p>First release. <code>tarpolyglot</code> adds <code>targets</code> constructors that run Python, Julia, and Rust as pipeline steps.</p>
+<div class="section level4">
+<h4 id="new-features-0-1-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-0"></a></h4>
 <ul><li>
-<code><a href="../reference/tar_target_py.html">tar_target_py()</a></code> / <code><a href="../reference/tar_target_jl.html">tar_target_jl()</a></code> / <code><a href="../reference/tar_target_rs.html">tar_target_rs()</a></code> (and matching <code>_raw()</code> variants) mirror <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target()</a></code> / <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code>. Python and Julia steps run a script via a live interpreter (reticulate / JuliaCall) with optional R pre- and post-scripts; Rust steps compile <code>#[extendr]</code> functions with rextendr and call them from an R post-script.</li>
-<li>Results are returned as converted R objects or as files written to disk (<code>output = "file"</code>).</li>
+<code><a href="../reference/tar_target_py.html">tar_target_py()</a></code>, <code><a href="../reference/tar_target_jl.html">tar_target_jl()</a></code>, and <code><a href="../reference/tar_target_rs.html">tar_target_rs()</a></code> (with matching <code>_raw()</code> variants) mirror <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target()</a></code> / <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code>. Python and Julia steps run a script through a live interpreter (reticulate / JuliaCall) with optional R pre- and post-scripts; Rust steps compile <code>#[extendr]</code> functions with rextendr and call them from an R post-script.</li>
+<li>Steps return either a converted R object or files written to disk (<code>output = "file"</code>).</li>
 <li>
 <code><a href="../reference/tar_target_path.html">tar_target_path()</a></code> tracks a script file as a real <code>targets</code> dependency, so a step re-runs when its script changes.</li>
 <li>
 <code><a href="../reference/polyglot_controller.html">polyglot_controller()</a></code> provides a <code>crew</code> controller preconfigured for per-step interpreter isolation (<code>tasks_max = 1</code>).</li>
 <li>Python environment selection via <code>env</code> / <code>env_manager</code> (system, virtualenv, venv, uv, poetry, conda), <code>python_version</code>, or an explicit <code>python</code> path; Julia selection via <code>julia_version</code> / <code>julia_home</code> / <code>julia_project</code> / <code>julia_packages</code>.</li>
 <li>Full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument pass-through, including dynamic branching (<code>pattern</code>).</li>
+<li>
+<code><a href="../reference/tar_code.html">tar_code()</a></code> supplies inline code for the <code>script</code>, <code>pre_script</code>, and <code>post_script</code> arguments of the constructors, as an alternative to a file path or a <code><a href="../reference/tar_target_path.html">tar_target_path()</a></code> reference. An R <code>{...}</code> block is captured as inline R and is valid in the <code>pre_script</code> / <code>post_script</code> slots; a character string is inline source for the foreign <code>script</code> (Python, Julia, or Rust) or for an R pre/post-script. Multi-line strings are dedented, so code indented to line up with <code>_targets.R</code> still starts flush-left and Python’s own block indentation stays valid. Inline code is embedded in the target’s command, so <code>targets</code> hashes it and re-runs the step when it changes.</li>
 </ul></div>
-  </main></div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
