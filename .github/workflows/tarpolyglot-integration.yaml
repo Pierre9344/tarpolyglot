@@ -80,6 +80,13 @@ jobs:
           rustup default stable-x86_64-pc-windows-gnu
           rustc -vV
 
+      # --- JuliaCall + R can segfault on Linux from a libstdc++ mismatch between
+      #     Julia's bundled copy and the system one R was built against. Preload
+      #     the system libstdc++ so both use it (documented JuliaCall workaround). ---
+      - name: Work around the JuliaCall/libstdc++ segfault on Linux
+        if: runner.os == 'Linux'
+        run: echo "LD_PRELOAD=$(gcc -print-file-name=libstdc++.so.6)" >> "$GITHUB_ENV"
+
       # --- Diagnose Julia / JuliaCall in isolation (verbose), so a setup or
       #     version problem surfaces here with full output rather than buried in
       #     the test runner (the tests otherwise skip on a setup failure). ---
