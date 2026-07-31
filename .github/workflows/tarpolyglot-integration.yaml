@@ -78,6 +78,17 @@ jobs:
           rustup default stable-x86_64-pc-windows-gnu
           rustc -vV
 
+      # --- Diagnose Julia / JuliaCall in isolation (verbose), so a setup or
+      #     version problem surfaces here with full output rather than buried in
+      #     the test runner (the tests otherwise skip on a setup failure). ---
+      - name: Julia / JuliaCall diagnostics
+        shell: Rscript {0}
+        run: |
+          cat("julia on PATH:", Sys.which("julia"), "\n")
+          system2("julia", "--version")
+          JuliaCall::julia_setup(installJulia = FALSE, verbose = TRUE)
+          cat("JuliaCall julia_eval(1 + 1) =", JuliaCall::julia_eval("1 + 1"), "\n")
+
       # --- Run the whole test suite, including the now-live integration tests. ---
       - name: Run tests (incl. live integration)
         shell: Rscript {0}
