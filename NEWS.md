@@ -1,3 +1,24 @@
+# tarpolyglot (development version)
+
+### New features
+
+* New `toolchain_check()` diagnostic function reports the status of the Python (via reticulate), Julia, and Rust toolchains: interpreter/compiler discovery in a fresh worker process, environment-manager presence (uv, Poetry, or conda for Python; juliaup and Julia's `Pkg` project mechanism for Julia; rustup, cargo, and, on Windows, the GNU toolchain and Rtools for Rust), and multi-version discovery that lists every installed version per language and marks the one that would be used by default. Use `toolchains = c("py", "jl", "rs")` to check a subset, and `deep = FALSE` to skip the slower compile-reachability check for Rust.
+* An RStudio addin (also working on Positron) exposes `toolchain_check()` (all languages, or Python/Julia/Rust individually) from the Addins menu.
+* New `tar_polyglot_log()`, passed to `polyglot_controller(log = ...)`, turns on per-step stdout/stderr log files **for Python and Julia steps only** (`<step name>.out` / `<step name>.err`). Since `crew` launches worker processes before it knows which target they will run, the configuration is stashed as environment variables that every worker inherits, and `run_py_step()` / `run_jl_step()` do the actual redirection once they know the step name and resolved toolchain; `append` controls whether a re-run truncates or accumulates (with a two-blank-line separator) the log, and `header` prepends the step name, `date()`, interpreter version/path, and whether an explicit environment was used. **Deliberately does not cover `tar_target_rs()`**, for two independent reasons: `rextendr`-compiled code writes straight to the OS file descriptor, bypassing the redirection reticulate/JuliaCall provide for their embedded interpreters; and Rust steps don't pay a per-branch interpreter start-up cost the way Python/Julia do in the first place, since a Rust library under `pattern` is already compiled once and reused across every branch (`tarpolyglot_map()` and friends, `compile_rs_lib()` / `run_rs_step_prebuilt()`), so there is correspondingly less need for a per-step Rust log. Use `crew`'s own `options_local(log_directory = ...)` for Rust step output instead (it also covers Python/Julia when `log` is left unset, since tarpolyglot never spawns a subprocess for them).
+
+### Bug fixes
+
+* Compiled Rust libraries no longer collide when several are used in one pipeline. rextendr names every compiled crate `rextendr<N>` from a per-process counter, so two libraries built in separate `crew` workers can both be `rextendr1`; a worker that later reused both would have resolved calls to whichever library loaded first. `run_rs_step_prebuilt()` now tracks the loaded library by content and hot-swaps when a different one needs the same module name. As a result, pipelines with multiple `tar_target_rs()` steps (branching or not), reusing a compiled library across steps, and using more than one Rust library in a single step all behave correctly. See `vignette("rust")`.
+
+### Documentation
+
+* `vignette("rust")` now documents compiling a Rust library once and reusing it across unrelated steps (`compile_rs_lib()` / `run_rs_step_prebuilt()`), defining several `#[extendr]` functions in one script, using more than one library in a step, and the accompanying limitations.
+* `vignette("rust")` and the tarpolyglot_*()` pattern helpers (`tarpolyglot_map()`, `tarpolyglot_cross()`, `tarpolyglot_slice()`, `tarpolyglot_head()`, `tarpolyglot_tail()`, `tarpolyglot_sample()`) were modified to reflect the previously described limitions of these helpers on `targets::tar_target()` and targets::tar_target()_raw`
+
+### Known limitations
+
+* Contrary to what was annonced in the "New features" section of the `0.2.0` version, the tarpolyglot_*()` pattern helpers (`tarpolyglot_map()`, `tarpolyglot_cross()`, `tarpolyglot_slice()`, `tarpolyglot_head()`, `tarpolyglot_tail()`, `tarpolyglot_sample()`) are recognised only inside the tarpolyglot constructors (`tar_target_rs()`, `tar_target_py()`, `tar_target_jl()`, and their `_raw()` forms). Used directly in a plain `targets::tar_target()` or `targets::tar_target_raw()` they raise an `invalid dynamic branching pattern ... Illegal symbols found` error. This cannot be corrected from tarpolyglot: `targets` validates a pattern against a fixed set of pattern functions held in a locked internal environment, so recognising a new helper would require modifying the `targets` package itself. In a plain `targets` target (which has no foreign code to compile) use the native `map()` / `cross()` / `slice()` / `head()` / `tail()` / `sample()` instead.
+
 # tarpolyglot 0.2.0
 
 ### New features

@@ -81,7 +81,8 @@ tar_target_jl_raw <- function(name,
       julia_version = .(julia_version),
       julia_home = .(julia_home),
       julia_project = .(julia_project),
-      julia_packages = .(julia_packages)
+      julia_packages = .(julia_packages),
+      name = .(name)
     )
   )
 

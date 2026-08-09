@@ -288,7 +288,24 @@ list(
 )
 ```
 
-See `vignette("python")`, `vignette("julia")`, and `vignette("rust")` for the full per-language reference, and `?polyglot_controller` for the controller options.
+**Per-step log files.** `polyglot_controller()` accepts a `log` argument (built with `tar_polyglot_log()`) that writes one stdout/stderr file per Python or Julia step, named after the target:
+
+```r
+tar_option_set(
+  controller = polyglot_controller(
+    workers = 2L,
+    log = tar_polyglot_log(stdout = "logs/out", stderr = "logs/err")
+  )
+)
+```
+
+The `km` step above would then get `logs/out/km.out` / `logs/err/km.err`, starting with a header (the step name, `date()`, the resolved interpreter's version and path, and whether an explicit environment was used) followed by whatever the script itself printed. By default (`append = FALSE`) a step's log is truncated at the start of its run, so it only ever holds the latest attempt; set `append = TRUE` to accumulate history instead, with new content separated from old by two blank lines -- this also means that if `crew` silently retries a step after a worker crash, both attempts show up in the same file, which can be useful for debugging.
+
+`tar_polyglot_log()` covers Python and Julia only, not Rust: `rextendr`-compiled code writes straight to the OS file descriptor, bypassing the redirection reticulate/JuliaCall provide for their embedded interpreters -- and Rust doesn't pay a per-branch interpreter start-up cost the way Python/Julia do to begin with, so there is less need for a per-step Rust log (see `tarpolyglot_map()` in `vignette("rust")` for how a Rust step's compiled library is instead built once and reused across branches). Use `crew`'s own `options_local(log_directory = ...)` for Rust step output; it also works for Python/Julia when `log` is left unset, since tarpolyglot never spawns a subprocess for them -- reticulate/JuliaCall's output shares the worker process's own stdout/stderr, so `crew`'s process-level capture sees it too. Setting *both* is fine, and the two are complementary rather than redundant: `options_local(log_directory = ...)` also captures ordinary R-level output (pre/post-script messages, warnings) that `tar_polyglot_log()` does not touch, while `tar_polyglot_log()`'s file is named after the step rather than a `crew`-generated worker name. They do **split** the foreign output between the two files rather than duplicate it, though: while a step's script body is running, `tar_polyglot_log()` diverts the foreign print output specifically into its own file, so for that window it will not also appear in `crew`'s log.
+
+One caveat under **dynamic branching**: every branch of a pattern target shares the *same* target name, so with `append = FALSE` (the default) each branch's log write truncates whatever the previous branch wrote -- only the last-finishing branch's log survives. Set `append = TRUE` if you need every branch's output; they land in one file, interleaved by finish order, not split into one file per branch.
+
+See `vignette("python")`, `vignette("julia")`, and `vignette("rust")` for the full per-language reference, and `?polyglot_controller` / `?tar_polyglot_log` for the controller and logging options.
 
 ## Pre- and post-scripts: moving variables in and out
 

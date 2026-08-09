@@ -46,12 +46,13 @@ If none of those apply, the plain `tar_target()` above is simpler and gives up n
 * `tar_target_rs()`: bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
 * `tar_target_rs_raw()`: string `name`, for use inside targets factories.
 
-Both return a single `targets` target and forward every `targets::tar_target_raw()` argument.
+Both forward every `targets::tar_target_raw()` argument and return a single `targets` target, except with a `tarpolyglot_*()` pattern helper (see "Compile the Rust code only once across branches"), where they return a compile target plus the branched target.
 
 ## How a Rust step differs
 
 * **No pre-script.** There is no foreign session to push variables into. The `inputs` are bound directly in the **post-script**, where you call the compiled functions with them.
 * **The post-script is where the work happens.** After compilation, the Rust functions are in scope in the post-script's environment (alongside `inputs`). Its last expression is the target value (object mode); it returns file paths (file mode).
+* **As many `#[extendr]` functions as you like.** A single script may define multiple functions; all of them become R functions in scope in the post-script.
 * **Real type conversion** (via extendr), not JSON, but return values still have to be R-representable, or use `output = "file"`.
 
 ## Arguments
@@ -236,7 +237,63 @@ list(
 )
 ```
 
-The `tarpolyglot_*` helpers are recognised only inside the tarpolyglot constructors. A plain `targets::tar_target()` does not know them, so there you use the native `map()` / `cross()` / ... directly (a plain step has no foreign code to compile anyway).
+The `tarpolyglot_*` helpers are recognised only inside the tarpolyglot constructors, which rewrite them before handing the pattern to `targets`. Used directly in a plain `targets::tar_target()` or `targets::tar_target_raw()` they **raise an error** (`invalid dynamic branching pattern ... Illegal symbols found: tarpolyglot_map`), because `targets` validates a pattern against its own fixed set of pattern functions and does not know these helpers. This cannot be corrected from tarpolyglot: `targets` looks its pattern functions up in a locked internal environment, so teaching it a new one would require modifying the `targets` package itself. In a plain `targets` target (which has no foreign code to compile, so nothing to gain) use the native `map()` / `cross()` / ... directly.
+
+## Several Rust steps in one pipeline
+
+A pipeline can contain as many `tar_target_rs()` steps as you like, mixing branching (`tarpolyglot_map()` and friends) and non-branching steps freely. Each step compiles its own library independently (or once, with a pattern helper), and the libraries do not interfere with one another, even when several run in the same `crew` worker:
+
+```r
+list(
+  tar_target(vals, c(10, 20, 30)),
+  tar_target(seed, 42),
+  # Branching, compile-once.
+  tar_target_rs(z, script = "rs/scale.rs", inputs = c(petal = "vals"),
+                post_script = "R/scale_post.R", pattern = tarpolyglot_map(vals)),
+  # A second, non-branching Rust step in the same pipeline.
+  tar_target_rs(noise, script = "rs/rng.rs", inputs = c(seed = "seed"),
+                post_script = "R/rng_post.R")
+)
+```
+
+## Compile once, reuse in other steps
+
+The library a Rust step compiles is an ordinary R object, so you can compile once in one target and reuse the functions in other, unrelated steps, with no recompilation. Two exported helpers make this explicit:
+
+* `compile_rs_lib()` compiles a script's `#[extendr]` functions and returns a self-contained library object (the compiled code plus its R wrappers). It is what the `tarpolyglot_*()` pattern helpers use under the hood.
+* `run_rs_step_prebuilt()` reloads such a library (in milliseconds, no toolchain needed) and evaluates a post-script against it, exactly like `run_rs_step()` does after compiling.
+
+```r
+list(
+  tar_target(x, 5),
+  # Compile once; the result is stored like any target value (rds by default, or qs).
+  tar_target(mathlib, tarpolyglot::compile_rs_lib("rs/math.rs")),
+  # Reuse it in a different step, with no recompilation.
+  tar_target(y, tarpolyglot::run_rs_step_prebuilt(
+    mathlib, post_script = "R/use_math.R", inputs = list(x = x)))
+)
+```
+
+Because a script can define several `#[extendr]` functions, one compiled library can serve many steps. This is the recommended way to share Rust code across a pipeline: compile the functions once, then call them wherever you need them.
+
+### Using more than one library in a step
+
+A single step can also use several compiled libraries. Call `run_rs_step_prebuilt()` once per library and combine the results:
+
+```r
+tar_target(combined, {
+  a <- tarpolyglot::run_rs_step_prebuilt(libA, post_script = "R/a.R", inputs = list(x = x))
+  b <- tarpolyglot::run_rs_step_prebuilt(libB, post_script = "R/b.R", inputs = list(x = x))
+  a + b
+})
+```
+
+The libraries are loaded one at a time (see "Current limitations"), so call them in sequence like this rather than trying to use functions from two libraries in the same expression.
+
+## Current limitations
+
+* **One compiled library resident at a time (per module name).** rextendr names every compiled crate `rextendr<N>` from a per-process counter, so two libraries built in separate workers often share the name `rextendr1`. `tarpolyglot` handles this by loading the library you are calling and swapping it out when you switch to another, so results are always correct. It does mean you cannot hold two such libraries live at once to interleave their functions in a single expression. When you need several functions available together, put them in one script (a script may define any number of `#[extendr]` functions) rather than in separate libraries.
+* **A pattern helper adds a companion target.** `tarpolyglot_map()` (and the other helpers) create a `<name>_rust_lib` compile target alongside the branched target. This is intentional, it is what makes compile-once work, and it shows up in `tar_visnetwork()`.
 
 ## Windows toolchain note
 
@@ -257,6 +314,6 @@ tar_target_rs(
 Because a Rust step compiles rather than using a live interpreter:
 
 * **No interpreter-per-session or global-state issues.** Each step compiles and loads its own library, so different steps can freely use different crates/toolchains in the same session.
-* **Compilation cost instead of interpreter start-up.** The first build compiles the extendr crate and your code (tens of seconds); cargo caches artefacts, so re-runs are faster.
+* **Compilation cost instead of interpreter start-up.** The first build compiles the extendr crate and your code (tens of seconds); cargo caches artefacts, so re-runs are faster. To avoid recompiling in every branch, use a `tarpolyglot_*()` pattern helper (compile-once across branches); to avoid recompiling across steps, compile once with `compile_rs_lib()` and reuse it with `run_rs_step_prebuilt()` (see the sections above).
 
-See `?tar_target_rs` and `?run_rs_step` for the full argument reference, and `vignette("get_started")` for how Rust steps fit alongside Python/Julia and `crew`.
+See `?tar_target_rs` and `?run_rs_step` for the full argument reference, `?tarpolyglot_map`, `?compile_rs_lib`, and `?run_rs_step_prebuilt` for compile-once and library reuse, and `vignette("get_started")` for how Rust steps fit alongside Python/Julia and `crew`.

@@ -25,6 +25,43 @@ test_that("run_rs_step compiles #[extendr] fns and returns via post-script", {
   expect_equal(res$n, 4)
 })
 
+test_that("multiple #[extendr] functions in one script are all exposed", {
+  script <- withr::local_tempfile(fileext = ".rs")
+  writeLines(c(
+    "#[extendr] fn inc(x: f64) -> f64 { x + 1.0 }",
+    "#[extendr] fn tentimes(x: f64) -> f64 { x * 10.0 }"
+  ), script)
+  lib <- compile_rs_lib(script)
+  expect_true(all(c("inc", "tentimes") %in% names(lib$objs)))
+  post <- withr::local_tempfile(fileext = ".R")
+  writeLines("c(inc(x), tentimes(x))", post)
+  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 5)),
+    c(6, 50))
+})
+
+test_that("two libraries sharing the rextendr module name do not collide", {
+  skip_if_not_installed("callr")
+  # Compile in fresh processes so both get the per-process module name rextendr1
+  # (the collision case). One process then reloads both in turn, as a reused crew
+  # worker would.
+  compile_fresh <- function(rust) {
+    script <- tempfile(fileext = ".rs")
+    writeLines(rust, script)
+    on.exit(unlink(script), add = TRUE)
+    callr::r(function(s) tarpolyglot::compile_rs_lib(s), args = list(script))
+  }
+  libA <- compile_fresh("#[extendr] fn f(x: f64) -> f64 { x + 1.0 }")
+  libB <- compile_fresh("#[extendr] fn f(x: f64) -> f64 { x + 100.0 }")
+  expect_identical(libA$basename, libB$basename)  # same module name => collision risk
+
+  post <- withr::local_tempfile(fileext = ".R")
+  writeLines("f(x)", post)
+  # Hot-swap must give each library its own behaviour, in both directions.
+  expect_equal(run_rs_step_prebuilt(libA, post_script = post, inputs = list(x = 5)), 6)
+  expect_equal(run_rs_step_prebuilt(libB, post_script = post, inputs = list(x = 5)), 105)
+  expect_equal(run_rs_step_prebuilt(libA, post_script = post, inputs = list(x = 5)), 6)
+})
+
 test_that("compile_rs_lib() builds a reusable bundle that run_rs_step_prebuilt reloads", {
   script <- withr::local_tempfile(fileext = ".rs")
   writeLines("#[extendr]\nfn square(x: f64) -> f64 { x * x }", script)

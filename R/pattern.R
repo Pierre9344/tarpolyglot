@@ -70,7 +70,10 @@
 #'
 #' On [tar_target_py()] and [tar_target_jl()] there is nothing to compile, so `tarpolyglot_map()` is exactly `map()`: it is provided so the same pipeline code can branch every language uniformly.
 #'
-#' Use it wherever you would write `map()`: `pattern = tarpolyglot_map(x)`. The arguments are upstream target names to iterate over in parallel, with the same meaning as [targets::tar_target()]'s `map()`. This helper is only recognised inside the `pattern` argument of the tarpolyglot constructors; it is not meant to be called directly.
+#' Use it wherever you would write `map()`: `pattern = tarpolyglot_map(x)`. The arguments are upstream target names to iterate over in parallel, with the same meaning as [targets::tar_target()]'s `map()`.
+#'
+#' @section Only recognised by tarpolyglot constructors:
+#' The `tarpolyglot_*()` pattern helpers work only inside the `pattern` argument of the tarpolyglot constructors ([tar_target_rs()], [tar_target_py()], [tar_target_jl()], and their `_raw()` forms), which rewrite them to the plain \pkg{targets} pattern before building the target. Used directly in a plain [targets::tar_target()] or [targets::tar_target_raw()] they raise an error such as `invalid dynamic branching pattern ... Illegal symbols found: tarpolyglot_map`, because \pkg{targets} validates a pattern against its own fixed set of pattern functions and does not know these helpers. This cannot be fixed from tarpolyglot: \pkg{targets} looks its pattern functions up in a locked internal environment, so teaching it a new one would require modifying the \pkg{targets} package itself. In a plain \pkg{targets} target (which has no foreign code to compile, so nothing to gain) use the native `map()` / `cross()` / `slice()` / `head()` / `tail()` / `sample()` instead.
 #'
 #' @param ... Upstream targets to map over in parallel, exactly as in the \pkg{targets} `map()` pattern (e.g. `tarpolyglot_map(x)` or `tarpolyglot_map(x, y)`).
 #'
@@ -114,6 +117,7 @@ tarpolyglot_map <- function(...) {
 #' @param ... Upstream targets to cross (all combinations), with the same meaning as in the \pkg{targets} `cross()` pattern.
 #'
 #' @inherit tarpolyglot_map return
+#' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso [tarpolyglot_map()], [tar_target_rs()], [tar_target_py()], [tar_target_jl()]
 #' @examples
 #' \dontrun{
@@ -135,6 +139,7 @@ tarpolyglot_cross <- function(...) {
 #' @param index Integer vector of branch indices to keep, as in the \pkg{targets} `slice()` pattern.
 #'
 #' @inherit tarpolyglot_map return
+#' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso [tarpolyglot_map()], [tar_target_rs()], [tar_target_py()], [tar_target_jl()]
 #' @examples
 #' \dontrun{
@@ -156,6 +161,7 @@ tarpolyglot_slice <- function(..., index) {
 #' @param n Number of branches to keep from the start, as in the \pkg{targets} `head()` pattern.
 #'
 #' @inherit tarpolyglot_map return
+#' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso [tarpolyglot_map()], [tar_target_rs()], [tar_target_py()], [tar_target_jl()]
 #' @examples
 #' \dontrun{
@@ -177,6 +183,7 @@ tarpolyglot_head <- function(..., n) {
 #' @param n Number of branches to keep from the end, as in the \pkg{targets} `tail()` pattern.
 #'
 #' @inherit tarpolyglot_map return
+#' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso [tarpolyglot_map()], [tar_target_rs()], [tar_target_py()], [tar_target_jl()]
 #' @examples
 #' \dontrun{
@@ -198,6 +205,7 @@ tarpolyglot_tail <- function(..., n) {
 #' @param n Number of branches to sample at random, as in the \pkg{targets} `sample()` pattern.
 #'
 #' @inherit tarpolyglot_map return
+#' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso [tarpolyglot_map()], [tar_target_rs()], [tar_target_py()], [tar_target_jl()]
 #' @examples
 #' \dontrun{

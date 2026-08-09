@@ -143,6 +143,8 @@ list(
 )
 ```
 
+Run the branches in parallel by setting a `crew` controller (see `vignette("get_started")`, the "Parallelism and isolation with crew" section, which also covers `polyglot_controller(log = tar_polyglot_log(...))` for per-step stdout/stderr log files -- including a caveat specific to branching there, since every branch of a pattern shares one log file).
+
 ## Choosing the Julia install and project
 
 ### Use case 1: Julia on PATH (default)

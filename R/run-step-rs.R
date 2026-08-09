@@ -1,3 +1,9 @@
+# Per-process record of which compiled library (by content) is currently loaded
+# under each rextendr module name (e.g. "rextendr1"), so run_rs_step_prebuilt()
+# can reuse it when the same library repeats and hot-swap it when a different one
+# needs the same name. See run_rs_step_prebuilt().
+.tp_rustlib_loaded <- new.env(parent = emptyenv())
+
 # Rust step worker (extendr model). Unlike the subprocess approach, this compiles the Rust `#[extendr]` functions in `script` with rextendr::rust_source() and exposes them as R functions in the step environment; a post-R script then calls those functions (with the upstream `inputs` bound alongside) and returns the target value. There is no pre-R script for Rust: inputs are used directly from the post-script.
 #
 # Windows note: rextendr requires the Rust GNU toolchain (to match R's mingw ABI). Set it as the rustup default, or pass `toolchain = "stable-x86_64-pc-windows-gnu"` (which sets RUSTUP_TOOLCHAIN for the build).
@@ -229,23 +235,36 @@ run_rs_step_prebuilt <- function(lib,
       call. = FALSE)
   }
 
-  # Materialise the embedded library under a stable path and dyn.load it, unless
-  # a DLL registered under the same module name is already loaded in this
-  # process. The basename must match the compiled module so its generated
-  # wrappers (which `.Call(..., PACKAGE = "rextendr<N>")`) resolve. Skipping when
-  # already loaded means a worker running several branches loads it once, and the
-  # non-crew case (where the compile target ran in this same process) does not
-  # try to load a second copy under the same name.
+  # Materialise the embedded library and dyn.load it so its wrappers resolve. Its
+  # generated wrappers call `.Call(..., PACKAGE = "rextendr<N>")`, and the file
+  # basename must match that module name for the call to resolve, so we cannot
+  # simply rename the library to something unique. rextendr numbers each freshly
+  # compiled crate `rextendr<N>` from a per-process counter, so two different
+  # compile-once targets built in separate workers can both be `rextendr1`. R
+  # keys loaded DLLs by that name, so loading a second one under the same name
+  # would be ignored (the first would shadow it). We therefore track which
+  # library (by content) is loaded under each module name and hot-swap when a
+  # different one arrives, while reusing it when the same library repeats: the
+  # common case of many branches of one target on one worker stays a no-op.
   regname <- tools::file_path_sans_ext(lib$basename)
-  loaded_names <- vapply(getLoadedDLLs(), function(d) d[["name"]], character(1))
-  if (!(regname %in% loaded_names)) {
-    dir <- file.path(tempdir(), "tarpolyglot-rustlib")
-    dir.create(dir, showWarnings = FALSE, recursive = TRUE)
-    path <- file.path(dir, lib$basename)
-    if (!file.exists(path) || file.info(path)$size != length(lib$bytes)) {
-      writeBin(lib$bytes, path)
+  if (!identical(.tp_rustlib_loaded[[regname]], lib$bytes)) {
+    loaded <- getLoadedDLLs()
+    if (regname %in% names(loaded)) {
+      try(dyn.unload(loaded[[regname]][["path"]]), silent = TRUE)
     }
-    dyn.load(path)
+    base <- file.path(tempdir(), "tarpolyglot-rustlib")
+    dir.create(base, showWarnings = FALSE, recursive = TRUE)
+    # Write into a fresh unique subdirectory rather than overwriting a fixed file:
+    # on Windows the previous copy may still be locked (it was just loaded, and an
+    # antivirus scanner may hold it), which fails an overwrite. The basename is
+    # kept because it must match the compiled module name for the wrappers to
+    # resolve.
+    sub <- tempfile("lib", tmpdir = base)
+    dir.create(sub)
+    path <- file.path(sub, lib$basename)
+    writeBin(lib$bytes, path)
+    dyn.load(path, local = TRUE, now = TRUE)
+    .tp_rustlib_loaded[[regname]] <- lib$bytes
   }
 
   e <- new.env(parent = globalenv())

@@ -34,7 +34,9 @@ Imports:
     reticulate,
     JuliaCall,
     crew,
-    rextendr
+    rextendr,
+    callr,
+    cli
 Suggests:
     knitr,
     rmarkdown,

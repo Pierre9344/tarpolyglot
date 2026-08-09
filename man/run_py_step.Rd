@@ -15,7 +15,8 @@ run_py_step(
   python_version = NULL,
   env = NULL,
   env_manager = "system",
-  python = NULL
+  python = NULL,
+  name = NULL
 )
 }
 \arguments{
@@ -36,6 +37,8 @@ run_py_step(
 \item{python_version}{Optional Python version to select (e.g. \code{"3.12"} or \code{">=3.11"}), used only when no environment and no explicit \code{python} path are given. reticulate fetches/selects it (via its uv-backed ephemeral environment) with \code{\link[reticulate:py_require]{reticulate::py_require()}}. Default \code{NULL} uses the computer/global default Python. Use this when you only care about the interpreter \emph{version} and are happy for reticulate to build a \emph{throwaway} environment; for a \emph{pinned, reproducible} environment use \code{env} / \code{env_manager} (or \code{python}) instead.}
 
 \item{env, env_manager, python}{Python environment selection: the reproducible alternatives to \code{python_version}. Use \code{env} + \code{env_manager} to point at an existing environment built by a known tool, or \code{python} for one explicit interpreter path. \code{env_manager} is one of \code{"system"}, \code{"virtualenv"}, \code{"venv"}, \code{"conda"}, \code{"uv"}, \code{"poetry"}; \code{env} is the corresponding virtualenv/conda name or path (or poetry project directory); \code{python} is an explicit interpreter path. Precedence: \code{python} > environment (\code{env}/\code{env_manager}) > \code{python_version} > default. (\code{"virtualenv"}, \code{"venv"} and \code{"uv"} all point at a standard virtualenv, including one created by \code{renv::use_python()}, and behave identically.) For \code{"virtualenv"}/\code{"venv"}/\code{"uv"}/\code{"poetry"}, an \code{env} that is an already-existing directory (relative to the working directory, or absolute) is resolved to an absolute path before use, so a relative venv path (e.g. \code{".venv"}, created with \verb{uv venv .venv}) works as expected; otherwise \code{reticulate::use_virtualenv()} would misread a separator-less relative path as the \emph{name} of an environment under its own virtualenv root instead of a path on disk. A bare name that does not correspond to an existing directory is passed through unchanged, so a genuine named environment (one already registered under that root) still resolves. When \code{python} or an environment is given, the selection also takes priority over an ambient \code{RETICULATE_PYTHON} environment variable (e.g. one set by the RStudio project Python config and inherited by \code{crew} workers), which reticulate would otherwise let silently override the request.}
+
+\item{name}{Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=tar_polyglot_log]{tar_polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call).}
 }
 \value{
 The converted R object (object mode) or a character vector of normalised file paths (file mode).

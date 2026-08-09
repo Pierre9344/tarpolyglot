@@ -1,0 +1,19 @@
+Name: toolchain_check(): all languages
+Description: Diagnose the Python, Julia, and Rust toolchains (tarpolyglot::toolchain_check()).
+Binding: rstudio_addin_toolchain_check_all
+Interactive: false
+
+Name: toolchain_check(): Python only
+Description: Diagnose just the Python toolchain (tarpolyglot::toolchain_check("py")).
+Binding: rstudio_addin_toolchain_check_py
+Interactive: false
+
+Name: toolchain_check(): Julia only
+Description: Diagnose just the Julia toolchain (tarpolyglot::toolchain_check("jl")).
+Binding: rstudio_addin_toolchain_check_jl
+Interactive: false
+
+Name: toolchain_check(): Rust only
+Description: Diagnose just the Rust toolchain (tarpolyglot::toolchain_check("rs")).
+Binding: rstudio_addin_toolchain_check_rs
+Interactive: false

@@ -11,10 +11,11 @@
 #' @param workers Integer number of parallel worker processes. Default `2`.
 #' @param tasks_max Integer max tasks a worker runs before it is retired (and its embedded interpreter torn down). Default `1` for maximum isolation: a fresh Python/Julia per target. Raise it (or set `Inf`) to reuse interpreters for throughput, accepting that same-language steps on a worker then share the foreign global namespace and one environment.
 #' @param seconds_idle Numeric seconds an idle worker waits before shutting down. Default `30`.
+#' @param log Optional [tar_polyglot_log()] object turning on per-step stdout/stderr log files for Python and Julia steps (see that function; Rust is not covered). Default `NULL` (no logging, the previous behavior).
 #' @param ... Further arguments passed to [crew::crew_controller_local()], e.g. `seconds_timeout`, `garbage_collection`, or `reset_globals`.
 #'
 #' @return A `crew` controller object, ready for `targets::tar_option_set(controller = ...)`.
-#' @seealso [tar_target_py()], [tar_target_jl()]
+#' @seealso [tar_target_py()], [tar_target_jl()], [tar_polyglot_log()]
 #' @export
 #' @examples
 #' \dontrun{
@@ -29,7 +30,9 @@
 polyglot_controller <- function(workers = 2L,
                                 tasks_max = 1L,
                                 seconds_idle = 30,
+                                log = NULL,
                                 ...) {
+  .tp_log_set_env(log)
   crew::crew_controller_local(
     workers = as.integer(workers),
     tasks_max = as.integer(tasks_max),

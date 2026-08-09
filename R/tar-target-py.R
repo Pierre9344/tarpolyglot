@@ -83,7 +83,8 @@ tar_target_py_raw <- function(name,
       python_version = .(python_version),
       env = .(env),
       env_manager = .(env_manager),
-      python = .(python)
+      python = .(python),
+      name = .(name)
     )
   )
 
