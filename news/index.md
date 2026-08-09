@@ -2,6 +2,8 @@
 
 ## tarpolyglot 0.2.0
 
+CRAN release: 2026-08-08
+
 #### New features
 
 - New dynamic-branching pattern helpers mirror the `targets` patterns

@@ -62,20 +62,25 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9">
+<!-- badges: end -->
 <div class="section level1">
 <div class="page-header">
 <img src="logo.svg" class="logo" alt=""><h1 id="tarpolyglot-">
 <code>{tarpolyglot}</code> <a class="anchor" aria-label="anchor" href="#tarpolyglot-"></a>
 </h1>
 </div>
-<p><code>tarpolyglot</code> adds target constructors that run <strong>Python</strong>, <strong>Julia</strong>, and <strong>Rust</strong> as first-class steps of a <a href="https://docs.ropensci.org/targets/" class="external-link"><code>{targets}</code></a> pipeline, via <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a> (Python), <a href="https://github.com/JuliaInterop/JuliaCall" class="external-link">JuliaCall</a> (Julia), and <a href="https://extendr.rs/rextendr/" class="external-link">rextendr</a> / <a href="https://extendr.rs/" class="external-link">extendr</a> (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> step supports works unchanged: dynamic branching, storage formats, resources, cues, <code>crew</code> parallelism.</p>
+<p><a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> adds target constructors that run <strong>Python</strong>, <strong>Julia</strong>, and <strong>Rust</strong> as first-class steps of a <a href="https://docs.ropensci.org/targets/" class="external-link"><code>{targets}</code></a> pipeline, via <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a> (Python), <a href="https://github.com/JuliaInterop/JuliaCall" class="external-link">JuliaCall</a> (Julia), and <a href="https://extendr.rs/rextendr/" class="external-link">rextendr</a> / <a href="https://extendr.rs/" class="external-link">extendr</a> (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> step supports works unchanged: dynamic branching, storage formats, resources, cues, <code>crew</code> parallelism.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> from GitHub:</p>
+<p>You can install <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> from CRAN or GitHub for the development version:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Pierre9344/tarpolyglot"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># CRAN</span></span>
+<span><span class="fu">install.package</span><span class="op">(</span><span class="st">"tarpolyglot"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># GitHub (development version)</span></span>
+<span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"Pierre9344/tarpolyglot@dev"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>You also need a working toolchain for whichever language(s) you plan to use: Python, Julia, and/or Rust. Each is independent and only needed if you use the matching constructor (<code><a href="reference/tar_target_py.html">tar_target_py()</a></code>, <code><a href="reference/tar_target_jl.html">tar_target_jl()</a></code>, <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code>). See <code><a href="articles/get_started.html">vignette("get_started")</a></code> for the full setup instructions (Python via reticulate/uv, Julia via <a href="https://github.com/JuliaLang/juliaup" class="external-link">juliaup</a>, Rust via <a href="https://rust-lang.org/tools/install/" class="external-link">rustup</a>: use the <strong>GNU</strong> toolchain on Windows so it matches R’s ABI).</p>
 </div>
 <div class="section level2">
@@ -89,7 +94,7 @@
 <li>
 <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code> / <code><a href="reference/tar_target_rs_raw.html">tar_target_rs_raw()</a></code>: Rust, via rextendr/extendr.</li>
 </ul>
-<p>Each mirrors <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target()</a></code> / <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> and forwards every argument (<code>pattern</code>, <code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, …), so dynamic branching, storage formats, <code>crew</code>-based parallelism, and other <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a>features all work as usual.</p>
+<p>Each mirrors <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target()</a></code> / <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> and forwards every argument (<code>pattern</code>, <code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, …), so dynamic branching, storage formats, <code>crew</code>-based parallelism, and other <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> features all work as usual.</p>
 <div class="section level3">
 <h3 id="example-using-tar_target_py">Example using <code>tar_target_py</code>
 <a class="anchor" aria-label="anchor" href="#example-using-tar_target_py"></a>
@@ -128,7 +133,7 @@
 <code class="sourceCode R"><span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_make.html" class="external-link">tar_make</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_read.html" class="external-link">tar_read</a></span><span class="op">(</span><span class="va">py_mean</span><span class="op">)</span>   <span class="co"># $mean 5  $n 4</span></span>
 <span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_read.html" class="external-link">tar_read</a></span><span class="op">(</span><span class="va">report</span><span class="op">)</span>    <span class="co"># "mean = 5.0 over n = 4"</span></span></code></pre></div>
-<p>Here the <code>retrieve</code> argument is used to extract a value from the python environment using <code>reticulate</code> type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the <code>py</code>object. It is also possible tu use the <code>py_get</code> helper function to extract some variable. Both are created by the steps constructor.</p>
+<p>Here the <code>retrieve</code> argument is used to extract a value from the python environment using <code>reticulate</code> type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the <code>py</code> object. It is also possible tu use the <code>py_get()</code> helper function to extract some variable. Both are created by the steps constructor.</p>
 </div>
 <div class="section level3">
 <h3 id="inline-code-with-tar_code">Inline code with <code>tar_code()</code>
@@ -160,12 +165,12 @@
 <li>Easy selection of environment and language version selection as arguments: choose a Python interpreter or environment (<code>python</code>, <code>env</code> + <code>env_manager</code> for system / virtualenv / venv / uv / poetry / conda, or <code>python_version</code>), or a Julia install and project (<code>julia_version</code>, <code>julia_home</code>, <code>julia_project</code>, <code>julia_packages</code>). Your selection wins over ambient settings: an explicit environment overrides an inherited <code>RETICULATE_PYTHON</code> or <code>JULIA_PROJECT</code> (for example one set by RStudio and inherited by <code>crew</code> workers).</li>
 <li>Every <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> feature keeps working:
 <ul>
-<li>the constructors forward the full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument set (<code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, <code>memory</code>, and so on), so storage formats, cues, and <code>crew</code> parallelism behave as usual making <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> fully compatible with <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> and <code>tarchetypes</code>.</li>
+<li>the constructors forward the full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument set (<code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, <code>memory</code>, and so on), so storage formats, cues, and <code>crew</code> parallelism behave as usual making <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> fully compatible with <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> and <a href="https://docs.ropensci.org/tarchetypes/" class="external-link">tarchetypes</a>.</li>
 <li>the constructor <code>input</code> argument ensure that <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> detect the dependencies of your polyglot steps.</li>
 </ul>
 </li>
 <li>Per-step isolation is one line: <code><a href="reference/polyglot_controller.html">polyglot_controller()</a></code> (a <code>crew</code> controller with <code>tasks_max = 1</code>) gives each step a fresh interpreter in its own process. This is the only way around reticulate and JuliaCall binding a single interpreter per session.</li>
-<li>You do not need to adopt a separate build tool like the <code>rixpress</code> R package does with Nix which is convenient for Windows computer or public computing cluster on which you can’t install Nix as a user.</li>
+<li>You do not need to adopt a separate build tool like the <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> R package does with Nix which is convenient for Windows computer or public computing cluster on which you can’t install Nix as a user.</li>
 </ul>
 <p>The gains above are largest for <strong>Python and Julia</strong>, where a live interpreter has to be bound and data marshalled across the R boundary on every step. <strong>Rust is different</strong>: <code><a href="https://extendr.github.io/rextendr/reference/rust_source.html" class="external-link">rextendr::rust_source()</a></code> compiles your <code>#[extendr]</code> functions and hands them back as ordinary R functions, so there is no interpreter to bind and no conversion layer to abstract, and for simple cases a plain <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target()</a></code> calling <code>rust_source()</code> already works. <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code> is still worth using because it puts R, <code>cargo</code>, and (on Windows) Rtools on <code>PATH</code> and sets <code>R_HOME</code> so the build succeeds in a bare or <code>crew</code> worker, lets you pick a toolchain per step with <code>toolchain</code>, bundles file output, script tracking, and the full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument set in one call, and keeps the same API as the Python and Julia constructors (see <code><a href="articles/rust.html">vignette("rust")</a></code>).</p>
 </div>
@@ -175,8 +180,8 @@
 </h2>
 <p>I am also aware of <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a>, which supports reproducible polyglot pipelines using Nix.</p>
 <p>I see <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> and <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> as addressing related needs with different architectures and trade-offs. <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> delegates pipeline execution, dependency management, and environment management to Nix, providing strong isolation and reproducibility guarantees.</p>
-<p>{tarpolyglot} takes a narrower and less prescriptive approach. It remains an extension of {targets} and leaves environment management to existing language-specific tools such as virtual environments, Conda, uv, Poetry, Juliaup, Julia projects, and rustup.</p>
-<p>The intention is not to reproduce the reproducibility guarantees provided by Nix. Instead, <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> is intended for users who want to add multilingual steps incrementally to an existing {targets} pipeline, including environments where Nix is unavailable or cannot be installed.</p>
+<p><a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> takes a narrower and less prescriptive approach. It remains an extension of <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> and leaves environment management to existing language-specific tools such as virtual environments, Conda, uv, Poetry, Juliaup, Julia projects, and rustup.</p>
+<p>The intention is not to reproduce the reproducibility guarantees provided by Nix. Instead, <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> is intended for users who want to add multilingual steps incrementally to an existing <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> pipeline, including environments where Nix is unavailable or cannot be installed.</p>
 <p>This distinction is relevant for my own work because I use a public computing cluster with restricted user permissions, and the administrators are not currently considering a Nix installation.</p>
 </div>
 <div class="section level2">
@@ -203,13 +208,14 @@
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
-<p>To cite <code>tarpolyglot</code>, run <code>citation("tarpolyglot")</code> in R, or see the <a href="CITATION.cff"><code>CITATION.cff</code></a> file (also surfaced by GitHub’s “Cite this repository” button).</p>
+<p>To cite <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a>, run <code>citation("tarpolyglot")</code> in R, or see the <a href="CITATION.cff"><code>CITATION.cff</code></a> file (also surfaced by GitHub’s “Cite this repository” button).</p>
 </div>
 </div>
 
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=tarpolyglot" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/Pierre9344/tarpolyglot/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/Pierre9344/tarpolyglot/issues" class="external-link">Report a bug</a></li>
 </ul>
@@ -249,6 +255,9 @@
 <ul class="list-unstyled">
 <li><a href="https://www.repostatus.org/#active" class="external-link"><img src="https://www.repostatus.org/badges/latest/active.svg" alt="status"></a></li>
 <li><a href="https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://CRAN.R-project.org/package=tarpolyglot" class="external-link"><img src="https://www.r-pkg.org/badges/version/tarpolyglot" alt="CRAN status"></a></li>
+<li><a href="https://cran.r-project.org/web/checks/check_results_tarpolyglot.html" class="external-link"><img src="https://badges.cranchecks.info/worst/tarpolyglot.svg" alt="CRAN checks"></a></li>
+<li><a href="https://cran.r-project.org/package=tarpolyglot" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/tarpolyglot" alt="downloads"></a></li>
 </ul>
 </div>
 

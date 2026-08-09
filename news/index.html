@@ -39,7 +39,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.2.0" id="tarpolyglot-020">tarpolyglot 0.2.0<a class="anchor" aria-label="anchor" href="#tarpolyglot-020"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="tarpolyglot-020">tarpolyglot 0.2.0<a class="anchor" aria-label="anchor" href="#tarpolyglot-020"></a></h2><p class="text-muted">CRAN release: 2026-08-08</p>
 <div class="section level4">
 <h4 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h4>
 <ul><li>New dynamic-branching pattern helpers mirror the <code>targets</code> patterns (<code>map()</code>, <code>cross()</code>, <code>slice()</code>, …). Used unquoted in <code>pattern</code> on <code><a href="../reference/tar_target_rs.html">tar_target_rs()</a></code> / <code><a href="../reference/tar_target_rs_raw.html">tar_target_rs_raw()</a></code>, they compile the Rust crate a single time in a companion <code>&lt;step name&gt;_rust_lib</code> target and reuse that compiled library across every branch (each branch reloads it in milliseconds), instead of recompiling the crate in every branch as the plain <code>targets</code> patterns do. On the other constructors (<code><a href="../reference/tar_target_py.html">tar_target_py()</a></code>, <code><a href="../reference/tar_target_jl.html">tar_target_jl()</a></code>, or <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target()</a></code>) each helper falls back to its plain <code>targets</code> equivalent, so the same pattern code branches every language.
