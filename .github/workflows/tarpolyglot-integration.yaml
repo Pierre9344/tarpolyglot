@@ -166,6 +166,26 @@ jobs:
           result <- JuliaCall::julia_eval("1 + 1")
           cat("JuliaCall julia_eval(1 + 1) =", result, "\n")
 
+      # `setup-r-dependencies` installs only the *dependencies*, and
+      # `testthat::test_local()` below loads tarpolyglot with pkgload, i.e. as a
+      # source tree in the main R process only. Two of the gated tests spawn a
+      # fresh `callr::r()` subprocess that needs the tarpolyglot *namespace*
+      # (`tarpolyglot::compile_rs_lib()` in test-integration-rust.R, and
+      # `tarpolyglot:::.tp_with_rust_build_env()` inside toolchain_check()'s Rust
+      # deep check). A fresh subprocess only sees `.libPaths()`, never the
+      # pkgload-loaded source, so without this step it fails with
+      # "there is no package called 'tarpolyglot'". Installing here puts the
+      # package on `.libPaths()` for those subprocesses, which is also how it is
+      # actually used in production (a crew worker reloads an installed package).
+      - name: Install tarpolyglot itself (needed by the callr subprocess tests)
+        shell: Rscript {0}
+        run: |
+          install.packages(".", repos = NULL, type = "source")
+          cat(
+            "tarpolyglot", as.character(packageVersion("tarpolyglot")),
+            "installed at", find.package("tarpolyglot"), "\n"
+          )
+
       # --- Run the complete test suite, including live integration tests ---
       - name: Run tests (incl. live integration)
         shell: Rscript {0}
