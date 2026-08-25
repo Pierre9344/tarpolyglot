@@ -4,7 +4,7 @@
 <!-- badges: start -->
 
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml) [![CRAN status](https://www.r-pkg.org/badges/version/tarpolyglot)](https://CRAN.R-project.org/package=tarpolyglot) [![CRAN checks](https://badges.cranchecks.info/worst/tarpolyglot.svg)](https://cran.r-project.org/web/checks/check_results_tarpolyglot.html) [![downloads](https://cranlogs.r-pkg.org/badges/tarpolyglot)](https://cran.r-project.org/package=tarpolyglot)
-
+[![Codecov test coverage](https://codecov.io/gh/Pierre9344/tarpolyglot/graph/badge.svg)](https://app.codecov.io/gh/Pierre9344/tarpolyglot)
 <!-- badges: end -->
 
 # `{tarpolyglot}` <img src="man/figures/logo.png" align="right" height="120"/>
