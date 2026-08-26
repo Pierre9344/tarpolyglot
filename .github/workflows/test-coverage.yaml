@@ -90,6 +90,29 @@ jobs:
           cat("TARPOLYGLOT_INTEGRATION =",
               Sys.getenv("TARPOLYGLOT_INTEGRATION"), "\n")
 
+      # Build RCall.jl against this exact R *before* the coverage run, exactly as
+      # tarpolyglot-integration.yaml does. Without it the first julia_setup()
+      # happens inside the test suite, where several tests can trigger the
+      # precompile at once and it fails with
+      #   "Failed to precompile RCall ... to ~/.julia/compiled/v1.10/RCall/jl_XXXX"
+      # Doing it here once also surfaces a Julia problem as its own failed step
+      # rather than buried in testthat.Rout.fail.
+      - name: Julia / JuliaCall diagnostics (pre-build RCall.jl)
+        shell: Rscript {0}
+        run: |
+          cat("julia on PATH:", Sys.which("julia"), "\n")
+          system2("julia", "--version")
+          cat("JuliaCall:", as.character(packageVersion("JuliaCall")), "\n")
+
+          JuliaCall::julia_setup(
+            installJulia = FALSE,
+            rebuild = TRUE,
+            verbose = TRUE
+          )
+
+          result <- JuliaCall::julia_eval("1 + 1")
+          cat("JuliaCall julia_eval(1 + 1) =", result, "\n")
+
       - name: Test coverage
         run: |
           cov <- covr::package_coverage(
