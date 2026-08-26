@@ -43,7 +43,7 @@ test_that("run_py_step writes a header + the script's stdout/stderr to per-step 
   expect_true(file.exists(out_path))
   expect_true(file.exists(err_path))
 
-  out_txt <- paste(readLines(out_path), collapse = "\n")
+  out_txt <- paste(readLines(out_path, warn = FALSE), collapse = "\n")
   expect_match(out_txt, "tarpolyglot step: py_log_step", fixed = TRUE)
   expect_match(out_txt, "date:")
   expect_match(out_txt, "Python version:")
@@ -51,7 +51,7 @@ test_that("run_py_step writes a header + the script's stdout/stderr to per-step 
   expect_match(out_txt, "environment: no (system default", fixed = TRUE)
   expect_match(out_txt, "hello stdout from python", fixed = TRUE)
 
-  err_txt <- paste(readLines(err_path), collapse = "\n")
+  err_txt <- paste(readLines(err_path, warn = FALSE), collapse = "\n")
   expect_match(err_txt, "hello stderr from python", fixed = TRUE)
   # stderr file gets no header -- only the stdout file does.
   expect_no_match(err_txt, "tarpolyglot step:")
@@ -65,7 +65,7 @@ test_that("run_py_step overwrites the log by default (append = FALSE)", {
   first_size <- file.info(file.path(dir, "out", "py_overwrite.out"))$size
   run_py_step(py_print_script(), retrieve = "result", name = "py_overwrite")
 
-  txt <- paste(readLines(file.path(dir, "out", "py_overwrite.out")), collapse = "\n")
+  txt <- paste(readLines(file.path(dir, "out", "py_overwrite.out"), warn = FALSE), collapse = "\n")
   expect_equal(lengths(regmatches(txt, gregexpr("hello stdout from python", txt))), 1L)
   expect_equal(file.info(file.path(dir, "out", "py_overwrite.out"))$size, first_size)
 })
@@ -77,7 +77,7 @@ test_that("run_py_step append = TRUE accumulates with a two-blank-line separator
   run_py_step(py_print_script(), retrieve = "result", name = "py_append")
   run_py_step(py_print_script(), retrieve = "result", name = "py_append")
 
-  lines <- readLines(file.path(dir, "out", "py_append.out"))
+  lines <- readLines(file.path(dir, "out", "py_append.out"), warn = FALSE)
   txt <- paste(lines, collapse = "\n")
   expect_equal(lengths(regmatches(txt, gregexpr("hello stdout from python", txt))), 2L)
   # separator: two blank lines somewhere between the two runs.
@@ -90,7 +90,7 @@ test_that("run_py_step header = FALSE omits the header block", {
   local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL, header = FALSE))
 
   run_py_step(py_print_script(), retrieve = "result", name = "py_noheader")
-  txt <- paste(readLines(file.path(dir, "out", "py_noheader.out")), collapse = "\n")
+  txt <- paste(readLines(file.path(dir, "out", "py_noheader.out"), warn = FALSE), collapse = "\n")
   expect_no_match(txt, "tarpolyglot step:")
   expect_match(txt, "hello stdout from python", fixed = TRUE)
 })
@@ -129,7 +129,7 @@ test_that("run_jl_step writes a header + the script's stdout to a per-step file"
   out <- run_jl_step(jl_print_script(), retrieve = "result", name = "jl_log_step")
   expect_equal(out, 1)
 
-  out_txt <- paste(readLines(file.path(dir, "out", "jl_log_step.out")), collapse = "\n")
+  out_txt <- paste(readLines(file.path(dir, "out", "jl_log_step.out"), warn = FALSE), collapse = "\n")
   expect_match(out_txt, "tarpolyglot step: jl_log_step", fixed = TRUE)
   expect_match(out_txt, "Julia version:")
   expect_match(out_txt, "Julia path:")
@@ -189,12 +189,12 @@ test_that("run_cpp_step writes a header + Rcout/Rcerr to per-step files", {
   expect_true(file.exists(out_path))
   expect_true(file.exists(err_path))
 
-  out_txt <- paste(readLines(out_path), collapse = "\n")
+  out_txt <- paste(readLines(out_path, warn = FALSE), collapse = "\n")
   expect_match(out_txt, "tarpolyglot step: cpp_log_step", fixed = TRUE)
   expect_match(out_txt, "C++ version: Rcpp", fixed = TRUE)
   expect_match(out_txt, "computing square of -3", fixed = TRUE)
 
-  err_txt <- paste(readLines(err_path), collapse = "\n")
+  err_txt <- paste(readLines(err_path, warn = FALSE), collapse = "\n")
   expect_match(err_txt, "warning: negative input", fixed = TRUE)
 })
 
@@ -214,7 +214,7 @@ test_that("run_cpp_step does not capture raw std::cout (only Rcout/Rcerr)", {
   writeLines("raw_cout_fn(x)", post)
 
   run_cpp_step(script, post_script = post, inputs = list(x = 1), name = "cpp_raw_cout")
-  out_txt <- paste(readLines(file.path(dir, "out", "cpp_raw_cout.out")), collapse = "\n")
+  out_txt <- paste(readLines(file.path(dir, "out", "cpp_raw_cout.out"), warn = FALSE), collapse = "\n")
   expect_no_match(out_txt, "raw cout, not Rcout")
 })
 
@@ -237,7 +237,7 @@ test_that("run_cpp_step_prebuilt writes Rcout output through the reloaded, re-bo
     name = "cpp_prebuilt_log")
   expect_equal(out, 36)
 
-  out_txt <- paste(readLines(file.path(dir, "out", "cpp_prebuilt_log.out")), collapse = "\n")
+  out_txt <- paste(readLines(file.path(dir, "out", "cpp_prebuilt_log.out"), warn = FALSE), collapse = "\n")
   expect_match(out_txt, "tarpolyglot step: cpp_prebuilt_log", fixed = TRUE)
   expect_match(out_txt, "reused a pre-compiled library", fixed = TRUE)
   expect_match(out_txt, "computing square of 6", fixed = TRUE)

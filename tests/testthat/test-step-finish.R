@@ -35,12 +35,23 @@ test_that("object mode requires a post-script", {
 test_that("file mode normalises the paths the post-script returns", {
   for (nm in names(finishers)) {
     e <- new.env(parent = globalenv())
+    # The files must actually exist for this to be a portable test:
+    # normalizePath(mustWork = FALSE) resolves an existing relative path to an
+    # absolute one on every platform, but leaves a *non-existent* relative path
+    # untouched on Unix while still absolutising it on Windows.
+    d <- withr::local_tempdir()
+    withr::local_dir(d)
+    writeLines("a", "out_one.txt")
+    writeLines("b", "out_two.txt")
+
     post <- write_post("c('out_one.txt', 'out_two.txt')")
     res <- finishers[[nm]](e, post, "file", NULL)
+
     expect_length(res, 2L)
+    expect_true(all(file.exists(res)), label = nm)
     expect_match(res[[1L]], "out_one.txt", fixed = TRUE)
-    # normalizePath() makes them absolute even though they do not exist.
-    expect_false(identical(res[[1L]], "out_one.txt"))
+    # Relative in, absolute out.
+    expect_false(identical(res[[1L]], "out_one.txt"), label = nm)
   }
 })
 

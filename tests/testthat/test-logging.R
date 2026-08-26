@@ -172,15 +172,15 @@ test_that(".tp_cpp_with_redirect captures cat()/message() output to the configur
     "value"
   })
   expect_equal(result, "value")
-  expect_match(paste(readLines(out_path), collapse = "\n"), "to stdout", fixed = TRUE)
-  expect_match(paste(readLines(err_path), collapse = "\n"), "to stderr", fixed = TRUE)
+  expect_match(paste(readLines(out_path, warn = FALSE), collapse = "\n"), "to stdout", fixed = TRUE)
+  expect_match(paste(readLines(err_path, warn = FALSE), collapse = "\n"), "to stderr", fixed = TRUE)
 })
 
 test_that(".tp_cpp_with_redirect honors a NULL stream (disabled independently)", {
   out_path <- withr::local_tempfile()
   file.create(out_path)
   .tp_cpp_with_redirect(out_path, NULL, function() cat("only stdout\n"))
-  expect_match(paste(readLines(out_path), collapse = "\n"), "only stdout", fixed = TRUE)
+  expect_match(paste(readLines(out_path, warn = FALSE), collapse = "\n"), "only stdout", fixed = TRUE)
 })
 
 test_that(".tp_cpp_env_info describes the depends argument", {
