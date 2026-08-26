@@ -15,7 +15,7 @@ run_rs_step_prebuilt(
 \arguments{
 \item{lib}{A \code{tp_rust_lib} bundle from \code{\link[=compile_rs_lib]{compile_rs_lib()}} (supplied by the companion \verb{<name>_rust_lib} target).}
 
-\item{post_script}{Path to an R script evaluated after compilation. The compiled Rust functions and the named \code{inputs} are in scope; its last expression is the target value (object mode), or it returns a character vector of file paths (file mode). Required for object mode.}
+\item{post_script}{Path to an R script evaluated after compilation. The compiled Rust functions and the named \code{inputs} are in scope; its last expression is the target value (object mode), or it returns a character vector of file paths (file mode). Required for object mode. Accepts a file path or an inline \code{\link[=tar_code]{tar_code()}} carrier; see the "Script arguments" section below.}
 
 \item{inputs}{Named character vector (or list) mapping the name seen inside the step (in the R environment and, after the hand-off, in the foreign session) to the name of an upstream target, e.g. \code{c(x = "prepared_x")}. Each upstream target becomes a dependency of this target and is bound by that name in the step environment; under dynamic branching the per-branch slice is bound instead.}
 
@@ -32,9 +32,22 @@ Reloads a compiled Rust library produced by \code{\link[=compile_rs_lib]{compile
 \details{
 No Rust toolchain is needed here: reloading is a \code{dyn.load()}, not a build. See \code{\link[=tarpolyglot_map]{tarpolyglot_map()}} for the overall design.
 }
+\section{Script arguments}{
+
+
+A worker receives whatever the constructor already resolved, which is one of two things: a \strong{path to a file} on disk, or an \strong{inline carrier} built by \code{\link[=tar_code]{tar_code()}} that holds the code in memory. Both are accepted, so a direct call may pass either.
+
+\code{\link[=tar_target_path]{tar_target_path()}} is deliberately \emph{not} a third form at this level. It is a constructor-level convenience: \code{\link[=tar_target_py]{tar_target_py()}} and the other constructors rewrite it while the pipeline's DAG is built, so that by the time a worker runs it has already become the ordinary file path held by the upstream target. Handing the result of \code{\link[=tar_target_path]{tar_target_path()}} straight to a worker therefore does not resolve to a file. The three forms as written in \verb{_targets.R}, and which of them tracks your edits, are covered in \code{vignette("scripts")}.
+}
+
 \examples{
 \dontrun{
 # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+# scripts/square.rs:
+#   #[extendr]
+#   fn square(x: f64) -> f64 { x * x }
+# scripts/post.R:
+#   square(x)
 lib <- compile_rs_lib(script = "scripts/square.rs")
 run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
 }

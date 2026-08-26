@@ -5,10 +5,11 @@
 #' All [targets::tar_target_raw()] arguments are forwarded unchanged, so dynamic branching (`pattern`), storage `format`, `deployment`, `resources`, `cue`, etc. all work as usual. Upstream targets are wired in through `inputs`, which become dependencies (and are sliced under dynamic branching).
 #'
 #' @inheritParams tarpolyglot-shared-params
+#' @inheritSection tarpolyglot-shared-params Script options
 #' @param name Character string, the target name.
-#' @param script Path to the Julia script to run (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a [tar_target_path()] reference to an upstream target (typically `format = "file"`), which makes this step re-run whenever that file changes.
-#' @param pre_script Optional path to an R script run before the Julia script. See [run_jl_step()]; assign a named list `to_jl` to hand objects to Julia. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
-#' @param post_script Optional path to an R script run after the Julia script. See [run_jl_step()]; helpers `jl_get()` and `jl_call()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
+#' @param script Path to the Julia script to run (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @param pre_script Optional path to an R script run before the Julia script. See [run_jl_step()]; assign a named list `to_jl` to hand objects to Julia. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @param post_script Optional path to an R script run after the Julia script. See [run_jl_step()]; helpers `jl_get()` and `jl_call()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param julia_version Optional Julia version to select (e.g. `"1.11"`), used when `julia_home` is not given; resolved to a juliaup-managed install. Forwarded to [run_jl_step()]. Default `NULL` uses the computer/global Julia.
 #' @param julia_home,julia_project,julia_packages Julia environment selection, forwarded to [run_jl_step()]. `julia_home` is the directory containing the julia executable (defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`). `julia_project` is a Julia project environment to `Pkg.activate()`. `julia_packages` is a character vector of packages to `using` before the script.
 #' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
@@ -18,12 +19,60 @@
 #' @export
 #' @examples
 #' \dontrun{
+#' # scripts/sum.jl (uses the `using Statistics` julia_packages requests):
+#' #   result = mean(x)
+#' # scripts/post.R:
+#' #   jl_get("result")
 #' tarpolyglot::tar_target_jl_raw(
 #'   name = "jl_sum",
 #'   script = "scripts/sum.jl",
 #'   inputs = c(x = "prepared_x"),
 #'   post_script = "scripts/post.R",
 #'   julia_packages = "Statistics"
+#' )
+#'
+#' # The three ways to supply a script (see the "Script options" section):
+#' # 1. Literal path: untracked, editing the file does NOT re-run the step.
+#' tarpolyglot::tar_target_jl_raw(
+#'   name = "demo_literal", script = "jl/step.jl", retrieve = "result"
+#' )
+#'
+#' # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+#' list(
+#'   targets::tar_target(step_jl, "jl/step.jl", format = "file"),
+#'   tarpolyglot::tar_target_jl_raw(
+#'     name = "demo_tracked",
+#'     script = tarpolyglot::tar_target_path("step_jl"),
+#'     retrieve = "result"
+#'   )
+#' )
+#'
+#' # 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#' #    carries foreign source; an R { } block carries inline R.
+#' tarpolyglot::tar_target_jl_raw(
+#'   name = "demo_inline",
+#'   script = tarpolyglot::tar_code("result = 1 + 1"),
+#'   post_script = tarpolyglot::tar_code({ jl_get("result") })
+#' )
+#'
+#' # Tracking a helper file the script includes. Point `inputs` at a
+#' # format = "file" target so editing the helper also re-runs the step;
+#' # `inputs` takes the *target* name, not the path. Julia resolves a
+#' # relative include() against the including file's own directory, so make
+#' # the path absolute. jl/step.jl is then:
+#' #   include(helper_path)
+#' #   result = sum(myscale(x))
+#' list(
+#'   targets::tar_target(helper_file, "jl/helper.jl", format = "file"),
+#'   tarpolyglot::tar_target_jl_raw(
+#'     name = "demo_helper",
+#'     script = "jl/step.jl",
+#'     inputs = c(x = "prepared_x", helper_path = "helper_file"),
+#'     pre_script = tarpolyglot::tar_code({
+#'       to_jl <- list(x = x, helper_path = normalizePath(helper_path, winslash = "/"))
+#'     }),
+#'     retrieve = "result"
+#'   )
 #' )
 #' }
 tar_target_jl_raw <- function(name,
@@ -123,6 +172,7 @@ tar_target_jl_raw <- function(name,
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()]: pass a bare `name` and unquoted `pattern`, for direct use in `_targets.R`. Delegates to [tar_target_jl_raw()]; see it and [run_jl_step()] for the full reference. The Python twin is [tar_target_py()].
 #'
 #' @inheritParams tar_target_jl_raw
+#' @inheritSection tarpolyglot-shared-params Script options
 #' @param name Symbol, the target name (unquoted).
 #' @param pattern Optional dynamic-branching pattern, unquoted (e.g. `map(x)`).
 #'
@@ -131,12 +181,60 @@ tar_target_jl_raw <- function(name,
 #' @export
 #' @examples
 #' \dontrun{
+#' # scripts/sum.jl:
+#' #   result = sum(x)
+#' # scripts/post.R:
+#' #   jl_get("result")
 #' list(
 #'   tarpolyglot::tar_target_jl(
 #'     name = jl_sum,
 #'     script = "scripts/sum.jl",
 #'     inputs = c(x = "prepared_x"),
 #'     post_script = "scripts/post.R"
+#'   )
+#' )
+#'
+#' # The three ways to supply a script (see the "Script options" section):
+#' # 1. Literal path: untracked, editing the file does NOT re-run the step.
+#' tarpolyglot::tar_target_jl(
+#'   name = demo_literal, script = "jl/step.jl", retrieve = "result"
+#' )
+#'
+#' # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+#' list(
+#'   targets::tar_target(step_jl, "jl/step.jl", format = "file"),
+#'   tarpolyglot::tar_target_jl(
+#'     name = demo_tracked,
+#'     script = tarpolyglot::tar_target_path("step_jl"),
+#'     retrieve = "result"
+#'   )
+#' )
+#'
+#' # 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#' #    carries foreign source; an R { } block carries inline R.
+#' tarpolyglot::tar_target_jl(
+#'   name = demo_inline,
+#'   script = tarpolyglot::tar_code("result = 1 + 1"),
+#'   post_script = tarpolyglot::tar_code({ jl_get("result") })
+#' )
+#'
+#' # Tracking a helper file the script includes. Point `inputs` at a
+#' # format = "file" target so editing the helper also re-runs the step;
+#' # `inputs` takes the *target* name, not the path. Julia resolves a
+#' # relative include() against the including file's own directory, so make
+#' # the path absolute. jl/step.jl is then:
+#' #   include(helper_path)
+#' #   result = sum(myscale(x))
+#' list(
+#'   targets::tar_target(helper_file, "jl/helper.jl", format = "file"),
+#'   tarpolyglot::tar_target_jl(
+#'     name = demo_helper,
+#'     script = "jl/step.jl",
+#'     inputs = c(x = "prepared_x", helper_path = "helper_file"),
+#'     pre_script = tarpolyglot::tar_code({
+#'       to_jl <- list(x = x, helper_path = normalizePath(helper_path, winslash = "/"))
+#'     }),
+#'     retrieve = "result"
 #'   )
 #' )
 #' }

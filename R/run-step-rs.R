@@ -43,8 +43,9 @@
 #' Unlike Python/Julia there is **no pre-script** for Rust and no live interpreter: `rust_source()` compiles a dynamic library and R calls into it with real type conversion (via [extendr](https://extendr.rs/)). A Rust toolchain and `cargo` must be reachable (this function puts R, cargo, and on Windows Rtools on `PATH` for the build itself); on Windows use the GNU toolchain.
 #'
 #' @inheritParams tarpolyglot-shared-params
-#' @param script Path to the Rust script containing `#[extendr]` functions (required).
-#' @param post_script Path to an R script evaluated after compilation. The compiled Rust functions and the named `inputs` are in scope; its last expression is the target value (object mode), or it returns a character vector of file paths (file mode). Required for object mode.
+#' @inheritSection tarpolyglot-shared-params Script arguments
+#' @param script Path to the Rust script containing `#[extendr]` functions (required). Accepts a file path or an inline [tar_code()] carrier; see the "Script arguments" section below.
+#' @param post_script Path to an R script evaluated after compilation. The compiled Rust functions and the named `inputs` are in scope; its last expression is the target value (object mode), or it returns a character vector of file paths (file mode). Required for object mode. Accepts a file path or an inline [tar_code()] carrier; see the "Script arguments" section below.
 #' @param dependencies,features,profile Passed to [rextendr::rust_source()]: crate `dependencies` (named list), Cargo `features`, and build `profile` (e.g. `"dev"` or `"release"`).
 #' @param toolchain Optional rustup toolchain (e.g. `"stable-x86_64-pc-windows-gnu"`); sets `RUSTUP_TOOLCHAIN` for the build. Default `NULL` uses the rustup default toolchain.
 #'
@@ -54,7 +55,11 @@
 #' @examples
 #' \dontrun{
 #' # Normally invoked by tar_target_rs(); shown here as a direct call.
-#' # scripts/square.rs defines a #[extendr] fn square(x); post.R ends on square(x).
+#' # scripts/square.rs:
+#' #   #[extendr]
+#' #   fn square(x: f64) -> f64 { x * x }
+#' # scripts/post.R:
+#' #   square(x)
 #' run_rs_step(
 #'   script = "scripts/square.rs",
 #'   inputs = list(x = 21),
@@ -136,6 +141,7 @@ run_rs_step <- function(script,
 #' The bundle embeds the library bytes, so it travels with the target's value to any worker or machine, and reloading is a `dyn.load()` (near-instant) rather than a fresh `cargo` build. See [tarpolyglot_map()] for the motivation and [run_rs_step()] for the per-branch (recompiling) alternative.
 #'
 #' @inheritParams run_rs_step
+#' @inheritSection tarpolyglot-shared-params Script arguments
 #'
 #' @return An object of class `tp_rust_lib`: a list with the library `basename`, the raw library `bytes`, and the generated wrapper `objs` (named list of R functions).
 #' @seealso [tarpolyglot_map()], [run_rs_step_prebuilt()], [tar_target_rs()]
@@ -144,6 +150,9 @@ run_rs_step <- function(script,
 #' @examples
 #' \dontrun{
 #' # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+#' # scripts/square.rs:
+#' #   #[extendr]
+#' #   fn square(x: f64) -> f64 { x * x }
 #' lib <- compile_rs_lib(script = "scripts/square.rs")
 #' }
 compile_rs_lib <- function(script,
@@ -212,6 +221,7 @@ compile_rs_lib <- function(script,
 #' No Rust toolchain is needed here: reloading is a `dyn.load()`, not a build. See [tarpolyglot_map()] for the overall design.
 #'
 #' @inheritParams run_rs_step
+#' @inheritSection tarpolyglot-shared-params Script arguments
 #' @param lib A `tp_rust_lib` bundle from [compile_rs_lib()] (supplied by the companion `<name>_rust_lib` target).
 #'
 #' @return The value of the post-script (object mode) or a character vector of normalised file paths (file mode).
@@ -221,6 +231,11 @@ compile_rs_lib <- function(script,
 #' @examples
 #' \dontrun{
 #' # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+#' # scripts/square.rs:
+#' #   #[extendr]
+#' #   fn square(x: f64) -> f64 { x * x }
+#' # scripts/post.R:
+#' #   square(x)
 #' lib <- compile_rs_lib(script = "scripts/square.rs")
 #' run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
 #' }

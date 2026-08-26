@@ -23,4 +23,26 @@
 \description{
 Shared arguments for tarpolyglot constructors and workers
 }
+\section{Script options}{
+
+
+Every script argument (\code{script}, and \code{pre_script} / \code{post_script} where the constructor has them) accepts the same three forms. The choice is not cosmetic: it decides whether editing the code re-runs the target.
+
+\describe{
+\item{A literal path string}{e.g. \code{script = "py/step.py"}. The file is read when the step runs, but it is \strong{not} tracked, so editing it does \strong{not} invalidate the target: \code{targets} will happily reuse a stale result until some \emph{other} dependency changes. Simplest form, and a reasonable default once a script has settled.}
+\item{A \code{\link[=tar_target_path]{tar_target_path()}} reference}{e.g. \code{script = tar_target_path("step_py")}, naming an upstream \code{tar_target(step_py, "py/step.py", format = "file")}. The file becomes a real \code{targets} dependency, so editing it \strong{does} invalidate this target and the step re-runs. This is what you want while a script is still changing, and the recommended form for reproducible pipelines.}
+\item{Inline code via \code{\link[=tar_code]{tar_code()}}}{e.g. \code{script = tar_code("result = sum(x)")}. The code lives in \verb{_targets.R} rather than in a file, and is embedded in the target's command, so \code{targets} hashes it and editing it \strong{does} invalidate the target. A character string carries foreign source (Python, Julia, Rust, C++) or R source; an R \code{{ ... }} block carries inline R and is accepted only by \code{pre_script} / \code{post_script}, never by the foreign \code{script}.}
+}
+
+Mixing forms in one call is fine: a tracked \code{script} with a literal \code{post_script}, inline code for one and a file for another, and so on. See \code{vignette("scripts")} for worked examples of all three and guidance on choosing.
+}
+
+\section{Script arguments}{
+
+
+A worker receives whatever the constructor already resolved, which is one of two things: a \strong{path to a file} on disk, or an \strong{inline carrier} built by \code{\link[=tar_code]{tar_code()}} that holds the code in memory. Both are accepted, so a direct call may pass either.
+
+\code{\link[=tar_target_path]{tar_target_path()}} is deliberately \emph{not} a third form at this level. It is a constructor-level convenience: \code{\link[=tar_target_py]{tar_target_py()}} and the other constructors rewrite it while the pipeline's DAG is built, so that by the time a worker runs it has already become the ordinary file path held by the upstream target. Handing the result of \code{\link[=tar_target_path]{tar_target_path()}} straight to a worker therefore does not resolve to a file. The three forms as written in \verb{_targets.R}, and which of them tracks your edits, are covered in \code{vignette("scripts")}.
+}
+
 \keyword{internal}

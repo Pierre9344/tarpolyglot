@@ -7,11 +7,12 @@
 #' The interpreter/environment selection arguments (`python`, `env`, `env_manager`, `python_version`) are forwarded to [run_py_step()], which documents them (they are *alternatives*: normally set only one; precedence `python` > `env`/`env_manager` > `python_version` > none). See also `vignette("python")` for a decision guide with examples.
 #'
 #' @inheritParams tarpolyglot-shared-params
+#' @inheritSection tarpolyglot-shared-params Script options
 #' @inheritParams run_py_step
 #' @param name Character string, the target name.
-#' @param script Path to the Python script to run (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a [tar_target_path()] reference to an upstream target (typically `format = "file"`), which makes this step re-run whenever that file changes.
-#' @param pre_script Optional path to an R script run before the Python script. See [run_py_step()]; assign a named list `to_py` to hand objects to Python. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
-#' @param post_script Optional path to an R script run after the Python script. See [run_py_step()]; helpers `py` and `py_get()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
+#' @param script Path to the Python script to run (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @param pre_script Optional path to an R script run before the Python script. See [run_py_step()]; assign a named list `to_py` to hand objects to Python. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @param post_script Optional path to an R script run after the Python script. See [run_py_step()]; helpers `py` and `py_get()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
 #'
 #' @return A `targets` target object.
@@ -20,12 +21,63 @@
 #' @examples
 #' \dontrun{
 #' # Inside a targets factory:
+#' # scripts/pre.R:
+#' #   to_py <- list(x = x)
+#' # scripts/sum.py:
+#' #   result = sum(x)
+#' # scripts/post.R:
+#' #   py$result
 #' tarpolyglot::tar_target_py_raw(
 #'   name = "py_sum",
 #'   script = "scripts/sum.py",
 #'   inputs = c(x = "prepared_x"),
-#'   pre_script = "scripts/pre.R",   # builds `to_py <- list(x = x)`
-#'   post_script = "scripts/post.R"  # ends on `py$result`
+#'   pre_script = "scripts/pre.R",
+#'   post_script = "scripts/post.R"
+#' )
+#'
+#' # The three ways to supply a script (see the "Script options" section):
+#' # 1. Literal path: untracked, editing the file does NOT re-run the step.
+#' tarpolyglot::tar_target_py_raw(
+#'   name = "demo_literal", script = "py/step.py", retrieve = "result"
+#' )
+#'
+#' # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+#' list(
+#'   targets::tar_target(step_py, "py/step.py", format = "file"),
+#'   tarpolyglot::tar_target_py_raw(
+#'     name = "demo_tracked",
+#'     script = tarpolyglot::tar_target_path("step_py"),
+#'     retrieve = "result"
+#'   )
+#' )
+#'
+#' # 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#' #    carries foreign source; an R { } block carries inline R.
+#' tarpolyglot::tar_target_py_raw(
+#'   name = "demo_inline",
+#'   script = tarpolyglot::tar_code("result = 1 + 1"),
+#'   post_script = tarpolyglot::tar_code({ py_get("result") })
+#' )
+#'
+#' # Tracking a helper module the script imports. Point `inputs` at a
+#' # format = "file" target so editing the helper also re-runs the step;
+#' # `inputs` takes the *target* name, not the path. py/step.py then loads
+#' # the helper from the bound path rather than a hard-coded one:
+#' #   import os, sys
+#' #   sys.path.insert(0, os.path.dirname(helper_path))
+#' #   import helper
+#' #   result = sum(helper.scale(x))
+#' list(
+#'   targets::tar_target(helper_file, "py/helper.py", format = "file"),
+#'   tarpolyglot::tar_target_py_raw(
+#'     name = "demo_helper",
+#'     script = "py/step.py",
+#'     inputs = c(x = "prepared_x", helper_path = "helper_file"),
+#'     pre_script = tarpolyglot::tar_code({
+#'       to_py <- list(x = x, helper_path = helper_path)
+#'     }),
+#'     retrieve = "result"
+#'   )
 #' )
 #' }
 tar_target_py_raw <- function(name,
@@ -125,6 +177,7 @@ tar_target_py_raw <- function(name,
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()]: pass a bare `name` and an unquoted `pattern`, for direct use in `_targets.R`. It quotes those and delegates to [tar_target_py_raw()]. See that function and [run_py_step()] for the full argument reference and the pre/post-script contract. The Julia twin is [tar_target_jl()].
 #'
 #' @inheritParams tar_target_py_raw
+#' @inheritSection tarpolyglot-shared-params Script options
 #' @param name Symbol, the target name (unquoted).
 #' @param pattern Optional dynamic-branching pattern, unquoted (e.g. `map(x)`).
 #'
@@ -134,12 +187,61 @@ tar_target_py_raw <- function(name,
 #' @examples
 #' \dontrun{
 #' # Inside _targets.R:
+#' # scripts/sum.py:
+#' #   result = sum(x)
+#' # scripts/post.R:
+#' #   py$result
 #' list(
 #'   tarpolyglot::tar_target_py(
 #'     name = py_sum,
 #'     script = "scripts/sum.py",
 #'     inputs = c(x = "prepared_x"),
 #'     post_script = "scripts/post.R"
+#'   )
+#' )
+#'
+#' # The three ways to supply a script (see the "Script options" section):
+#' # 1. Literal path: untracked, editing the file does NOT re-run the step.
+#' tarpolyglot::tar_target_py(
+#'   name = demo_literal, script = "py/step.py", retrieve = "result"
+#' )
+#'
+#' # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+#' list(
+#'   targets::tar_target(step_py, "py/step.py", format = "file"),
+#'   tarpolyglot::tar_target_py(
+#'     name = demo_tracked,
+#'     script = tarpolyglot::tar_target_path("step_py"),
+#'     retrieve = "result"
+#'   )
+#' )
+#'
+#' # 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#' #    carries foreign source; an R { } block carries inline R.
+#' tarpolyglot::tar_target_py(
+#'   name = demo_inline,
+#'   script = tarpolyglot::tar_code("result = 1 + 1"),
+#'   post_script = tarpolyglot::tar_code({ py_get("result") })
+#' )
+#'
+#' # Tracking a helper module the script imports. Point `inputs` at a
+#' # format = "file" target so editing the helper also re-runs the step;
+#' # `inputs` takes the *target* name, not the path. py/step.py then loads
+#' # the helper from the bound path rather than a hard-coded one:
+#' #   import os, sys
+#' #   sys.path.insert(0, os.path.dirname(helper_path))
+#' #   import helper
+#' #   result = sum(helper.scale(x))
+#' list(
+#'   targets::tar_target(helper_file, "py/helper.py", format = "file"),
+#'   tarpolyglot::tar_target_py(
+#'     name = demo_helper,
+#'     script = "py/step.py",
+#'     inputs = c(x = "prepared_x", helper_path = "helper_file"),
+#'     pre_script = tarpolyglot::tar_code({
+#'       to_py <- list(x = x, helper_path = helper_path)
+#'     }),
+#'     retrieve = "result"
 #'   )
 #' )
 #' }

@@ -149,3 +149,43 @@ test_that(".tp_jl_source_with_redirect falls back to plain julia_source() when l
   .tp_jl_source_with_redirect("some/script.jl", NULL, NULL)
   expect_equal(called_with, "some/script.jl")
 })
+
+test_that(".tp_cpp_with_redirect is a transparent passthrough when logging is off", {
+  called <- FALSE
+  out <- .tp_cpp_with_redirect(NULL, NULL, function() { called <<- TRUE; 42 })
+  expect_true(called)
+  expect_equal(out, 42)
+})
+
+test_that(".tp_cpp_with_redirect captures cat()/message() output to the configured paths", {
+  # No live Rcpp compile needed here: sink() captures ordinary R output the
+  # same way it captures Rcpp::Rcout/Rcerr (see test-integration-logging.R
+  # for the real Rcout/Rcerr round-trip through a compiled function).
+  out_path <- withr::local_tempfile()
+  err_path <- withr::local_tempfile()
+  file.create(out_path)
+  file.create(err_path)
+
+  result <- .tp_cpp_with_redirect(out_path, err_path, function() {
+    cat("to stdout\n")
+    message("to stderr")
+    "value"
+  })
+  expect_equal(result, "value")
+  expect_match(paste(readLines(out_path), collapse = "\n"), "to stdout", fixed = TRUE)
+  expect_match(paste(readLines(err_path), collapse = "\n"), "to stderr", fixed = TRUE)
+})
+
+test_that(".tp_cpp_with_redirect honors a NULL stream (disabled independently)", {
+  out_path <- withr::local_tempfile()
+  file.create(out_path)
+  .tp_cpp_with_redirect(out_path, NULL, function() cat("only stdout\n"))
+  expect_match(paste(readLines(out_path), collapse = "\n"), "only stdout", fixed = TRUE)
+})
+
+test_that(".tp_cpp_env_info describes the depends argument", {
+  expect_match(.tp_cpp_env_info(NULL), "no Rcpp::depends", fixed = TRUE)
+  expect_match(.tp_cpp_env_info(character(0)), "no Rcpp::depends", fixed = TRUE)
+  expect_match(.tp_cpp_env_info("RcppArmadillo"), "RcppArmadillo", fixed = TRUE)
+  expect_match(.tp_cpp_env_info(c("RcppArmadillo", "RcppEigen")), "RcppArmadillo, RcppEigen", fixed = TRUE)
+})

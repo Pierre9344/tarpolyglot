@@ -40,11 +40,11 @@ tar_target_py(
 \arguments{
 \item{name}{Symbol, the target name (unquoted).}
 
-\item{script}{Path to the Python script to run (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a \code{\link[=tar_target_path]{tar_target_path()}} reference to an upstream target (typically \code{format = "file"}), which makes this step re-run whenever that file changes.}
+\item{script}{Path to the Python script to run (required). Accepts a literal path, a \code{\link[=tar_target_path]{tar_target_path()}} reference, or inline code from \code{\link[=tar_code]{tar_code()}}; see the "Script options" section below.}
 
-\item{pre_script}{Optional path to an R script run before the Python script. See \code{\link[=run_py_step]{run_py_step()}}; assign a named list \code{to_py} to hand objects to Python. Accepts a literal string or a \code{\link[=tar_target_path]{tar_target_path()}} reference, as for \code{script}.}
+\item{pre_script}{Optional path to an R script run before the Python script. See \code{\link[=run_py_step]{run_py_step()}}; assign a named list \code{to_py} to hand objects to Python. Accepts a literal path, a \code{\link[=tar_target_path]{tar_target_path()}} reference, or inline code from \code{\link[=tar_code]{tar_code()}}; see the "Script options" section below.}
 
-\item{post_script}{Optional path to an R script run after the Python script. See \code{\link[=run_py_step]{run_py_step()}}; helpers \code{py} and \code{py_get()} are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal string or a \code{\link[=tar_target_path]{tar_target_path()}} reference, as for \code{script}.}
+\item{post_script}{Optional path to an R script run after the Python script. See \code{\link[=run_py_step]{run_py_step()}}; helpers \code{py} and \code{py_get()} are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a \code{\link[=tar_target_path]{tar_target_path()}} reference, or inline code from \code{\link[=tar_code]{tar_code()}}; see the "Script options" section below.}
 
 \item{inputs}{Named character vector (or list) mapping the name seen inside the step (in the R environment and, after the hand-off, in the foreign session) to the name of an upstream target, e.g. \code{c(x = "prepared_x")}. Each upstream target becomes a dependency of this target and is bound by that name in the step environment; under dynamic branching the per-branch slice is bound instead.}
 
@@ -74,15 +74,78 @@ A \code{targets} target object.
 \description{
 Non-standard-evaluation constructor mirroring \code{\link[targets:tar_target]{targets::tar_target()}}: pass a bare \code{name} and an unquoted \code{pattern}, for direct use in \verb{_targets.R}. It quotes those and delegates to \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}. See that function and \code{\link[=run_py_step]{run_py_step()}} for the full argument reference and the pre/post-script contract. The Julia twin is \code{\link[=tar_target_jl]{tar_target_jl()}}.
 }
+\section{Script options}{
+
+
+Every script argument (\code{script}, and \code{pre_script} / \code{post_script} where the constructor has them) accepts the same three forms. The choice is not cosmetic: it decides whether editing the code re-runs the target.
+
+\describe{
+\item{A literal path string}{e.g. \code{script = "py/step.py"}. The file is read when the step runs, but it is \strong{not} tracked, so editing it does \strong{not} invalidate the target: \code{targets} will happily reuse a stale result until some \emph{other} dependency changes. Simplest form, and a reasonable default once a script has settled.}
+\item{A \code{\link[=tar_target_path]{tar_target_path()}} reference}{e.g. \code{script = tar_target_path("step_py")}, naming an upstream \code{tar_target(step_py, "py/step.py", format = "file")}. The file becomes a real \code{targets} dependency, so editing it \strong{does} invalidate this target and the step re-runs. This is what you want while a script is still changing, and the recommended form for reproducible pipelines.}
+\item{Inline code via \code{\link[=tar_code]{tar_code()}}}{e.g. \code{script = tar_code("result = sum(x)")}. The code lives in \verb{_targets.R} rather than in a file, and is embedded in the target's command, so \code{targets} hashes it and editing it \strong{does} invalidate the target. A character string carries foreign source (Python, Julia, Rust, C++) or R source; an R \code{{ ... }} block carries inline R and is accepted only by \code{pre_script} / \code{post_script}, never by the foreign \code{script}.}
+}
+
+Mixing forms in one call is fine: a tracked \code{script} with a literal \code{post_script}, inline code for one and a file for another, and so on. See \code{vignette("scripts")} for worked examples of all three and guidance on choosing.
+}
+
 \examples{
 \dontrun{
 # Inside _targets.R:
+# scripts/sum.py:
+#   result = sum(x)
+# scripts/post.R:
+#   py$result
 list(
   tarpolyglot::tar_target_py(
     name = py_sum,
     script = "scripts/sum.py",
     inputs = c(x = "prepared_x"),
     post_script = "scripts/post.R"
+  )
+)
+
+# The three ways to supply a script (see the "Script options" section):
+# 1. Literal path: untracked, editing the file does NOT re-run the step.
+tarpolyglot::tar_target_py(
+  name = demo_literal, script = "py/step.py", retrieve = "result"
+)
+
+# 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+list(
+  targets::tar_target(step_py, "py/step.py", format = "file"),
+  tarpolyglot::tar_target_py(
+    name = demo_tracked,
+    script = tarpolyglot::tar_target_path("step_py"),
+    retrieve = "result"
+  )
+)
+
+# 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#    carries foreign source; an R { } block carries inline R.
+tarpolyglot::tar_target_py(
+  name = demo_inline,
+  script = tarpolyglot::tar_code("result = 1 + 1"),
+  post_script = tarpolyglot::tar_code({ py_get("result") })
+)
+
+# Tracking a helper module the script imports. Point `inputs` at a
+# format = "file" target so editing the helper also re-runs the step;
+# `inputs` takes the *target* name, not the path. py/step.py then loads
+# the helper from the bound path rather than a hard-coded one:
+#   import os, sys
+#   sys.path.insert(0, os.path.dirname(helper_path))
+#   import helper
+#   result = sum(helper.scale(x))
+list(
+  targets::tar_target(helper_file, "py/helper.py", format = "file"),
+  tarpolyglot::tar_target_py(
+    name = demo_helper,
+    script = "py/step.py",
+    inputs = c(x = "prepared_x", helper_path = "helper_file"),
+    pre_script = tarpolyglot::tar_code({
+      to_py <- list(x = x, helper_path = helper_path)
+    }),
+    retrieve = "result"
   )
 )
 }

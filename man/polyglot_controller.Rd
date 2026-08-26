@@ -37,6 +37,8 @@ This is the recommended default for polyglot pipelines. Put it near the top of \
 }
 \examples{
 \dontrun{
+# scripts/step.py:
+#   result = 42
 # _targets.R
 library(targets)
 library(tarpolyglot)

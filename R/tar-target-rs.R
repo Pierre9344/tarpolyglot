@@ -7,23 +7,53 @@
 #' Under dynamic branching, `pattern = map(...)` recompiles the crate in every branch (Rust has no live interpreter to reuse). Passing a tarpolyglot pattern helper instead ([tarpolyglot_map()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_sample()]) compiles the crate **once** in a companion target named `<name>_rust_lib` and reuses it across all branches; the constructor then returns *both* targets as a list. See [tarpolyglot_map()].
 #'
 #' @inheritParams tarpolyglot-shared-params
+#' @inheritSection tarpolyglot-shared-params Script options
 #' @param name Character string, the target name.
-#' @param script Path to the Rust script with `#[extendr]` functions (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a [tar_target_path()] reference to an upstream target (typically `format = "file"`), which makes this step re-run whenever that file changes.
-#' @param post_script Path to an R script run after compilation, where the compiled functions and `inputs` are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal string or a [tar_target_path()] reference, as for `script`.
+#' @param script Path to the Rust script with `#[extendr]` functions (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @param post_script Path to an R script run after compilation, where the compiled functions and `inputs` are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param dependencies,features,profile Passed to [rextendr::rust_source()]: crate `dependencies` (named list), Cargo `features`, and build `profile`.
 #' @param toolchain Optional rustup toolchain (e.g. `"stable-x86_64-pc-windows-gnu"`); sets `RUSTUP_TOOLCHAIN` for the build.
-#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. Use `quote(tarpolyglot_map(x))` to compile the crate once and reuse it across branches (see [tarpolyglot_map()]).
+#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
 #'
 #' @return A `targets` target object. When `pattern` uses [tarpolyglot_map()] it is instead a list of two targets: the `<name>_rust_lib` compile target and the branched `<name>` target.
 #' @seealso [tar_target_rs()], [tarpolyglot_map()], [run_rs_step()], [tar_target_py_raw()], [tar_target_jl_raw()]
 #' @export
 #' @examples
 #' \dontrun{
+#' # scripts/square.rs:
+#' #   #[extendr]
+#' #   fn square(x: f64) -> f64 { x * x }
+#' # scripts/post.R:
+#' #   square(x)
 #' tarpolyglot::tar_target_rs_raw(
 #'   name = "rs_square",
-#'   script = "scripts/square.rs",     # #[extendr] fn square(x: f64) -> f64
+#'   script = "scripts/square.rs",
 #'   inputs = c(x = "value"),
-#'   post_script = "scripts/post.R"    # ends on square(x)
+#'   post_script = "scripts/post.R"
+#' )
+#'
+#' # The three ways to supply a script (see the "Script options" section):
+#' # 1. Literal path: untracked, editing the file does NOT re-run the step.
+#' tarpolyglot::tar_target_rs_raw(
+#'   name = "demo_literal", script = "rs/step.rs", post_script = "R/post.R"
+#' )
+#'
+#' # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+#' list(
+#'   targets::tar_target(step_rs, "rs/step.rs", format = "file"),
+#'   tarpolyglot::tar_target_rs_raw(
+#'     name = "demo_tracked",
+#'     script = tarpolyglot::tar_target_path("step_rs"),
+#'     post_script = "R/post.R"
+#'   )
+#' )
+#'
+#' # 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#' #    carries foreign source; an R { } block carries inline R.
+#' tarpolyglot::tar_target_rs_raw(
+#'   name = "demo_inline",
+#'   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
+#'   post_script = tarpolyglot::tar_code({ one() })
 #' )
 #' }
 tar_target_rs_raw <- function(name,
@@ -220,14 +250,20 @@ tar_target_rs_raw <- function(name,
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()] for Rust: pass a bare `name` and unquoted `pattern`, for direct use in `_targets.R`. Compiles the `#[extendr]` functions in `script` with [rextendr::rust_source()] and calls them from the R `post_script`. Delegates to [tar_target_rs_raw()]; see it and [run_rs_step()] for the full reference. The Python/Julia twins are [tar_target_py()] / [tar_target_jl()].
 #'
 #' @inheritParams tar_target_rs_raw
+#' @inheritSection tarpolyglot-shared-params Script options
 #' @param name Symbol, the target name (unquoted).
-#' @param pattern Optional dynamic-branching pattern, unquoted (e.g. `map(x)`). Use `tarpolyglot_map(x)` to compile the crate once and reuse it across branches (see [tarpolyglot_map()]).
+#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), unquoted (e.g. `map(x)`). The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
 #'
 #' @return A `targets` target object. When `pattern` uses [tarpolyglot_map()] it is instead a list of two targets: the `<name>_rust_lib` compile target and the branched `<name>` target.
 #' @seealso [tar_target_rs_raw()], [tarpolyglot_map()], [run_rs_step()], [tar_target_py()], [tar_target_jl()]
 #' @export
 #' @examples
 #' \dontrun{
+#' # scripts/square.rs:
+#' #   #[extendr]
+#' #   fn square(x: f64) -> f64 { x * x }
+#' # scripts/post.R:
+#' #   square(x)
 #' list(
 #'   tarpolyglot::tar_target_rs(
 #'     name = rs_square,
@@ -235,6 +271,30 @@ tar_target_rs_raw <- function(name,
 #'     inputs = c(x = "value"),
 #'     post_script = "scripts/post.R"
 #'   )
+#' )
+#'
+#' # The three ways to supply a script (see the "Script options" section):
+#' # 1. Literal path: untracked, editing the file does NOT re-run the step.
+#' tarpolyglot::tar_target_rs(
+#'   name = demo_literal, script = "rs/step.rs", post_script = "R/post.R"
+#' )
+#'
+#' # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+#' list(
+#'   targets::tar_target(step_rs, "rs/step.rs", format = "file"),
+#'   tarpolyglot::tar_target_rs(
+#'     name = demo_tracked,
+#'     script = tarpolyglot::tar_target_path("step_rs"),
+#'     post_script = "R/post.R"
+#'   )
+#' )
+#'
+#' # 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#' #    carries foreign source; an R { } block carries inline R.
+#' tarpolyglot::tar_target_rs(
+#'   name = demo_inline,
+#'   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
+#'   post_script = tarpolyglot::tar_code({ one() })
 #' )
 #' }
 tar_target_rs <- function(name,

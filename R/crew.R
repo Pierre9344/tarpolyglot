@@ -19,6 +19,8 @@
 #' @export
 #' @examples
 #' \dontrun{
+#' # scripts/step.py:
+#' #   result = 42
 #' # _targets.R
 #' library(targets)
 #' library(tarpolyglot)

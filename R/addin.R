@@ -24,3 +24,8 @@ rstudio_addin_toolchain_check_rs <- function() {
   toolchain_check("rs")
   invisible(NULL)
 }
+
+rstudio_addin_toolchain_check_cpp <- function() {
+  toolchain_check("cpp")
+  invisible(NULL)
+}

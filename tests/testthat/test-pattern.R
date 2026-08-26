@@ -1,9 +1,16 @@
-# tarpolyglot_map() and the compile-once expansion of tar_target_rs(). No Rust
-# toolchain needed: we only build/inspect target objects and the normalizer.
+# tarpolyglot_map() and the compile-once expansion of tar_target_rs() /
+# tar_target_cpp(). No Rust/C++ toolchain needed: we only build/inspect
+# target objects and the normalizer.
 
 rs_file <- function() {
   f <- withr::local_tempfile(fileext = ".rs", .local_envir = parent.frame())
   writeLines("#[extendr]\nfn square(x: f64) -> f64 { x * x }", f)
+  f
+}
+cpp_file <- function() {
+  f <- withr::local_tempfile(fileext = ".cpp", .local_envir = parent.frame())
+  writeLines(c("#include <Rcpp.h>", "// [[Rcpp::export]]",
+    "double square(double x) { return x * x; }"), f)
   f
 }
 cmd_txt <- function(target) paste(deparse(target$command$expr), collapse = " ")
@@ -174,6 +181,66 @@ test_that("Rust + tarpolyglot_map() carries build args onto the compile target",
   lib <- out[[which(nms == "rs_d_rust_lib")]]
   expect_match(cmd_txt(lib), "stable-x86_64-pc-windows-gnu")
   expect_match(cmd_txt(lib), "serde_json")
+})
+
+test_that("on C++, every helper expands to a compile target + a branch with the plain pattern", {
+  for (k in names(.plain_calls)) {
+    plain <- .plain_calls[[k]]
+    out <- tar_target_cpp_raw("cpp_h", cpp_file(), inputs = c(x = "a"),
+      post_script = "post.R", pattern = .tp_call(plain))
+    expect_type(out, "list")
+    nms <- vapply(out, function(t) t$settings$name, character(1))
+    expect_setequal(nms, c("cpp_h_cpp_lib", "cpp_h"))
+    br <- out[[which(nms == "cpp_h")]]
+    expect_identical(br$settings$pattern[[1L]], plain, info = k)
+    expect_true("cpp_h_cpp_lib" %in% br$deps, info = k)
+  }
+})
+
+test_that("C++ compile-once expansion works for a non-map helper (cross)", {
+  out <- tar_target_cpp_raw("cpp_x", cpp_file(), inputs = c(x = "a", y = "b"),
+    post_script = "post.R", pattern = quote(tarpolyglot_cross(a, b)))
+  nms <- vapply(out, function(t) t$settings$name, character(1))
+  expect_setequal(nms, c("cpp_x_cpp_lib", "cpp_x"))
+  br <- out[[which(nms == "cpp_x")]]
+  expect_match(paste(deparse(br$settings$pattern), collapse = " "), "cross\\(a, b\\)")
+  expect_true("cpp_x_cpp_lib" %in% br$deps)
+})
+
+test_that("C++ + tarpolyglot_map() expands to a compile target and a branch target", {
+  out <- tar_target_cpp_raw("cpp_b", cpp_file(), inputs = c(x = "vals"),
+    post_script = "post.R", pattern = quote(tarpolyglot_map(vals)))
+  expect_type(out, "list")
+  expect_false(inherits(out, "tar_target"))
+  nms <- vapply(out, function(t) t$settings$name, character(1))
+  expect_setequal(nms, c("cpp_b_cpp_lib", "cpp_b"))
+
+  lib <- out[[which(nms == "cpp_b_cpp_lib")]]
+  br <- out[[which(nms == "cpp_b")]]
+
+  expect_null(lib$settings$pattern)
+  expect_match(cmd_txt(lib), "compile_cpp_lib")
+
+  expect_false(is.null(br$settings$pattern))
+  expect_true("cpp_b_cpp_lib" %in% br$deps)
+  expect_match(cmd_txt(br), "run_cpp_step_prebuilt")
+  expect_no_match(cmd_txt(br), "compile_cpp_lib")
+})
+
+test_that("C++ + plain map() stays a single, self-compiling target", {
+  t <- tar_target_cpp_raw("cpp_c", cpp_file(), inputs = c(x = "vals"),
+    post_script = "post.R", pattern = quote(map(vals)))
+  expect_s3_class(t, "tar_target")
+  expect_match(cmd_txt(t), "run_cpp_step\\(")
+})
+
+test_that("C++ + tarpolyglot_map() carries build args (depends) onto the compile target", {
+  out <- tar_target_cpp_raw("cpp_d", cpp_file(), inputs = c(x = "vals"),
+    post_script = "post.R", pattern = quote(tarpolyglot_map(vals)),
+    depends = c("RcppArmadillo"))
+  nms <- vapply(out, function(t) t$settings$name, character(1))
+  lib <- out[[which(nms == "cpp_d_cpp_lib")]]
+  expect_match(cmd_txt(lib), "RcppArmadillo")
 })
 
 test_that("Python + tarpolyglot_map() degrades to map() in a single target", {

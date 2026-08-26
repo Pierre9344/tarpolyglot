@@ -17,8 +17,8 @@ Code blocks are illustrative and **not executed** when the vignette builds.
 
 ## The two constructors
 
-* `tar_target_py()`: bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
-* `tar_target_py_raw()`: string `name`, for use inside targets factories.
+- `tar_target_py()`: bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
+- `tar_target_py_raw()`: string `name`, for use inside targets factories.
 
 Both return a single `targets` target and forward **every** `targets::tar_target_raw()` argument, so anything an ordinary target supports (`pattern`, `format`, `iteration`, `deployment`, `resources`, `cue`, `memory`, `error`, `priority`, `description`, ...) works exactly as usual.
 
@@ -27,7 +27,7 @@ Both return a single `targets` target and forward **every** `targets::tar_target
 ### Scripts
 
 | Argument | Meaning |
-|---|---|
+|------------------------------------|------------------------------------|
 | `script` | Path to the Python script to run (**required**). |
 | `pre_script` | Optional R script run **before** the Python script. Assign a named list `to_py` to push objects into Python's `__main__`. |
 | `post_script` | Optional R script run **after** the Python script. `py` and `py_get()` are available; its last expression is the value (object mode) or file paths (file mode). |
@@ -37,7 +37,7 @@ Each of the three accepts either a **literal path string** (untracked: editing t
 ### Wiring in data and reading it back
 
 | Argument | Meaning |
-|---|---|
+|------------------------------------|------------------------------------|
 | `inputs` | Named character vector mapping the name seen in the step to an upstream target, e.g. `c(x = "prepared_x")`. Each becomes a real dependency (and is sliced under dynamic branching). |
 | `output` | `"object"` (default) returns a converted R object; `"file"` returns a character vector of paths and defaults `format` to `"file"`. |
 | `retrieve` | Character vector of Python variable names to return when there is **no** post-script (object mode). One name returns that object; several return a named list. |
@@ -46,30 +46,30 @@ Each of the three accepts either a **literal path string** (untracked: editing t
 ### Choosing the interpreter / environment
 
 | Argument | Meaning |
-|---|---|
+|------------------------------------|------------------------------------|
 | `python` | Path to a specific interpreter executable. |
 | `env` + `env_manager` | Point at an existing environment built by a known tool. |
 | `python_version` | A version string (e.g. `"3.12"`); reticulate provisions it via an ephemeral uv environment. |
 
-These are **alternatives**: normally set only one. If several are given, the first in this precedence wins: **`python` > `env`/`env_manager` > `python_version` > nothing**. They are covered in detail in the next section.
+These are **alternatives**: normally set only one. If several are given, the first in this precedence wins: **`python` \> `env`/`env_manager` \> `python_version` \> nothing**. They are covered in detail in the next section.
 
 ## The three-script model
 
-```
+```         
  upstream targets ─► pre_script (R) ─► script (.py) ─► post_script (R) ─► target value
                      builds `to_py`     computes         reads `py$name` /
                                         `result`         `py_get("name")`
 ```
 
-1. **`script`**: the Python file. Runs in the `__main__` module.
-2. **`pre_script`**: the `inputs` are already bound by name. Assign a named list `to_py`; each element is pushed as a top-level variable into `__main__` using reticulate's conversion rules.
-3. **`post_script`**: `py` (the reticulate `__main__` proxy) and `py_get(name)` (an explicit `reticulate::py_to_r()` shortcut) are available. Read a variable with `py$result` or `py_get("result")`.
+1.  **`script`**: the Python file. Runs in the `__main__` module.
+2.  **`pre_script`**: the `inputs` are already bound by name. Assign a named list `to_py`; each element is pushed as a top-level variable into `__main__` using reticulate's conversion rules.
+3.  **`post_script`**: `py` (the reticulate `__main__` proxy) and `py_get(name)` (an explicit `reticulate::py_to_r()` shortcut) are available. Read a variable with `py$result` or `py_get("result")`.
 
 ## Object output
 
 `py/compute.py`:
 
-```python
+``` python
 # `x` was pushed from R by the pre-script.
 seq = list(x) if hasattr(x, "__iter__") else [x]
 result = {"sum": float(sum(seq)), "n": len(seq), "mean": float(sum(seq)) / len(seq)}
@@ -77,20 +77,20 @@ result = {"sum": float(sum(seq)), "n": len(seq), "mean": float(sum(seq)) / len(s
 
 `R/pre_push.R`:
 
-```r
+``` r
 to_py <- list(x = x)   # `x` came from inputs = c(x = "prepared_x")
 ```
 
 `R/post_result.R` (last expression becomes the value):
 
-```r
+``` r
 res <- py_get("result")
 data.frame(sum = res$sum, n = res$n, mean = res$mean)
 ```
 
 `_targets.R`:
 
-```r
+``` r
 list(
   tar_target(prepared_x, c(1, 2, 3, 4)),
 
@@ -118,10 +118,27 @@ list(
 
 Set `output = "file"` when the script writes to disk; return the path(s) from the post-script (or via `files` when there is no post-script). The target `format` becomes `"file"` automatically.
 
-```r
+`py/write_csv.py`: writes `x` to a CSV, keeps the path in `out_path` for the post-script to read back:
+
+``` python
+import csv
+import tempfile
+
+out_path = tempfile.mktemp(suffix=".csv")
+with open(out_path, "w", newline="") as f:
+    csv.writer(f).writerow(x)
+```
+
+`R/post_files.R`:
+
+``` r
+py_get("out_path")
+```
+
+``` r
 tar_target_py(
   name = py_file,
-  script = "py/write_csv.py",       # writes a CSV, stores its path in `out_path`
+  script = "py/write_csv.py",
   inputs = c(x = "prepared_x"),
   pre_script = "R/pre_push.R",
   post_script = "R/post_files.R",   # returns py_get("out_path")
@@ -133,7 +150,7 @@ tar_target_py(
 
 `inputs` are real dependencies, so `pattern` branches them:
 
-```r
+``` r
 list(
   tar_target(chunks, list(10, 20, 30)),
   tar_target_py(
@@ -147,21 +164,49 @@ list(
 )
 ```
 
-Run the branches in parallel by setting a `crew` controller (see `vignette("get_started")`, the "Parallelism and isolation with crew" section, which also covers `polyglot_controller(log = tar_polyglot_log(...))` for per-step stdout/stderr log files -- including a caveat specific to branching there, since every branch of a pattern shares one log file).
+Run the branches in parallel by setting a `crew` controller (see `vignette("get_started")`, the "Parallelism and isolation with crew" section, which also covers `polyglot_controller(log = tar_polyglot_log(...))` for per-step stdout/stderr log files, including a caveat specific to branching there, since every branch of a pattern shares one log file).
+
+## Parallel computing (multiprocessing)
+
+Python's own `multiprocessing` / `concurrent.futures.ProcessPoolExecutor` work correctly through `run_py_step()`, confirmed both in the main session and inside a real `crew` worker, with one hard constraint: the pool has to be created and used at the **top level of the script itself**, guarded by the usual `if __name__ == "__main__":`, not inside a function that the script only defines and that a later `post_script` calls. That second shape breaks on Windows: `reticulate::py_run_file()` runs your script directly into `__main__`, and when the pool is created later from a separate reticulate call, the worker processes `multiprocessing` spawns cannot find the function it needs to unpickle, and the pool fails with a pickling error. Doing the parallel work at the top level of `script`, with `retrieve` (or a top-level result variable a `post_script` reads with `py_get()`) to bring the value back, avoids this entirely, and is also the standard, portable way to write this in plain Python:
+
+```python
+# py/parallel_sqrt.py
+from concurrent.futures import ProcessPoolExecutor
+
+def _sqrt_one(v):
+    return v ** 0.5
+
+if __name__ == "__main__":
+    with ProcessPoolExecutor(max_workers=n_workers) as ex:
+        result = list(ex.map(_sqrt_one, x))
+```
+
+```r
+tar_target_py(
+  name = py_parallel,
+  script = "py/parallel_sqrt.py",
+  inputs = c(x = "big_x", n_workers = "n_workers"),
+  pre_script = tar_code({ to_py <- list(x = x, n_workers = n_workers) }),
+  retrieve = "result"
+)
+```
+
+The same oversubscription concern from `vignette("get_started")` applies here too: a `crew` worker is a full process with access to every core, not a slice of one, so several workers each spawning their own multiprocessing pool at once can oversubscribe the machine. Put the parallel-heavy step on `deployment = "main"` if you have more than one, or cap `n_workers` per step, for the same reason described there.
 
 ## Choosing the Python environment
 
 The four selection arguments and when to reach for each:
 
-* **`python`**: a path to a specific interpreter executable (e.g. `".venv/Scripts/python.exe"`). Use when you already have the exact interpreter and want no ambiguity.
-* **`env` + `env_manager`**: an *existing* environment built by a known tool (`env_manager` says how to read `env`; see the table). **Recommended for reproducible pipelines**: install the packages once, every run reuses them.
-* **`python_version`** (e.g. `"3.12"`), *not* an environment, just an interpreter *version*: reticulate provisions it through an *ephemeral*, uv-managed environment (`py_require()`), resolving packages on the fly. Use when only the version matters.
-* **nothing set**: reticulate's default discovery (the computer's Python, or an ephemeral uv-managed one on recent reticulate). Fine for exploration; pin an environment for reproducibility.
+- **`python`**: a path to a specific interpreter executable (e.g. `".venv/Scripts/python.exe"`). Use when you already have the exact interpreter and want no ambiguity.
+- **`env` + `env_manager`**: an *existing* environment built by a known tool (`env_manager` says how to read `env`; see the table). **Recommended for reproducible pipelines**: install the packages once, every run reuses them.
+- **`python_version`** (e.g. `"3.12"`), *not* an environment, just an interpreter *version*: reticulate provisions it through an *ephemeral*, uv-managed environment (`py_require()`), resolving packages on the fly. Use when only the version matters.
+- **nothing set**: reticulate's default discovery (the computer's Python, or an ephemeral uv-managed one on recent reticulate). Fine for exploration; pin an environment for reproducibility.
 
 The key contrast is **reproducible vs throwaway**: `env`/`python` reuse an environment *you* built and pinned; `python_version` lets reticulate build a fresh one keyed only on a version. One more difference: `python` and `env`/`env_manager` **override** an ambient `RETICULATE_PYTHON` (e.g. an RStudio project Python inherited by `crew` workers), while `python_version` and the default **respect** it.
 
 | `env_manager` | what `env` is | reticulate call |
-|---|---|---|
+|------------------------|------------------------|------------------------|
 | `"system"` (default) | none (optionally set `python`) | `use_python(python)` or default |
 | `"venv"` | a `python -m venv` directory path | `use_virtualenv(env)` |
 | `"virtualenv"` | same as venv | `use_virtualenv(env)` |
@@ -171,11 +216,18 @@ The key contrast is **reproducible vs throwaway**: `env`/`python` reuse an envir
 
 `"virtualenv"`, `"venv"`, and `"uv"` all point at a standard Python virtualenv and behave identically: this includes one created by `renv::use_python()` (use `env_manager = "venv"` with the path under `renv/python/virtualenvs/`). For these managers, a **relative** `env` that is an existing directory is expanded to an absolute path, so `env = ".venv"` works; a bare name that is not a directory is passed through unchanged, so a genuine named environment still resolves. Setting `env` while `env_manager = "system"` is an error.
 
+The use cases below are about the environment-selection arguments, not what each script computes, so the script bodies are deliberately trivial, one line assigning the variable named in `retrieve`.
+
 ### Use case 1: global / system default
 
-Set nothing; reticulate uses the computer's default Python (on recent versions, an ephemeral uv-managed one provisioned on first use). Convenient for exploration; pin a real environment for reproducibility.
+Set nothing; reticulate uses the computer's default Python (on recent versions, an ephemeral uv-managed one provisioned on first use). Convenient for exploration; pin a real environment for reproducibility. `py/probe.py` (reused in use case 5 below):
 
-```r
+``` python
+import sys
+result = sys.executable
+```
+
+``` r
 tar_target_py(
   name = probe,
   script = "py/probe.py",
@@ -188,12 +240,18 @@ tar_target_py(
 
 Create it once, then point to it. Reproducible: the exact package set is reused every run.
 
-```sh
+``` sh
 uv venv .venv
 uv pip install --python .venv/Scripts/python.exe numpy pandas scikit-learn
 ```
 
-```r
+`py/fit.py`:
+
+``` python
+model = {"coef": 1.5, "intercept": 0.2}
+```
+
+``` r
 tar_target_py(
   name = fit,
   script = "py/fit.py",
@@ -205,9 +263,13 @@ tar_target_py(
 
 ### Use case 3: a poetry project
 
-Give the **project directory** (the folder with `pyproject.toml`); its virtualenv is resolved for you with `poetry env info -p`.
+Give the **project directory** (the folder with `pyproject.toml`); its virtualenv is resolved for you with `poetry env info -p`. `py/embed.py`:
 
-```r
+``` python
+vectors = [[0.1, 0.2], [0.3, 0.4]]
+```
+
+``` r
 tar_target_py(
   name = embed,
   script = "py/embed.py",
@@ -221,7 +283,19 @@ If the `poetry` on `PATH` is not the one you want, select a specific executable 
 
 ### Use case 4: a plain venv or a conda env
 
-```r
+`py/score.py`:
+
+``` python
+result = 0.87
+```
+
+`py/classify.py`:
+
+``` python
+labels = ["setosa", "versicolor", "virginica"]
+```
+
+``` r
 # python -m venv .venv
 tar_target_py(
   name = score,
@@ -245,7 +319,7 @@ tar_target_py(
 
 To fix the interpreter *version* without naming an environment, use `python_version` (leaves the environment at the default, uv-managed one):
 
-```r
+``` r
 tar_target_py(
   name = probe_ver,
   script = "py/probe.py",
@@ -258,9 +332,13 @@ tar_target_py(
 
 ## Tracking scripts as dependencies
 
-By default `script` / `pre_script` / `post_script` are untracked literal paths. To have the step re-run when a script changes, track it with a `format = "file"` target and reference it with `tar_target_path()`:
+By default `script` / `pre_script` / `post_script` are untracked literal paths. To have the step re-run when a script changes, track it with a `format = "file"` target and reference it with `tar_target_path()`. `py/fit.py` is the same script shown in "Use case 2" above; `R/pre_fit.R`:
 
-```r
+``` r
+to_py <- list(x = x)   # `x` came from inputs = c(x = "data")
+```
+
+``` r
 list(
   tar_target(fit_py, "py/fit.py", format = "file"),
 
@@ -276,8 +354,8 @@ list(
 
 ## Conversion caveats
 
-* A bare number in R is a double; use `L` (e.g. `42L`) when Python needs an int.
-* Python is 0-indexed.
-* For anything that does not round-trip cleanly, use file mode.
+- A bare number in R is a double; use `L` (e.g. `42L`) when Python needs an int.
+- Python is 0-indexed.
+- For anything that does not round-trip cleanly, use file mode.
 
 See `?tar_target_py` and `?run_py_step` for the full argument reference.

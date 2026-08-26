@@ -38,9 +38,9 @@ tar_target_rs(
 \arguments{
 \item{name}{Symbol, the target name (unquoted).}
 
-\item{script}{Path to the Rust script with \verb{#[extendr]} functions (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a \code{\link[=tar_target_path]{tar_target_path()}} reference to an upstream target (typically \code{format = "file"}), which makes this step re-run whenever that file changes.}
+\item{script}{Path to the Rust script with \verb{#[extendr]} functions (required). Accepts a literal path, a \code{\link[=tar_target_path]{tar_target_path()}} reference, or inline code from \code{\link[=tar_code]{tar_code()}}; see the "Script options" section below.}
 
-\item{post_script}{Path to an R script run after compilation, where the compiled functions and \code{inputs} are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal string or a \code{\link[=tar_target_path]{tar_target_path()}} reference, as for \code{script}.}
+\item{post_script}{Path to an R script run after compilation, where the compiled functions and \code{inputs} are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal path, a \code{\link[=tar_target_path]{tar_target_path()}} reference, or inline code from \code{\link[=tar_code]{tar_code()}}; see the "Script options" section below.}
 
 \item{inputs}{Named character vector (or list) mapping the name seen inside the step (in the R environment and, after the hand-off, in the foreign session) to the name of an upstream target, e.g. \code{c(x = "prepared_x")}. Each upstream target becomes a dependency of this target and is bound by that name in the step environment; under dynamic branching the per-branch slice is bound instead.}
 
@@ -52,7 +52,7 @@ tar_target_rs(
 
 \item{toolchain}{Optional rustup toolchain (e.g. \code{"stable-x86_64-pc-windows-gnu"}); sets \code{RUSTUP_TOOLCHAIN} for the build.}
 
-\item{pattern}{Optional dynamic-branching pattern, unquoted (e.g. \code{map(x)}). Use \code{tarpolyglot_map(x)} to compile the crate once and reuse it across branches (see \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}).}
+\item{pattern}{Optional branching pattern as described in the \href{https://books.ropensci.org/targets/dynamic.html#patterns}{targets package documentation}, unquoted (e.g. \code{map(x)}). The patterns included in the \pkg{targets} package (\code{map()}, \code{head()}, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=tarpolyglot_head]{tarpolyglot_head()}}, \code{\link[=tarpolyglot_tail]{tarpolyglot_tail()}}, \code{\link[=tarpolyglot_cross]{tarpolyglot_cross()}}, \code{\link[=tarpolyglot_slice]{tarpolyglot_slice()}}, \code{\link[=tarpolyglot_sample]{tarpolyglot_sample()}}).}
 
 \item{packages, library}{Character vectors of R packages (and library paths) to load for the target, forwarded to \code{\link[targets:tar_target_raw]{targets::tar_target_raw()}}.}
 
@@ -68,8 +68,27 @@ A \code{targets} target object. When \code{pattern} uses \code{\link[=tarpolyglo
 \description{
 Non-standard-evaluation constructor mirroring \code{\link[targets:tar_target]{targets::tar_target()}} for Rust: pass a bare \code{name} and unquoted \code{pattern}, for direct use in \verb{_targets.R}. Compiles the \verb{#[extendr]} functions in \code{script} with \code{\link[rextendr:rust_source]{rextendr::rust_source()}} and calls them from the R \code{post_script}. Delegates to \code{\link[=tar_target_rs_raw]{tar_target_rs_raw()}}; see it and \code{\link[=run_rs_step]{run_rs_step()}} for the full reference. The Python/Julia twins are \code{\link[=tar_target_py]{tar_target_py()}} / \code{\link[=tar_target_jl]{tar_target_jl()}}.
 }
+\section{Script options}{
+
+
+Every script argument (\code{script}, and \code{pre_script} / \code{post_script} where the constructor has them) accepts the same three forms. The choice is not cosmetic: it decides whether editing the code re-runs the target.
+
+\describe{
+\item{A literal path string}{e.g. \code{script = "py/step.py"}. The file is read when the step runs, but it is \strong{not} tracked, so editing it does \strong{not} invalidate the target: \code{targets} will happily reuse a stale result until some \emph{other} dependency changes. Simplest form, and a reasonable default once a script has settled.}
+\item{A \code{\link[=tar_target_path]{tar_target_path()}} reference}{e.g. \code{script = tar_target_path("step_py")}, naming an upstream \code{tar_target(step_py, "py/step.py", format = "file")}. The file becomes a real \code{targets} dependency, so editing it \strong{does} invalidate this target and the step re-runs. This is what you want while a script is still changing, and the recommended form for reproducible pipelines.}
+\item{Inline code via \code{\link[=tar_code]{tar_code()}}}{e.g. \code{script = tar_code("result = sum(x)")}. The code lives in \verb{_targets.R} rather than in a file, and is embedded in the target's command, so \code{targets} hashes it and editing it \strong{does} invalidate the target. A character string carries foreign source (Python, Julia, Rust, C++) or R source; an R \code{{ ... }} block carries inline R and is accepted only by \code{pre_script} / \code{post_script}, never by the foreign \code{script}.}
+}
+
+Mixing forms in one call is fine: a tracked \code{script} with a literal \code{post_script}, inline code for one and a file for another, and so on. See \code{vignette("scripts")} for worked examples of all three and guidance on choosing.
+}
+
 \examples{
 \dontrun{
+# scripts/square.rs:
+#   #[extendr]
+#   fn square(x: f64) -> f64 { x * x }
+# scripts/post.R:
+#   square(x)
 list(
   tarpolyglot::tar_target_rs(
     name = rs_square,
@@ -77,6 +96,30 @@ list(
     inputs = c(x = "value"),
     post_script = "scripts/post.R"
   )
+)
+
+# The three ways to supply a script (see the "Script options" section):
+# 1. Literal path: untracked, editing the file does NOT re-run the step.
+tarpolyglot::tar_target_rs(
+  name = demo_literal, script = "rs/step.rs", post_script = "R/post.R"
+)
+
+# 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+list(
+  targets::tar_target(step_rs, "rs/step.rs", format = "file"),
+  tarpolyglot::tar_target_rs(
+    name = demo_tracked,
+    script = tarpolyglot::tar_target_path("step_rs"),
+    post_script = "R/post.R"
+  )
+)
+
+# 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#    carries foreign source; an R { } block carries inline R.
+tarpolyglot::tar_target_rs(
+  name = demo_inline,
+  script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
+  post_script = tarpolyglot::tar_code({ one() })
 )
 }
 }

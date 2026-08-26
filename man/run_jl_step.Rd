@@ -20,11 +20,11 @@ run_jl_step(
 )
 }
 \arguments{
-\item{script}{Path to the Julia script to run (required).}
+\item{script}{Path to the Julia script to run (required). Accepts a file path or an inline \code{\link[=tar_code]{tar_code()}} carrier; see the "Script arguments" section below.}
 
-\item{pre_script}{Optional path to an R script run before the Julia script. It is evaluated in the step environment, which already holds the named \code{inputs}. To hand objects to Julia, assign a named list \code{to_jl} in this script; each element is \code{julia_assign()}ed as a variable in Julia's \code{Main} module.}
+\item{pre_script}{Optional path to an R script run before the Julia script. It is evaluated in the step environment, which already holds the named \code{inputs}. To hand objects to Julia, assign a named list \code{to_jl} in this script; each element is \code{julia_assign()}ed as a variable in Julia's \code{Main} module. Accepts a file path or an inline \code{\link[=tar_code]{tar_code()}} carrier; see the "Script arguments" section below.}
 
-\item{post_script}{Optional path to an R script run after the Julia script. It is evaluated in the same environment, which now also holds \code{jl_get(name)} and \code{jl_call(fn, ...)}. In \code{output = "object"} mode the value of its last expression becomes the target value; in \code{output = "file"} mode it must return a character vector of file paths.}
+\item{post_script}{Optional path to an R script run after the Julia script. It is evaluated in the same environment, which now also holds \code{jl_get(name)} and \code{jl_call(fn, ...)}. In \code{output = "object"} mode the value of its last expression becomes the target value; in \code{output = "file"} mode it must return a character vector of file paths. Accepts a file path or an inline \code{\link[=tar_code]{tar_code()}} carrier; see the "Script arguments" section below.}
 
 \item{inputs}{Named list of upstream target values, bound by name into the step environment. Supplied automatically by the constructor.}
 
@@ -46,10 +46,21 @@ The converted R object (object mode) or a character vector of normalised file pa
 \description{
 Julia counterpart of \code{\link[=run_py_step]{run_py_step()}}. Runs, inside a fresh R environment, an optional R pre-script, a Python script (via \pkg{JuliaCall}). This is the function the target built by \code{\link[=tar_target_jl]{tar_target_jl()}} calls; it is exported so that call resolves at pipeline run time but this function is not destined to be called directly by the package users.
 }
+\section{Script arguments}{
+
+
+A worker receives whatever the constructor already resolved, which is one of two things: a \strong{path to a file} on disk, or an \strong{inline carrier} built by \code{\link[=tar_code]{tar_code()}} that holds the code in memory. Both are accepted, so a direct call may pass either.
+
+\code{\link[=tar_target_path]{tar_target_path()}} is deliberately \emph{not} a third form at this level. It is a constructor-level convenience: \code{\link[=tar_target_py]{tar_target_py()}} and the other constructors rewrite it while the pipeline's DAG is built, so that by the time a worker runs it has already become the ordinary file path held by the upstream target. Handing the result of \code{\link[=tar_target_path]{tar_target_path()}} straight to a worker therefore does not resolve to a file. The three forms as written in \verb{_targets.R}, and which of them tracks your edits, are covered in \code{vignette("scripts")}.
+}
+
 \examples{
 \dontrun{
 # Normally invoked by tar_target_jl(); shown here as a direct call.
-# scripts/sum.jl assigns `result`; pre.R builds `to_jl <- list(x = x)`.
+# scripts/pre.R:
+#   to_jl <- list(x = x)
+# scripts/sum.jl:
+#   result = sum(x)
 run_jl_step(
   script = "scripts/sum.jl",
   pre_script = "scripts/pre.R",

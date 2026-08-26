@@ -17,8 +17,8 @@ Code blocks are illustrative and **not executed** when the vignette builds.
 
 ## The two constructors
 
-* `tar_target_jl()`: bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
-* `tar_target_jl_raw()`: string `name`, for use inside targets factories.
+- `tar_target_jl()`: bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
+- `tar_target_jl_raw()`: string `name`, for use inside targets factories.
 
 Both return a single `targets` target and forward **every** `targets::tar_target_raw()` argument (`pattern`, `format`, `iteration`, `deployment`, `resources`, `cue`, ...).
 
@@ -29,7 +29,7 @@ Both return a single `targets` target and forward **every** `targets::tar_target
 These behave exactly as for Python (see `vignette("python")`):
 
 | Argument | Meaning |
-|---|---|
+|------------------------------------|------------------------------------|
 | `script` | Path to the Julia script to run (**required**). Runs in the `Main` module. |
 | `pre_script` | Optional R script run **before** the Julia script. Assign a named list `to_jl` to push objects into `Main`. |
 | `post_script` | Optional R script run **after** the Julia script. `jl_get()` and `jl_call()` are available; its last expression is the value (object mode) or file paths (file mode). |
@@ -43,7 +43,7 @@ As with Python, any of `script` / `pre_script` / `post_script` may be a literal 
 ### Choosing the Julia install / project
 
 | Argument | Meaning |
-|---|---|
+|------------------------------------|------------------------------------|
 | `julia_version` | A version string (e.g. `"1.11"`), resolved to a [juliaup](https://github.com/JuliaLang/juliaup)-managed install. Used when `julia_home` is not given. |
 | `julia_home` | The directory containing the `julia` executable. Defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`. |
 | `julia_project` | A Julia project environment (folder with `Project.toml` / `Manifest.toml`) to `Pkg.activate()`. When `NULL`, Julia's default global environment (`@v#.#`) is used. |
@@ -51,21 +51,21 @@ As with Python, any of `script` / `pre_script` / `post_script` may be a literal 
 
 ## The three-script model
 
-```
+```         
  upstream targets ─► pre_script (R) ─► script (.jl) ─► post_script (R) ─► target value
                      builds `to_jl`     computes         reads jl_get("name") /
                                         `result`         jl_call(fn, ...)
 ```
 
-1. **`script`**: the Julia file, run in `Main`.
-2. **`pre_script`**: the `inputs` are already bound by name. Assign a named list `to_jl`; each element is `julia_assign()`ed as a variable in `Main`.
-3. **`post_script`**: JuliaCall has no `py`-style proxy, so you read variables back through `jl_get("name")` (a shortcut for `JuliaCall::julia_eval("name")`) and call Julia functions with `jl_call` (an alias of `JuliaCall::julia_call()`).
+1.  **`script`**: the Julia file, run in `Main`.
+2.  **`pre_script`**: the `inputs` are already bound by name. Assign a named list `to_jl`; each element is `julia_assign()`ed as a variable in `Main`.
+3.  **`post_script`**: JuliaCall has no `py`-style proxy, so you read variables back through `jl_get("name")` (a shortcut for `JuliaCall::julia_eval("name")`) and call Julia functions with `jl_call` (an alias of `JuliaCall::julia_call()`).
 
 ## Object output
 
 `jl/stats.jl`:
 
-```julia
+``` julia
 # `x` was pushed from R by the pre-script.
 seq = isa(x, AbstractVector) ? x : [x]
 result = Dict("sum" => sum(seq), "n" => length(seq), "mean" => sum(seq) / length(seq))
@@ -73,20 +73,20 @@ result = Dict("sum" => sum(seq), "n" => length(seq), "mean" => sum(seq) / length
 
 `R/pre_push.R`:
 
-```r
+``` r
 to_jl <- list(x = x)   # `x` came from inputs = c(x = "prepared_x")
 ```
 
 `R/post_result.R`:
 
-```r
+``` r
 res <- jl_get("result")
 data.frame(sum = res$sum, n = res$n, mean = res$mean)   # last expression = value
 ```
 
 `_targets.R`:
 
-```r
+``` r
 library(targets)
 library(tarpolyglot)
 
@@ -115,10 +115,25 @@ list(
 
 ## File output
 
-```r
+`jl/write.jl`: writes `x` to a file, keeps the path in `out_path` for the post-script to read back:
+
+``` julia
+out_path = tempname() * ".csv"
+open(out_path, "w") do io
+    println(io, join(x, ","))
+end
+```
+
+`R/post_files.R`:
+
+``` r
+jl_get("out_path")
+```
+
+``` r
 tar_target_jl(
   name = jl_file,
-  script = "jl/write.jl",            # writes a file, stores its path in `out_path`
+  script = "jl/write.jl",
   inputs = c(x = "prepared_x"),
   pre_script = "R/pre_push.R",
   post_script = "R/post_files.R",    # returns jl_get("out_path")
@@ -128,14 +143,26 @@ tar_target_jl(
 
 ## Dynamic branching (iris example)
 
-```r
+`jl/fit.jl`: `df` (a per-species subset of `iris`, auto-converted to a Julia `DataFrame`) was pushed from R by the pre-script:
+
+``` julia
+result = sum(df[!, "Petal.Length"]) / nrow(df)
+```
+
+`R/pre_push_jl.R`:
+
+``` r
+to_jl <- list(df = df)   # `df` came from inputs = c(df = "iris_groups")
+```
+
+``` r
 list(
   tar_target(iris_groups, split(iris, iris$Species), iteration = "list"),
   tar_target_jl(
     name = fit_by_group,
     script = "jl/fit.jl",
     inputs = c(df = "iris_groups"),
-    pre_script = "R/pre_push_jl.R",  # to_jl <- list(df = df)
+    pre_script = "R/pre_push_jl.R",
     retrieve = "result",
     pattern = map(iris_groups),      # one branch per species
     iteration = "list"
@@ -143,15 +170,47 @@ list(
 )
 ```
 
-Run the branches in parallel by setting a `crew` controller (see `vignette("get_started")`, the "Parallelism and isolation with crew" section, which also covers `polyglot_controller(log = tar_polyglot_log(...))` for per-step stdout/stderr log files -- including a caveat specific to branching there, since every branch of a pattern shares one log file).
+Run the branches in parallel by setting a `crew` controller (see `vignette("get_started")`, the "Parallelism and isolation with crew" section, which also covers `polyglot_controller(log = tar_polyglot_log(...))` for per-step stdout/stderr log files, including a caveat specific to branching there, since every branch of a pattern shares one log file).
+
+## Parallel computing (Distributed, not Threads)
+
+Julia's native `Threads.@threads` multi-threading does **not** work through JuliaCall: `Threads.nthreads()` reports `1` from a `run_jl_step()` session regardless of the `JULIA_NUM_THREADS` environment variable, confirmed set both to a fixed number and to `"auto"` before `JuliaCall::julia_setup()` runs. This is a limitation of how JuliaCall embeds Julia, not something `tar_target_jl()` or `deployment` can work around.
+
+`Distributed`, Julia's process-based parallelism, works correctly instead, confirmed both in the main session and inside a real `crew` worker:
+
+```julia
+# jl/parallel_sqrt.jl
+using Distributed
+addprocs(n_workers)
+@everywhere sqrt_one(v) = sqrt(v)
+result = pmap(sqrt_one, x)
+```
+
+```r
+tar_target_jl(
+  name = jl_parallel,
+  script = "jl/parallel_sqrt.jl",
+  inputs = c(x = "big_x", n_workers = "n_workers"),
+  pre_script = tar_code({ to_jl <- list(x = x, n_workers = n_workers) }),
+  retrieve = "result"
+)
+```
+
+`addprocs()` spawns genuine separate `julia` processes, so the same oversubscription concern from `vignette("get_started")` applies: a `crew` worker has access to every core on the machine, not a restricted slice of it, so several workers each calling `addprocs()` at once can oversubscribe the machine. Put the parallel-heavy step on `deployment = "main"` if you have more than one, or cap `n_workers` per step, for the same reason described there.
 
 ## Choosing the Julia install and project
 
+The use cases below are about the installation-selection arguments, not what each script computes.
+
 ### Use case 1: Julia on PATH (default)
 
-Set nothing; JuliaCall discovers the `julia` on `PATH` and uses the global environment.
+Set nothing; JuliaCall discovers the `julia` on `PATH` and uses the global environment. `jl/probe.jl`:
 
-```r
+``` julia
+result = Sys.BINDIR
+```
+
+``` r
 tar_target_jl(
   name = probe,
   script = "jl/probe.jl",
@@ -161,7 +220,9 @@ tar_target_jl(
 
 ### Use case 2: a specific juliaup version
 
-```r
+Reuses `jl/fit.jl` from "Dynamic branching" above as a stand-in script (without `inputs` here, so `df` is undefined, the point of this example is `julia_version`, not the computation):
+
+``` r
 tar_target_jl(
   name = fit,
   script = "jl/fit.jl",
@@ -174,13 +235,13 @@ tar_target_jl(
 
 If discovery fails (e.g. a fresh install not yet on `PATH`, or the Windows juliaup shim), point at the `bin` directory. You can set it once globally:
 
-```r
+``` r
 options(tarpolyglot.julia_home = "C:/Users/me/.julia/juliaup/.../bin")
 ```
 
-or per step:
+or per step, again reusing `jl/fit.jl` as a stand-in:
 
-```r
+``` r
 tar_target_jl(
   name = fit,
   script = "jl/fit.jl",
@@ -191,9 +252,14 @@ tar_target_jl(
 
 ### Use case 4: a pinned project (recommended)
 
-For reproducibility, activate a Julia **project** with a committed `Manifest.toml`, and `using` the packages the script needs:
+For reproducibility, activate a Julia **project** with a committed `Manifest.toml`, and `using` the packages the script needs. `jl/solve.jl`:
 
-```r
+``` julia
+A = [2.0 0.0; 0.0 2.0]
+result = tr(A)
+```
+
+``` r
 tar_target_jl(
   name = solve,
   script = "jl/solve.jl",
@@ -209,7 +275,9 @@ The requested project takes priority over an ambient `JULIA_PROJECT` environment
 
 ## Tracking scripts as dependencies
 
-```r
+Reuses `jl/fit.jl` from "Dynamic branching" above as a stand-in script (again without `inputs = c(df = ...)`, so `df` is undefined here, the point of this example is `tar_target_path()`, not the computation):
+
+``` r
 list(
   tar_target(fit_jl, "jl/fit.jl", format = "file"),
 
@@ -224,7 +292,7 @@ list(
 
 ## Conversion caveats
 
-* Julia is **1-indexed** (unlike Python).
-* Check the JuliaCall conversion rules for which R/Julia types round-trip; for anything that does not, use file mode.
+- Julia is **1-indexed** (unlike Python).
+- Check the JuliaCall conversion rules for which R/Julia types round-trip; for anything that does not, use file mode.
 
 See `?tar_target_jl` and `?run_jl_step` for the full argument reference.

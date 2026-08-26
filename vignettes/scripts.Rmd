@@ -1,0 +1,298 @@
+---
+title: "Supplying scripts to tarpolyglot constructors"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Supplying scripts: paths, tracking, and inline code}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+Every tarpolyglot constructor takes its code through script arguments: the foreign `script`, and, where the language has them, an R `pre_script` and `post_script`. Each of those accepts the same three forms, and this vignette is about choosing between them.
+
+The choice is not cosmetic. It decides **whether editing your code re-runs the step**, which is the difference between a pipeline that rebuilds when you change a script and one that quietly serves you a stale result. Examples below use `tar_target_py()`, but everything applies unchanged to `tar_target_jl()`, `tar_target_rs()`, `tar_target_cpp()`, and the `_raw()` forms.
+
+## The three forms at a glance
+
+| Form | Where the code lives | Tracked by `targets`? | Editing the code re-runs the step? |
+|----|----|----|----|
+| `"py/step.py"` | a file on disk | no | **no** |
+| `tar_target_path("step_py")` | a file on disk | yes | **yes** |
+| `tar_code(...)` | inside `_targets.R` | yes (hashed in the command) | **yes** |
+
+## 1. A literal path string
+
+The simplest form: give the path as an ordinary string.
+
+``` r
+library(targets)
+library(tarpolyglot)
+
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+
+  tar_target_py(
+    name = py_sum,
+    script = "py/step.py",
+    inputs = c(x = "prepared_x"),
+    pre_script = "R/pre.R",
+    retrieve = "result"
+  )
+)
+```
+
+The file is read when the step runs, but `targets` never looks at its contents, so **the path is untracked**. Editing `py/step.py` does not invalidate `py_sum`: the target stays up to date and keeps returning its old value until some *other* tracked dependency (here, `prepared_x`) changes.
+
+That is occasionally what you want, and it is the least ceremony, so it is a reasonable default for a script that has settled down. It is a poor default while you are still writing the script, because the pipeline will not notice your edits.
+
+## 2. A `tar_target_path()` reference
+
+To make edits count, track the file as a real target and point at it by target name with \`tarpolyglot::tar_target_path()\`.
+
+``` r
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+
+  # The script becomes a file target: targets watches its contents.
+  tar_target(step_py, "py/step.py", format = "file"),
+
+  tar_target_py(
+    name = py_sum,
+    script = tar_target_path("step_py"),
+    inputs = c(x = "prepared_x"),
+    retrieve = "result"
+  )
+)
+```
+
+Two things are happening. The `tar_target(step_py, "py/step.py", format = "file")` target hashes the file, so `targets` re-runs it whenever the file changes. Then `tar_target_path("step_py")` wires that target in as a dependency of `py_sum`, rather than passing the literal string `"step_py"` as a path.
+
+Now editing `py/step.py` invalidates `step_py`, which invalidates `py_sum`, and the step re-runs. This is the recommended form for a reproducible pipeline, and the one to reach for while a script is under active development.
+
+`tar_target_path()` takes the **target name**, not a path. This is the common mistake:
+
+``` r
+# Wrong: this looks for a target called "py/step.py".
+script = tar_target_path("py/step.py")
+
+# Right: name the file target you declared above.
+script = tar_target_path("step_py")
+```
+
+## 3. Inline code with `tar_code()`
+
+Sometimes a step is three lines long and a separate file is more bookkeeping than it is worth. `tar_code()` lets the code live directly in `_targets.R`.
+
+``` r
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+
+  tar_target_py(
+    name = py_sum,
+    inputs = c(x = "prepared_x"),
+    pre_script = tar_code({ to_py <- list(x = x) }),
+    script = tar_code("result = sum(x)"),
+    post_script = tar_code({ py_get("result") })
+  )
+)
+```
+
+Inline code is embedded in the target's command, so `targets` hashes it like any other part of the command: **editing the code invalidates the target**, with no `format = "file"` target needed.
+
+Note the two flavours, which are not interchangeable:
+
+- **A character string** carries *foreign* source (Python here, or Julia, Rust, C++) and is also accepted for an R `pre_script`/`post_script`.
+- **An R `{ ... }` block** carries *inline R* and is valid only for `pre_script`/`post_script`. Passing one as the foreign `script` is an error, since a `{ }` block is R code, not Python.
+
+``` r
+# Error: an R block cannot be the Python script.
+tar_target_py(name = bad, script = tar_code({ result <- 1 }))
+```
+
+Multi-line strings are dedented, so you can indent inline Python to line up with the surrounding `_targets.R` and its own block indentation still comes out valid:
+
+``` r
+tar_target_py(
+  name = py_positive,
+  inputs = c(x = "prepared_x"),
+  pre_script = tar_code({ to_py <- list(x = x) }),
+  script = tar_code("
+    total = 0
+    for v in x:
+        if v > 0:
+            total += v
+    result = total
+  "),
+  retrieve = "result"
+)
+```
+
+## Mixing forms in one call
+
+The three forms are per argument, so you can mix them freely. A common combination is a tracked `script` with a small inline `post_script`:
+
+``` r
+list(
+  tar_target(step_py, "py/step.py", format = "file"),
+
+  tar_target_py(
+    name = py_sum,
+    script = tar_target_path("step_py"),   # tracked file
+    inputs = c(x = "prepared_x"),
+    pre_script = "R/pre.R",                # untracked file
+    post_script = tar_code({ py_get("result") })  # inline
+  )
+)
+```
+
+## Which should I use?
+
+- **Writing or debugging a script**: `tar_target_path()`. You want every edit to re-run the step; anything else will waste your time on stale results.
+- **A short step, a few lines**: `tar_code()`. No file to manage, and edits still invalidate correctly.
+- **A long, stable script you rarely touch**: a literal path is fine, and the least ceremony. Be aware you are opting out of change detection, and switch to `tar_target_path()` the moment you start editing again.
+
+When in doubt, prefer `tar_target_path()` or `tar_code()`. Both make `targets` do what people expect: change the code, re-run the step.
+
+## Tracking helper files your script imports
+
+The `script` is often not the only file a step needs. A Python step may import a helper module, a Julia step may `include()` a file of shared definitions. Tracking the script itself does nothing for those: `targets` has no idea the helper exists, so editing it leaves the step up to date and hands you a stale value. This is the same failure as an untracked script, and it is quieter, because the script you *are* tracking has not changed.
+
+Here the helper is invisible to the pipeline:
+
+``` r
+# py/helper.py       ->  def scale(v): return [2 * i for i in v]
+# py/step.py         ->  import sys; sys.path.insert(0, "py")
+#                        import helper
+#                        result = sum(helper.scale(x))
+
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+
+  tar_target_py(
+    name = py_total,
+    script = "py/step.py",
+    inputs = c(x = "prepared_x"),
+    pre_script = tar_code({ to_py <- list(x = x) }),
+    retrieve = "result"
+  )
+)
+```
+
+Change `helper.py` to scale by 3 and `py_total` stays up to date, still reporting the result computed with the old factor.
+
+### Wiring the helper in with `inputs`
+
+`inputs` maps a name you will see inside the step to the name of an upstream target. Point it at a `format = "file"` target and you get both halves at once: the helper becomes a real dependency, so editing it re-runs the step, and its path is bound in the step environment, so the script can load it.
+
+``` r
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+
+  # The helper becomes a file target: targets hashes its contents.
+  tar_target(helper_file, "py/helper.py", format = "file"),
+
+  tar_target_py(
+    name = py_total,
+    script = "py/step.py",
+    inputs = c(x = "prepared_x", helper_path = "helper_file"),
+    pre_script = tar_code({ to_py <- list(x = x, helper_path = helper_path) }),
+    retrieve = "result"
+  )
+)
+```
+
+with `py/step.py` loading the helper from the path it was handed, rather than a hard-coded one:
+
+``` python
+import os, sys
+sys.path.insert(0, os.path.dirname(helper_path))
+import helper
+
+result = sum(helper.scale(x))
+```
+
+Now editing `py/helper.py` re-hashes `helper_file`, which puts `py_total` out of date, and the step re-runs against the new helper.
+
+Like `tar_target_path()`, `inputs` takes **target names**, not paths. The same mistake applies:
+
+``` r
+# Wrong: looks for a target called "py/helper.py".
+inputs = c(helper_path = "py/helper.py")
+
+# Right: name the file target you declared above.
+inputs = c(helper_path = "helper_file")
+```
+
+Several helpers are simply several entries, each with its own file target:
+
+``` r
+inputs = c(
+  x        = "prepared_x",
+  helper_1 = "helper_1_file",
+  helper_2 = "helper_2_file"
+)
+```
+
+### Julia
+
+The shape is identical, with `to_jl` in place of `to_py`. One difference matters: Julia resolves a relative path given to `include()` against the directory of the file doing the including, not the working directory, so a relative helper path from a file target will not be found. Make it absolute in the pre-script.
+
+``` r
+list(
+  tar_target(prepared_x, c(1, 2, 3, 4)),
+  tar_target(helper_file, "jl/helper.jl", format = "file"),
+
+  tar_target_jl(
+    name = jl_total,
+    script = "jl/step.jl",
+    inputs = c(x = "prepared_x", helper_path = "helper_file"),
+    pre_script = tar_code({
+      to_jl <- list(x = x, helper_path = normalizePath(helper_path, winslash = "/"))
+    }),
+    retrieve = "result"
+  )
+)
+```
+
+with `jl/step.jl`:
+
+``` julia
+include(helper_path)
+result = sum(myscale(x))
+```
+
+### Why C++ and Rust are different
+
+For Python and Julia the helper is loaded at *run time*, from a path the step is handed, which is exactly what `inputs` provides. C++ and Rust instead need their helper at *compile* time, and tarpolyglot reads your script and passes its **text** to `Rcpp::sourceCpp(code = ...)` and `rextendr::rust_source(code = ...)`. The compiler therefore runs in a temporary build directory rather than beside your source file, so a neighbouring helper is not on its search path and a relative `#include "helper.h"` or `include!("helper.rs")` does not resolve.
+
+The tracking half still works: listing the helper in `inputs` makes it a dependency, so editing it re-runs the step and recompiles. It is only the *loading* half that a relative path cannot do. For C++ an absolute `#include` does resolve, so a helper header is usable if you are willing to hard-code an absolute path, or build the source with `glue()` (see the next section) so the path is filled in when the DAG is built.
+
+In practice, for a compiled step the simplest answer is usually to keep the code in one file, and to reach for `depends` (C++) or `dependencies` (Rust) when what you want is a real library rather than a local helper.
+
+## A note on building code with `glue()`
+
+Inline code is often assembled with `glue::glue()`. That runs when `_targets.R` is *sourced*, i.e. when the pipeline's DAG is built, not when the step runs. It can therefore use ordinary R objects in scope at that moment, but it cannot see the *values* of upstream targets: those only exist while the pipeline is running.
+
+``` r
+# known when _targets.R is sourced by being put on top of the _targets.R file 
+# or in a R file sourced by targets::tar_source() (see the targets documentation)
+# when targets::tar_make() is called.
+measurement <- "flipper_length_mm"
+
+tar_target_py(
+  name = py_mean,
+  inputs = c(df = "penguins"),
+  pre_script = tar_code({ to_py <- list(df = df) }),
+  script = tar_code(glue::glue("result = float(df['{measurement}'].mean())")),
+  retrieve = "result"
+)
+```
+
+Use `inputs` for anything that depends on upstream target values, and `glue()` only for things already known when the DAG is built.
+
+## See also
+
+`?tar_code` and `?tar_target_path` for the argument reference, `vignette("python")` / `vignette("julia")` / `vignette("rust")` / `vignette("cpp")` for the per-language details, and `vignette("get_started")` for how the pieces fit together.

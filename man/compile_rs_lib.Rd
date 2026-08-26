@@ -13,7 +13,7 @@ compile_rs_lib(
 )
 }
 \arguments{
-\item{script}{Path to the Rust script containing \verb{#[extendr]} functions (required).}
+\item{script}{Path to the Rust script containing \verb{#[extendr]} functions (required). Accepts a file path or an inline \code{\link[=tar_code]{tar_code()}} carrier; see the "Script arguments" section below.}
 
 \item{dependencies, features, profile}{Passed to \code{\link[rextendr:rust_source]{rextendr::rust_source()}}: crate \code{dependencies} (named list), Cargo \code{features}, and build \code{profile} (e.g. \code{"dev"} or \code{"release"}).}
 
@@ -28,9 +28,20 @@ Compiles the \verb{#[extendr]} functions in a Rust script with \code{\link[rexte
 \details{
 The bundle embeds the library bytes, so it travels with the target's value to any worker or machine, and reloading is a \code{dyn.load()} (near-instant) rather than a fresh \code{cargo} build. See \code{\link[=tarpolyglot_map]{tarpolyglot_map()}} for the motivation and \code{\link[=run_rs_step]{run_rs_step()}} for the per-branch (recompiling) alternative.
 }
+\section{Script arguments}{
+
+
+A worker receives whatever the constructor already resolved, which is one of two things: a \strong{path to a file} on disk, or an \strong{inline carrier} built by \code{\link[=tar_code]{tar_code()}} that holds the code in memory. Both are accepted, so a direct call may pass either.
+
+\code{\link[=tar_target_path]{tar_target_path()}} is deliberately \emph{not} a third form at this level. It is a constructor-level convenience: \code{\link[=tar_target_py]{tar_target_py()}} and the other constructors rewrite it while the pipeline's DAG is built, so that by the time a worker runs it has already become the ordinary file path held by the upstream target. Handing the result of \code{\link[=tar_target_path]{tar_target_path()}} straight to a worker therefore does not resolve to a file. The three forms as written in \verb{_targets.R}, and which of them tracks your edits, are covered in \code{vignette("scripts")}.
+}
+
 \examples{
 \dontrun{
 # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+# scripts/square.rs:
+#   #[extendr]
+#   fn square(x: f64) -> f64 { x * x }
 lib <- compile_rs_lib(script = "scripts/square.rs")
 }
 }

@@ -65,10 +65,20 @@ test_that("toolchain_check('rs') compiles successfully in a fresh worker (deep =
   expect_identical(compile$status, "ok")
 })
 
-test_that("toolchain_check() with all three toolchains returns one row set per language", {
+test_that("toolchain_check() with all four toolchains returns one row set per language", {
   res <- toolchain_check(quiet = TRUE, deep = FALSE)
-  expect_setequal(unique(res$toolchain), c("py", "jl", "rs"))
+  expect_setequal(unique(res$toolchain), c("py", "jl", "rs", "cpp"))
   expect_true(all(res$status %in% c("ok", "warn", "fail")))
+})
+
+test_that("toolchain_check('cpp', deep = TRUE) includes a passing compile check", {
+  skip_if_not_installed("Rcpp")
+
+  res <- toolchain_check("cpp", deep = TRUE, quiet = TRUE)
+  expect_setequal(res$toolchain, "cpp")
+  compile <- res[res$check == "Compile reachability (fresh worker)", ]
+  expect_identical(nrow(compile), 1L)
+  expect_identical(compile$status, "ok")
 })
 
 # --- multi-version discovery: at most one entry per language is marked

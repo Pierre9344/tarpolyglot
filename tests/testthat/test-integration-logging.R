@@ -146,3 +146,99 @@ test_that("run_jl_step writes nothing when no log config is set", {
   run_jl_step(jl_print_script(), retrieve = "result", name = "jl_nolog")
   expect_length(list.files(dir, recursive = TRUE), 0L)
 })
+
+# --- C++ -----------------------------------------------------------------
+# Point 11 of the roadmap's C++ item: Rcpp::Rcout/Rcerr, unlike raw
+# std::cout/std::cerr (or Rust's println!()), route through R's own
+# output-connection system, so sink() captures them -- confirmed empirically
+# and implemented in .tp_cpp_with_redirect() (see R/log.R). These are real
+# Rcpp::sourceCpp() compiles, not stubs, exercising the same code path
+# run_cpp_step()/run_cpp_step_prebuilt() use in a real pipeline.
+
+skip_if_not_installed("Rcpp")
+
+cpp_loud_script <- function() {
+  tar_code("
+    #include <Rcpp.h>
+    // [[Rcpp::export]]
+    double loud_square(double x) {
+      Rcpp::Rcout << \"computing square of \" << x << std::endl;
+      double result = x * x;
+      if (x < 0) Rcpp::Rcerr << \"warning: negative input\" << std::endl;
+      return result;
+    }
+  ")
+}
+
+cpp_loud_post <- function() {
+  script <- withr::local_tempfile(fileext = ".R", .local_envir = parent.frame())
+  writeLines("loud_square(x)", script)
+  script
+}
+
+test_that("run_cpp_step writes a header + Rcout/Rcerr to per-step files", {
+  dir <- withr::local_tempdir()
+  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
+
+  out <- run_cpp_step(cpp_loud_script(), post_script = cpp_loud_post(),
+    inputs = list(x = -3), name = "cpp_log_step")
+  expect_equal(out, 9)
+
+  out_path <- file.path(dir, "out", "cpp_log_step.out")
+  err_path <- file.path(dir, "err", "cpp_log_step.err")
+  expect_true(file.exists(out_path))
+  expect_true(file.exists(err_path))
+
+  out_txt <- paste(readLines(out_path), collapse = "\n")
+  expect_match(out_txt, "tarpolyglot step: cpp_log_step", fixed = TRUE)
+  expect_match(out_txt, "C++ version: Rcpp", fixed = TRUE)
+  expect_match(out_txt, "computing square of -3", fixed = TRUE)
+
+  err_txt <- paste(readLines(err_path), collapse = "\n")
+  expect_match(err_txt, "warning: negative input", fixed = TRUE)
+})
+
+test_that("run_cpp_step does not capture raw std::cout (only Rcout/Rcerr)", {
+  dir <- withr::local_tempdir()
+  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
+
+  script <- tar_code("
+    #include <Rcpp.h>
+    // [[Rcpp::export]]
+    double raw_cout_fn(double x) {
+      std::cout << \"raw cout, not Rcout\" << std::endl;
+      return x;
+    }
+  ")
+  post <- withr::local_tempfile(fileext = ".R")
+  writeLines("raw_cout_fn(x)", post)
+
+  run_cpp_step(script, post_script = post, inputs = list(x = 1), name = "cpp_raw_cout")
+  out_txt <- paste(readLines(file.path(dir, "out", "cpp_raw_cout.out")), collapse = "\n")
+  expect_no_match(out_txt, "raw cout, not Rcout")
+})
+
+test_that("run_cpp_step writes nothing when no log config is set", {
+  dir <- withr::local_tempdir()
+  local_log_env(NULL)
+  withr::local_envvar(TARPOLYGLOT_LOG_STDOUT = "", TARPOLYGLOT_LOG_STDERR = "")
+
+  run_cpp_step(cpp_loud_script(), post_script = cpp_loud_post(), inputs = list(x = 4),
+    name = "cpp_nolog")
+  expect_length(list.files(dir, recursive = TRUE), 0L)
+})
+
+test_that("run_cpp_step_prebuilt writes Rcout output through the reloaded, re-bound closures", {
+  dir <- withr::local_tempdir()
+  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
+
+  lib <- compile_cpp_lib(cpp_loud_script())
+  out <- run_cpp_step_prebuilt(lib, post_script = cpp_loud_post(), inputs = list(x = 6),
+    name = "cpp_prebuilt_log")
+  expect_equal(out, 36)
+
+  out_txt <- paste(readLines(file.path(dir, "out", "cpp_prebuilt_log.out")), collapse = "\n")
+  expect_match(out_txt, "tarpolyglot step: cpp_prebuilt_log", fixed = TRUE)
+  expect_match(out_txt, "reused a pre-compiled library", fixed = TRUE)
+  expect_match(out_txt, "computing square of 6", fixed = TRUE)
+})

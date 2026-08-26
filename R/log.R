@@ -13,6 +13,10 @@
 #'
 #' Rust steps ([tar_target_rs()]) are not covered: \pkg{rextendr}-compiled code writes straight to the OS file descriptor, bypassing the redirection mechanism reticulate/JuliaCall provide for their embedded interpreters. Use \pkg{crew}'s own `options_local(log_directory = ...)` (process-level logging; since `polyglot_controller()` defaults to `tasks_max = 1`, each worker runs exactly one step, so that already gives one log per step, Rust included) if you need Rust step output.
 #'
+#' C++ steps ([tar_target_cpp()]) **are** covered, with one caveat: `Rcpp::Rcout`/`Rcpp::Rcerr` (the idiomatic Rcpp printing calls) route through R's own output-connection system, so they are captured by an R-level `sink()` redirect the same way `cat()`/`message()` output is (confirmed empirically, including from a fresh \pkg{crew} worker process). Raw `std::cout`/`std::cerr`/`printf()` writes bypass R's connection system entirely and write straight to the OS file descriptor, exactly like Rust's `println!()` -- **not** captured here; use `Rcpp::Rcout`/`Rcpp::Rcerr` in compiled code instead of raw C++ streams if you want step output in these logs.
+#'
+#' **Branches of one `pattern` share a single log file, language-agnostically.** The log file name is fixed to the *target*'s name at the moment its command is built, before branching happens -- so every branch of a `map()`/`tarpolyglot_map()`-driven step (Python, Julia, or C++ alike) writes to the same `<name>.out`/`<name>.err`, and since `append = FALSE` truncates at the start of *each* branch's run, only the last branch to run leaves its output in the file; earlier branches' output is overwritten, not lost-and-gone from disk but never actually visible. Not specific to C++ -- confirmed while investigating C++ logging, but the same file-per-target-name design applies to every constructor. Use `append = TRUE` to at least keep all branches' output (separated, in run order) instead of losing all but the last, or `crew`'s own `options_local(log_directory = ...)` for a genuinely one-file-per-worker-process log.
+#'
 #' @param stdout,stderr Directory to write per-step log files into (created if missing), or `NULL` to disable that stream. Default `"./logs/out"` / `"./logs/err"`.
 #' @param append If `FALSE` (default), a step's log file is truncated at the start of that step's run, so it only ever holds the latest run's output. If `TRUE`, new output is appended after two blank lines separating it from any prior content, so the file accumulates history across repeated runs.
 #' @param header If `TRUE` (default), the stdout file gets a header written before the step's own output: the step name, `date()`, the resolved interpreter's version and path, and whether an explicit environment was used.
@@ -231,4 +235,51 @@ tar_polyglot_log <- function(stdout = "./logs/out",
   writeLines(body, wrapper)
   JuliaCall::julia_source(wrapper)
   invisible(NULL)
+}
+
+# C++ counterpart of .tp_py_with_redirect()/.tp_jl_source_with_redirect(): an
+# R-level sink() redirect, not a language-side one -- there is no separate
+# interpreter object to swap here, and there's nothing to wrap at "script run"
+# time either, since compiling a C++ script (Rcpp::sourceCpp()) does not call
+# any of the compiled functions. Output only happens once the post-script
+# actually calls into compiled code, so `fn` here is that whole downstream
+# step (typically a .tp_cpp_finish() call), not just the compile step.
+#
+# Confirmed empirically (see the point-11 investigation) that Rcpp::Rcout is
+# captured by sink(type = "output") and Rcpp::Rcerr by sink(type = "message"),
+# in-session and from a fresh callr/crew-worker-like subprocess alike -- Rcout
+# routes through R's own output-connection system, unlike raw std::cout/
+# std::cerr/printf(), which write straight to the OS file descriptor and so
+# are NOT captured by this (exactly like Rust's println!(), see
+# .tp_rs_with_redirect()'s absence -- Rust has no equivalent at all).
+#
+# sink() is a stack (per type), so the two push calls and the two pop calls
+# must nest correctly: output pushed first (outermost), message pushed second
+# (innermost) -- popped in the reverse order, message then output, inside one
+# on.exit() block so a mid-`fn()` error still unwinds both cleanly.
+.tp_cpp_with_redirect <- function(out_path, err_path, fn) {
+  if (is.null(out_path) && is.null(err_path)) {
+    return(fn())
+  }
+  out_con <- if (!is.null(out_path)) file(out_path, "a") else NULL
+  err_con <- if (!is.null(err_path)) file(err_path, "a") else NULL
+  if (!is.null(out_con)) sink(out_con, type = "output")
+  if (!is.null(err_con)) sink(err_con, type = "message")
+  on.exit({
+    if (!is.null(err_con)) sink(type = "message")
+    if (!is.null(out_con)) sink(type = "output")
+    if (!is.null(err_con)) close(err_con)
+    if (!is.null(out_con)) close(out_con)
+  }, add = TRUE)
+  fn()
+}
+
+# Human-readable description of the depends = extension packages a C++ step
+# was compiled with, for the log header. Mirrors .tp_py_env_info()/
+# .tp_jl_env_info() in shape.
+.tp_cpp_env_info <- function(depends) {
+  if (is.null(depends) || !length(depends)) {
+    return("no Rcpp::depends() extension packages")
+  }
+  sprintf("yes, depends = %s", paste(depends, collapse = ", "))
 }

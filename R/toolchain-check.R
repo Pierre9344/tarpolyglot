@@ -1,5 +1,5 @@
-# toolchain_check(): diagnostics for the Python/Julia/Rust toolchains
-# tar_target_py()/tar_target_jl()/tar_target_rs() depend on. Every check that
+# toolchain_check(): diagnostics for the Python/Julia/Rust/C++ toolchains
+# tar_target_py()/tar_target_jl()/tar_target_rs()/tar_target_cpp() depend on. Every check that
 # actually binds an interpreter or compiles code runs inside a throwaway
 # callr subprocess, so (a) it never pollutes the caller's own R session (which
 # may already have reticulate/JuliaCall bound), and (b) it genuinely answers
@@ -406,7 +406,7 @@
         if (!is.null(missing)) return(missing)
         t0 <- Sys.time()
         val <- callr::r(function() {
-          restore <- tarpolyglot:::.tp_with_rust_build_env()
+          restore <- .tp_with_rust_build_env()
           on.exit(restore(), add = TRUE)
           e <- new.env()
           rextendr::rust_source(
@@ -414,7 +414,7 @@
             env = e, quiet = TRUE
           )
           e$tp_diag_ping(1)
-        })
+        }, package = "tarpolyglot")
         secs <- round(as.numeric(Sys.time() - t0, units = "secs"), 1)
         if (isTRUE(all.equal(val, 2))) {
           .tp_check_row("rs", check, "ok", paste0("compiled and ran successfully in ", secs, "s"))
@@ -428,36 +428,154 @@
   do.call(rbind, rows)
 }
 
-#' Diagnose the Python, Julia, and Rust toolchains
+# --------------------------------------------------------------------------
+# C++
+# --------------------------------------------------------------------------
+
+# The C++ compiler command R itself is configured to use for R CMD SHLIB,
+# i.e. exactly what Rcpp::sourceCpp() invokes -- queried via `R CMD config
+# CXX` rather than guessed from the OS (g++ on Linux, clang++ on macOS, ...),
+# so this is correct even on a machine where R was configured to use a
+# non-default compiler. Returns NA if the query itself fails. CXX may in
+# principle include flags after the executable name; only the first token
+# (the executable) is kept, since that is what Sys.which() needs.
+.tp_cpp_compiler_cmd <- function() {
+  out <- tryCatch(
+    system2(file.path(R.home("bin"), "R"), c("CMD", "config", "CXX"),
+      stdout = TRUE, stderr = TRUE),
+    error = function(e) character(0)
+  )
+  out <- trimws(out)
+  out <- out[nzchar(out)]
+  if (!length(out)) {
+    return(NA_character_)
+  }
+  strsplit(out[[1]], "\\s+")[[1]][1]
+}
+
+# Presence check for Rcpp itself, the only C++ dependency tarpolyglot
+# actually needs. Extension packages such as RcppArmadillo, RcppEigen, and
+# RcppParallel are entirely the caller's choice (passed via `depends`, or
+# declared directly in the C++ source): tarpolyglot itself does not depend on
+# any of them, so checking their presence here would be no more meaningful
+# than checking any other CRAN package a user's script might happen to use.
+.tp_check_cpp <- function(deep, quiet) {
+  rows <- list()
+  rows$Rcpp <- .tp_run_check("cpp", "Rcpp", quiet, fn = function() {
+    if (requireNamespace("Rcpp", quietly = TRUE)) {
+      .tp_check_row("cpp", "Rcpp", "ok", as.character(utils::packageVersion("Rcpp")))
+    } else {
+      .tp_check_row("cpp", "Rcpp", "fail", "not installed (required for tar_target_cpp())")
+    }
+  })
+
+  if (.Platform$OS.type == "windows") {
+    rows$rtools <- .tp_run_check("cpp", "Rtools (Windows)", quiet, fn = function() {
+      rt <- Sys.getenv("RTOOLS45_HOME", unset = "")
+      candidates <- c(if (nzchar(rt)) file.path(rt, "usr", "bin"),
+                       "C:/rtools45/usr/bin", "C:/rtools44/usr/bin")
+      found <- candidates[dir.exists(candidates)]
+      if (length(found)) {
+        .tp_check_row("cpp", "Rtools (Windows)", "ok", found[[1]])
+      } else {
+        .tp_check_row("cpp", "Rtools (Windows)", "warn",
+          "not found under RTOOLS45_HOME or the default install paths (C:/rtools45, C:/rtools44)")
+      }
+    })
+  } else {
+    os_label <- if (identical(Sys.info()[["sysname"]], "Darwin")) "macOS" else "Linux"
+    check <- paste0("C++ compiler (", os_label, ")")
+    rows$compiler <- .tp_run_check("cpp", check, quiet, fn = function() {
+      # The compiler R itself is configured to use for R CMD SHLIB, the same
+      # one sourceCpp() invokes -- queried rather than guessed by OS, so this
+      # is correct whether the machine uses gcc or clang under the hood.
+      cxx <- .tp_cpp_compiler_cmd()
+      if (is.na(cxx)) {
+        return(.tp_check_row("cpp", check, "warn",
+          "could not determine R's configured C++ compiler (R CMD config CXX)"))
+      }
+      path <- Sys.which(cxx)
+      if (!nzchar(path)) {
+        hint <- if (identical(os_label, "macOS")) {
+          paste0(cxx, " not found on PATH; install Xcode's command line tools (xcode-select --install)")
+        } else {
+          paste0(cxx, " not found on PATH; install a C++ compiler and R's own development ",
+            "package (e.g. r-base-dev on Debian/Ubuntu, R-devel on Fedora)")
+        }
+        return(.tp_check_row("cpp", check, "warn", hint))
+      }
+      ver <- tryCatch(system2(cxx, "--version", stdout = TRUE, stderr = TRUE),
+        error = function(e) character(0))
+      ver1 <- if (length(ver)) ver[[1]] else ""
+      .tp_check_row("cpp", check, "ok",
+        paste0(path, if (nzchar(ver1)) paste0(" (", ver1, ")") else ""))
+    })
+  }
+
+  if (isTRUE(deep)) {
+    check <- "Compile reachability (fresh worker)"
+    rows$compile <- .tp_run_check("cpp", check, quiet,
+      pre_msg = "Compiling a trivial C++ function to test full reachability...",
+      fn = function() {
+        missing <- .tp_require_callr("cpp", check)
+        if (!is.null(missing)) return(missing)
+        t0 <- Sys.time()
+        val <- callr::r(function() {
+          restore <- .tp_with_cpp_build_env()
+          on.exit(restore(), add = TRUE)
+          e <- new.env()
+          Rcpp::sourceCpp(code = paste(
+            "#include <Rcpp.h>",
+            "// [[Rcpp::export]]",
+            "double tp_diag_ping(double x) { return x + 1.0; }",
+            sep = "\n"
+          ), env = e, verbose = FALSE)
+          e$tp_diag_ping(1)
+        }, package = "tarpolyglot")
+        secs <- round(as.numeric(Sys.time() - t0, units = "secs"), 1)
+        if (isTRUE(all.equal(val, 2))) {
+          .tp_check_row("cpp", check, "ok", paste0("compiled and ran successfully in ", secs, "s"))
+        } else {
+          .tp_check_row("cpp", check, "fail", paste0("unexpected result: ", val))
+        }
+      }
+    )
+  }
+
+  do.call(rbind, rows)
+}
+
+#' Diagnose the Python, Julia, Rust, and C++ toolchains
 #'
 #' Runs a battery of checks for whichever toolchains you ask for and reports the result with [cli](https://cli.r-lib.org/) as it goes: interpreter/compiler discovery, environment-manager availability, and, most importantly, whether each toolchain is actually *reachable from a fresh worker process* -- the same kind of process `crew` spawns to run a `tar_target_py()`/`tar_target_jl()`/`tar_target_rs()` step. This is meant to preempt the common "it doesn't run on my machine" class of issue before you find out the hard way, mid-pipeline.
 #'
 #' Environment managers checked per language: for Python, `uv`, `poetry`, and `conda` (three separate, competing tools, plus the stdlib `venv` module on the resolved interpreter). For Julia, `juliaup` (which manages *versions*, checked via presence + the list of installed versions) and, separately, Julia's own `Pkg` project-environment mechanism (which manages *packages*, activated with `Pkg.activate()` -- the actual mechanism behind `julia_project`/`julia_packages`): a fresh worker actually activates a throwaway project to prove it works, not just that Julia is present. Rust has no separate environment concept (see `vignette("rust")`); `rustup`/`cargo`/(on Windows) the GNU toolchain and Rtools are checked instead.
 #'
-#' Every check that would bind an interpreter (Python, Julia) or compile code (Rust) runs inside a disposable [callr::r()] subprocess, never in your current R session: this means `toolchain_check()` cannot leave reticulate or JuliaCall bound afterwards, and it is answering the *real* question ("would a crew worker be able to do this right now"), not just "is something already loaded in this session". Plain presence checks (`Sys.which()` for `uv`, `poetry`, `rustup`, and so on) run directly, since they have no side effects to isolate.
+#' Every check that would bind an interpreter (Python, Julia) or compile code (Rust, C++) runs inside a disposable [callr::r()] subprocess, never in your current R session: this means `toolchain_check()` cannot leave reticulate or JuliaCall bound afterwards, and it is answering the *real* question ("would a crew worker be able to do this right now"), not just "is something already loaded in this session". Plain presence checks (`Sys.which()` for `uv`, `poetry`, `rustup`, and so on, or `requireNamespace()` for Rcpp) run directly, since they have no side effects to isolate.
 #'
-#' When more than one version is found, each language also reports every installed version it can enumerate, with its path and which one is the default (the one a step would actually use if you set nothing): Python via `uv python list --only-installed` (matched against the resolved interpreter primarily by exact version, since reticulate's default is often an *ephemeral* uv-provisioned interpreter that lives under uv's cache rather than its "installed" registry, so the two rarely share a literal path even when they are, in fact, the same build); Julia via the juliaup depot; Rust via `rustup toolchain list -v` (which marks its own default inline, no cross-referencing needed). With only one version found, this is a single summary line instead.
+#' When more than one version is found, each language also reports every installed version it can enumerate, with its path and which one is the default (the one a step would actually use if you set nothing): Python via `uv python list --only-installed` (matched against the resolved interpreter primarily by exact version, since reticulate's default is often an *ephemeral* uv-provisioned interpreter that lives under uv's cache rather than its "installed" registry, so the two rarely share a literal path even when they are, in fact, the same build); Julia via the juliaup depot; Rust via `rustup toolchain list -v` (which marks its own default inline, no cross-referencing needed). With only one version found, this is a single summary line instead. C++ has no separate version-manager concept to enumerate this way (see `tar_target_cpp()`): it compiles via R's own configured toolchain, so its checks are presence (Rcpp; the OS-appropriate compiler, Rtools on Windows or the actual `R CMD config CXX` compiler command on macOS/Linux, queried rather than guessed so it is correct under gcc or clang alike) plus, with `deep = TRUE`, a compile-reachability check. Extension packages such as RcppArmadillo/RcppEigen/RcppParallel are not checked here since tarpolyglot itself does not depend on any of them; they are entirely the caller's own choice via `depends` (see `tar_target_cpp()`).
 #'
-#' @param toolchains Character vector, which toolchains to check: any subset of `"py"`, `"jl"`, `"rs"`. Default checks all three.
-#' @param deep Logical. When `TRUE` (the default), the Rust check additionally compiles a trivial `#[extendr]` function in a fresh worker to prove the full toolchain (rustc, cargo, R headers, and on Windows Rtools/the GNU toolchain) actually links together end to end; this is the most informative Rust check but also the slowest (compiling extendr_api from scratch typically takes well under a minute, but is not instant). Set `deep = FALSE` to skip it and rely on the faster presence checks (`rustup`, `cargo`, the GNU toolchain, Rtools) alone. Python and Julia's fresh-worker checks are cheap either way and always run.
+#' @param toolchains Character vector, which toolchains to check: any subset of `"py"`, `"jl"`, `"rs"`, `"cpp"`. Default checks all four.
+#' @param deep Logical. When `TRUE` (the default), the Rust and C++ checks additionally compile a trivial function (`#[extendr]` / `// [[Rcpp::export]]`) in a fresh worker to prove the full toolchain actually links together end to end; this is the most informative check for each but also the slowest (well under a minute, but not instant). Set `deep = FALSE` to skip it and rely on the faster presence checks alone. Python and Julia's fresh-worker checks are cheap either way and always run.
 #' @param quiet Logical, default `FALSE`. Suppress the live `cli` progress/result output; the return value is unaffected either way.
 #'
-#' @return Invisibly, a `data.frame` with one row per check and columns `toolchain` (`"py"`/`"jl"`/`"rs"`), `check` (a short label), `status` (`"ok"`, `"warn"`, or `"fail"`), and `detail` (a human-readable description, e.g. the resolved path and version, or an error message).
-#' @seealso [tar_target_py()], [tar_target_jl()], [tar_target_rs()]
+#' @return Invisibly, a `data.frame` with one row per check and columns `toolchain` (`"py"`/`"jl"`/`"rs"`/`"cpp"`), `check` (a short label), `status` (`"ok"`, `"warn"`, or `"fail"`), and `detail` (a human-readable description, e.g. the resolved path and version, or an error message).
+#' @seealso [tar_target_py()], [tar_target_jl()], [tar_target_rs()], [tar_target_cpp()]
 #' @examples
 #' \dontrun{
 #' toolchain_check()                      # everything
 #' toolchain_check("py")                  # Python only
 #' toolchain_check(c("jl", "rs"))         # Julia and Rust
 #' toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
+#' toolchain_check("cpp")                 # C++ only
 #' res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
 #' res[res$status != "ok", ]              # anything that needs attention
 #' }
 #' @export
-toolchain_check <- function(toolchains = c("py", "jl", "rs"), deep = TRUE, quiet = FALSE) {
+toolchain_check <- function(toolchains = c("py", "jl", "rs", "cpp"), deep = TRUE, quiet = FALSE) {
   # match.arg(..., several.ok = TRUE) silently DROPS unrecognised values
   # instead of erroring, so it is validated by hand here.
-  choices <- c("py", "jl", "rs")
+  choices <- c("py", "jl", "rs", "cpp")
   bad <- setdiff(toolchains, choices)
   if (length(bad)) {
     stop("`toolchains` must be a subset of ", paste(shQuote(choices), collapse = ", "),
@@ -465,7 +583,7 @@ toolchain_check <- function(toolchains = c("py", "jl", "rs"), deep = TRUE, quiet
       paste(shQuote(bad), collapse = ", "), call. = FALSE)
   }
   toolchains <- unique(toolchains)
-  labels <- c(py = "Python", jl = "Julia", rs = "Rust")
+  labels <- c(py = "Python", jl = "Julia", rs = "Rust", cpp = "C++")
 
   all_rows <- list()
   for (tc in toolchains) {
@@ -473,7 +591,8 @@ toolchain_check <- function(toolchains = c("py", "jl", "rs"), deep = TRUE, quiet
     all_rows[[tc]] <- switch(tc,
       py = .tp_check_py(deep = deep, quiet = quiet),
       jl = .tp_check_jl(deep = deep, quiet = quiet),
-      rs = .tp_check_rs(deep = deep, quiet = quiet)
+      rs = .tp_check_rs(deep = deep, quiet = quiet),
+      cpp = .tp_check_cpp(deep = deep, quiet = quiet)
     )
   }
 
