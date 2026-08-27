@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
+    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
+    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -56,7 +58,8 @@
 <span>  python_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  env <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  env_manager <span class="op">=</span> <span class="st">"system"</span>,</span>
-<span>  python <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  python <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  name <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -65,15 +68,15 @@
 
 
 <dl><dt id="arg-script">script<a class="anchor" aria-label="anchor" href="#arg-script"></a></dt>
-<dd><p>Path to the Python script to run (required).</p></dd>
+<dd><p>Path to the Python script to run (required). Accepts a file path or an inline <code><a href="tar_code.html">tar_code()</a></code> carrier; see the "Script arguments" section below.</p></dd>
 
 
 <dt id="arg-pre-script">pre_script<a class="anchor" aria-label="anchor" href="#arg-pre-script"></a></dt>
-<dd><p>Optional path to an R script run before the Python script. It is evaluated in the step environment, which already holds the named <code>inputs</code>. To hand objects to Python, assign a named list <code>to_py</code> in this script; each element is pushed as a top-level variable in the Python <code>__main__</code> module.</p></dd>
+<dd><p>Optional path to an R script run before the Python script. It is evaluated in the step environment, which already holds the named <code>inputs</code>. To hand objects to Python, assign a named list <code>to_py</code> in this script; each element is pushed as a top-level variable in the Python <code>__main__</code> module. Accepts a file path or an inline <code><a href="tar_code.html">tar_code()</a></code> carrier; see the "Script arguments" section below.</p></dd>
 
 
 <dt id="arg-post-script">post_script<a class="anchor" aria-label="anchor" href="#arg-post-script"></a></dt>
-<dd><p>Optional path to an R script run after the Python script. It is evaluated in the same environment, which now also holds <code>py</code> (the reticulate <code>__main__</code> module proxy) and <code>py_get(name)</code>. In <code>output = "object"</code> mode the value of its last expression becomes the target value; in <code>output = "file"</code> mode it must return a character vector of file paths.</p></dd>
+<dd><p>Optional path to an R script run after the Python script. It is evaluated in the same environment, which now also holds <code>py</code> (the reticulate <code>__main__</code> module proxy) and <code>py_get(name)</code>. In <code>output = "object"</code> mode the value of its last expression becomes the target value; in <code>output = "file"</code> mode it must return a character vector of file paths. Accepts a file path or an inline <code><a href="tar_code.html">tar_code()</a></code> carrier; see the "Script arguments" section below.</p></dd>
 
 
 <dt id="arg-inputs">inputs<a class="anchor" aria-label="anchor" href="#arg-inputs"></a></dt>
@@ -99,10 +102,22 @@
 <dt id="arg-env-env-manager-python">env, env_manager, python<a class="anchor" aria-label="anchor" href="#arg-env-env-manager-python"></a></dt>
 <dd><p>Python environment selection: the reproducible alternatives to <code>python_version</code>. Use <code>env</code> + <code>env_manager</code> to point at an existing environment built by a known tool, or <code>python</code> for one explicit interpreter path. <code>env_manager</code> is one of <code>"system"</code>, <code>"virtualenv"</code>, <code>"venv"</code>, <code>"conda"</code>, <code>"uv"</code>, <code>"poetry"</code>; <code>env</code> is the corresponding virtualenv/conda name or path (or poetry project directory); <code>python</code> is an explicit interpreter path. Precedence: <code>python</code> &gt; environment (<code>env</code>/<code>env_manager</code>) &gt; <code>python_version</code> &gt; default. (<code>"virtualenv"</code>, <code>"venv"</code> and <code>"uv"</code> all point at a standard virtualenv, including one created by <code>renv::use_python()</code>, and behave identically.) For <code>"virtualenv"</code>/<code>"venv"</code>/<code>"uv"</code>/<code>"poetry"</code>, an <code>env</code> that is an already-existing directory (relative to the working directory, or absolute) is resolved to an absolute path before use, so a relative venv path (e.g. <code>".venv"</code>, created with <code>uv venv .venv</code>) works as expected; otherwise <code><a href="https://rstudio.github.io/reticulate/reference/use_python.html" class="external-link">reticulate::use_virtualenv()</a></code> would misread a separator-less relative path as the <em>name</em> of an environment under its own virtualenv root instead of a path on disk. A bare name that does not correspond to an existing directory is passed through unchanged, so a genuine named environment (one already registered under that root) still resolves. When <code>python</code> or an environment is given, the selection also takes priority over an ambient <code>RETICULATE_PYTHON</code> environment variable (e.g. one set by the RStudio project Python config and inherited by <code>crew</code> workers), which reticulate would otherwise let silently override the request.</p></dd>
 
+
+<dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
+<dd><p>Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when <code><a href="polyglot_controller.html">polyglot_controller()</a></code> was given a <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code> (<code>NULL</code> – the default – disables logging for a direct call).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The converted R object (object mode) or a character vector of normalised file paths (file mode).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="script-arguments">Script arguments<a class="anchor" aria-label="anchor" href="#script-arguments"></a></h2>
+
+
+
+<p>A worker receives whatever the constructor already resolved, which is one of two things: a <strong>path to a file</strong> on disk, or an <strong>inline carrier</strong> built by <code><a href="tar_code.html">tar_code()</a></code> that holds the code in memory. Both are accepted, so a direct call may pass either.</p>
+<p><code><a href="tar_target_path.html">tar_target_path()</a></code> is deliberately <em>not</em> a third form at this level. It is a constructor-level convenience: <code><a href="tar_target_py.html">tar_target_py()</a></code> and the other constructors rewrite it while the pipeline's DAG is built, so that by the time a worker runs it has already become the ordinary file path held by the upstream target. Handing the result of <code><a href="tar_target_path.html">tar_target_path()</a></code> straight to a worker therefore does not resolve to a file. The three forms as written in <code>_targets.R</code>, and which of them tracks your edits, are covered in <code><a href="../articles/scripts.html">vignette("scripts")</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -113,7 +128,10 @@
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># Normally invoked by tar_target_py(); shown here as a direct call.</span></span></span>
-<span class="r-in"><span><span class="co"># scripts/sum.py assigns `result`; pre.R builds `to_py &lt;- list(x = x)`.</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/pre.R:</span></span></span>
+<span class="r-in"><span><span class="co">#   to_py &lt;- list(x = x)</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/sum.py:</span></span></span>
+<span class="r-in"><span><span class="co">#   result = sum(x)</span></span></span>
 <span class="r-in"><span><span class="fu">run_py_step</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  script <span class="op">=</span> <span class="st">"scripts/sum.py"</span>,</span></span>
 <span class="r-in"><span>  pre_script <span class="op">=</span> <span class="st">"scripts/pre.R"</span>,</span></span>

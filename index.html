@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Run Python, Julia, and Rust Inside targets Pipeline Steps • tarpolyglot</title>
+<title>Run Python, Julia, Rust, and C++ Inside targets Pipeline Steps • tarpolyglot</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -15,9 +15,9 @@
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Run Python, Julia, and Rust Inside targets Pipeline Steps">
-<meta name="description" content='Adds target constructors that make it easy to use Python, Julia, and Rust inside a targets pipeline using reticulate, JuliaCall, and rextendr. Provides tar_target_py(), tar_target_jl(), and tar_target_rs() (with matching _raw() variants), each mirroring targets::tar_target() and targets::tar_target_raw(). Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust steps compile #[extendr] functions and call them from an R post-script. Results are returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
-<meta property="og:description" content='Adds target constructors that make it easy to use Python, Julia, and Rust inside a targets pipeline using reticulate, JuliaCall, and rextendr. Provides tar_target_py(), tar_target_jl(), and tar_target_rs() (with matching _raw() variants), each mirroring targets::tar_target() and targets::tar_target_raw(). Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust steps compile #[extendr] functions and call them from an R post-script. Results are returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Run Python, Julia, Rust, and C++ Inside targets Pipeline Steps">
+<meta name="description" content='Adds target constructors that make it easy to use Python, Julia, Rust, and C++ inside a targets pipeline using reticulate, JuliaCall, rextendr, and Rcpp. Provides tar_target_py(), tar_target_jl(), tar_target_rs(), and tar_target_cpp() (with matching _raw() variants), each mirroring targets::tar_target() and targets::tar_target_raw(). Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust and C++ steps compile functions and call them from an R post-script. Results are then returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
+<meta property="og:description" content='Adds target constructors that make it easy to use Python, Julia, Rust, and C++ inside a targets pipeline using reticulate, JuliaCall, rextendr, and Rcpp. Provides tar_target_py(), tar_target_jl(), tar_target_rs(), and tar_target_cpp() (with matching _raw() variants), each mirroring targets::tar_target() and targets::tar_target_raw(). Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust and C++ steps compile functions and call them from an R post-script. Results are then returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
 <meta property="og:image" content="https://pierre9344.github.io/tarpolyglot/logo.svg">
 </head>
 <body>
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,9 +42,11 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/get_started.html">Get started with tarpolyglot</a></li>
+    <li><a class="dropdown-item" href="articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="articles/rust.html">Using Rust inside targets</a></li>
+    <li><a class="dropdown-item" href="articles/cpp.html">Using C++ inside targets</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -62,7 +64,6 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9">
-<!-- badges: end -->
 <div class="section level1">
 <div class="page-header">
 <img src="logo.svg" class="logo" alt=""><h1 id="tarpolyglot-">
@@ -80,7 +81,7 @@
 <span></span>
 <span><span class="co"># GitHub (development version)</span></span>
 <span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"Pierre9344/tarpolyglot@dev"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Pierre9344/tarpolyglot@dev"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>You also need a working toolchain for whichever language(s) you plan to use: Python, Julia, and/or Rust. Each is independent and only needed if you use the matching constructor (<code><a href="reference/tar_target_py.html">tar_target_py()</a></code>, <code><a href="reference/tar_target_jl.html">tar_target_jl()</a></code>, <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code>). See <code><a href="articles/get_started.html">vignette("get_started")</a></code> for the full setup instructions (Python via reticulate/uv, Julia via <a href="https://github.com/JuliaLang/juliaup" class="external-link">juliaup</a>, Rust via <a href="https://rust-lang.org/tools/install/" class="external-link">rustup</a>: use the <strong>GNU</strong> toolchain on Windows so it matches R’s ABI).</p>
 </div>
 <div class="section level2">
@@ -270,6 +271,7 @@
 <li><a href="https://CRAN.R-project.org/package=tarpolyglot" class="external-link"><img src="https://www.r-pkg.org/badges/version/tarpolyglot" alt="CRAN status"></a></li>
 <li><a href="https://cran.r-project.org/web/checks/check_results_tarpolyglot.html" class="external-link"><img src="https://badges.cranchecks.info/worst/tarpolyglot.svg" alt="CRAN checks"></a></li>
 <li><a href="https://cran.r-project.org/package=tarpolyglot" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/tarpolyglot" alt="downloads"></a></li>
+<li><a href="https://app.codecov.io/gh/Pierre9344/tarpolyglot" class="external-link"><img src="https://codecov.io/gh/Pierre9344/tarpolyglot/graph/badge.svg" alt="Codecov test coverage"></a></li>
 </ul>
 </div>
 

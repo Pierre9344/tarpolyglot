@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
+    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
+    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -88,15 +90,15 @@
 
 
 <dt id="arg-script">script<a class="anchor" aria-label="anchor" href="#arg-script"></a></dt>
-<dd><p>Path to the Python script to run (required). Either a literal string (an untracked path: editing the file does not invalidate the target) or a <code><a href="tar_target_path.html">tar_target_path()</a></code> reference to an upstream target (typically <code>format = "file"</code>), which makes this step re-run whenever that file changes.</p></dd>
+<dd><p>Path to the Python script to run (required). Accepts a literal path, a <code><a href="tar_target_path.html">tar_target_path()</a></code> reference, or inline code from <code><a href="tar_code.html">tar_code()</a></code>; see the "Script options" section below.</p></dd>
 
 
 <dt id="arg-pre-script">pre_script<a class="anchor" aria-label="anchor" href="#arg-pre-script"></a></dt>
-<dd><p>Optional path to an R script run before the Python script. See <code><a href="run_py_step.html">run_py_step()</a></code>; assign a named list <code>to_py</code> to hand objects to Python. Accepts a literal string or a <code><a href="tar_target_path.html">tar_target_path()</a></code> reference, as for <code>script</code>.</p></dd>
+<dd><p>Optional path to an R script run before the Python script. See <code><a href="run_py_step.html">run_py_step()</a></code>; assign a named list <code>to_py</code> to hand objects to Python. Accepts a literal path, a <code><a href="tar_target_path.html">tar_target_path()</a></code> reference, or inline code from <code><a href="tar_code.html">tar_code()</a></code>; see the "Script options" section below.</p></dd>
 
 
 <dt id="arg-post-script">post_script<a class="anchor" aria-label="anchor" href="#arg-post-script"></a></dt>
-<dd><p>Optional path to an R script run after the Python script. See <code><a href="run_py_step.html">run_py_step()</a></code>; helpers <code>py</code> and <code>py_get()</code> are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal string or a <code><a href="tar_target_path.html">tar_target_path()</a></code> reference, as for <code>script</code>.</p></dd>
+<dd><p>Optional path to an R script run after the Python script. See <code><a href="run_py_step.html">run_py_step()</a></code>; helpers <code>py</code> and <code>py_get()</code> are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a <code><a href="tar_target_path.html">tar_target_path()</a></code> reference, or inline code from <code><a href="tar_code.html">tar_code()</a></code>; see the "Script options" section below.</p></dd>
 
 
 <dt id="arg-inputs">inputs<a class="anchor" aria-label="anchor" href="#arg-inputs"></a></dt>
@@ -153,6 +155,24 @@
 <p>The interpreter/environment selection arguments (<code>python</code>, <code>env</code>, <code>env_manager</code>, <code>python_version</code>) are forwarded to <code><a href="run_py_step.html">run_py_step()</a></code>, which documents them (they are <em>alternatives</em>: normally set only one; precedence <code>python</code> &gt; <code>env</code>/<code>env_manager</code> &gt; <code>python_version</code> &gt; none). See also <code><a href="../articles/python.html">vignette("python")</a></code> for a decision guide with examples.</p>
     </div>
     <div class="section level2">
+    <h2 id="script-options">Script options<a class="anchor" aria-label="anchor" href="#script-options"></a></h2>
+
+
+
+<p>Every script argument (<code>script</code>, and <code>pre_script</code> / <code>post_script</code> where the constructor has them) accepts the same three forms. The choice is not cosmetic: it decides whether editing the code re-runs the target.</p>
+<dl><dt>A literal path string</dt>
+<dd><p>e.g. <code>script = "py/step.py"</code>. The file is read when the step runs, but it is <strong>not</strong> tracked, so editing it does <strong>not</strong> invalidate the target: <code>targets</code> will happily reuse a stale result until some <em>other</em> dependency changes. Simplest form, and a reasonable default once a script has settled.</p></dd>
+
+<dt>A <code><a href="tar_target_path.html">tar_target_path()</a></code> reference</dt>
+<dd><p>e.g. <code>script = tar_target_path("step_py")</code>, naming an upstream <code>tar_target(step_py, "py/step.py", format = "file")</code>. The file becomes a real <code>targets</code> dependency, so editing it <strong>does</strong> invalidate this target and the step re-runs. This is what you want while a script is still changing, and the recommended form for reproducible pipelines.</p></dd>
+
+<dt>Inline code via <code><a href="tar_code.html">tar_code()</a></code></dt>
+<dd><p>e.g. <code>script = tar_code("result = sum(x)")</code>. The code lives in <code>_targets.R</code> rather than in a file, and is embedded in the target's command, so <code>targets</code> hashes it and editing it <strong>does</strong> invalidate the target. A character string carries foreign source (Python, Julia, Rust, C++) or R source; an R <code>{ ... }</code> block carries inline R and is accepted only by <code>pre_script</code> / <code>post_script</code>, never by the foreign <code>script</code>.</p></dd>
+
+
+</dl><p>Mixing forms in one call is fine: a tracked <code>script</code> with a literal <code>post_script</code>, inline code for one and a file for another, and so on. See <code><a href="../articles/scripts.html">vignette("scripts")</a></code> for worked examples of all three and guidance on choosing.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="tar_target_py.html">tar_target_py()</a></code>, <code><a href="run_py_step.html">run_py_step()</a></code>, <code><a href="tar_target_jl_raw.html">tar_target_jl_raw()</a></code></p></div>
     </div>
@@ -161,12 +181,63 @@
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># Inside a targets factory:</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/pre.R:</span></span></span>
+<span class="r-in"><span><span class="co">#   to_py &lt;- list(x = x)</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/sum.py:</span></span></span>
+<span class="r-in"><span><span class="co">#   result = sum(x)</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/post.R:</span></span></span>
+<span class="r-in"><span><span class="co">#   py$result</span></span></span>
 <span class="r-in"><span><span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu">tar_target_py_raw</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  name <span class="op">=</span> <span class="st">"py_sum"</span>,</span></span>
 <span class="r-in"><span>  script <span class="op">=</span> <span class="st">"scripts/sum.py"</span>,</span></span>
 <span class="r-in"><span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  pre_script <span class="op">=</span> <span class="st">"scripts/pre.R"</span>,   <span class="co"># builds `to_py &lt;- list(x = x)`</span></span></span>
-<span class="r-in"><span>  post_script <span class="op">=</span> <span class="st">"scripts/post.R"</span>  <span class="co"># ends on `py$result`</span></span></span>
+<span class="r-in"><span>  pre_script <span class="op">=</span> <span class="st">"scripts/pre.R"</span>,</span></span>
+<span class="r-in"><span>  post_script <span class="op">=</span> <span class="st">"scripts/post.R"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The three ways to supply a script (see the "Script options" section):</span></span></span>
+<span class="r-in"><span><span class="co"># 1. Literal path: untracked, editing the file does NOT re-run the step.</span></span></span>
+<span class="r-in"><span><span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu">tar_target_py_raw</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  name <span class="op">=</span> <span class="st">"demo_literal"</span>, script <span class="op">=</span> <span class="st">"py/step.py"</span>, retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 2. tar_target_path(): tracked, editing the file DOES re-run the step.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">step_py</span>, <span class="st">"py/step.py"</span>, format <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu">tar_target_py_raw</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    name <span class="op">=</span> <span class="st">"demo_tracked"</span>,</span></span>
+<span class="r-in"><span>    script <span class="op">=</span> <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_target_path.html">tar_target_path</a></span><span class="op">(</span><span class="st">"step_py"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 3. tar_code(): inline, editing the code DOES re-run the step. A string</span></span></span>
+<span class="r-in"><span><span class="co">#    carries foreign source; an R { } block carries inline R.</span></span></span>
+<span class="r-in"><span><span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu">tar_target_py_raw</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  name <span class="op">=</span> <span class="st">"demo_inline"</span>,</span></span>
+<span class="r-in"><span>  script <span class="op">=</span> <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_code.html">tar_code</a></span><span class="op">(</span><span class="st">"result = 1 + 1"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  post_script <span class="op">=</span> <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span> <span class="fu">py_get</span><span class="op">(</span><span class="st">"result"</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Tracking a helper module the script imports. Point `inputs` at a</span></span></span>
+<span class="r-in"><span><span class="co"># format = "file" target so editing the helper also re-runs the step;</span></span></span>
+<span class="r-in"><span><span class="co"># `inputs` takes the *target* name, not the path. py/step.py then loads</span></span></span>
+<span class="r-in"><span><span class="co"># the helper from the bound path rather than a hard-coded one:</span></span></span>
+<span class="r-in"><span><span class="co">#   import os, sys</span></span></span>
+<span class="r-in"><span><span class="co">#   sys.path.insert(0, os.path.dirname(helper_path))</span></span></span>
+<span class="r-in"><span><span class="co">#   import helper</span></span></span>
+<span class="r-in"><span><span class="co">#   result = sum(helper.scale(x))</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">helper_file</span>, <span class="st">"py/helper.py"</span>, format <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu">tar_target_py_raw</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    name <span class="op">=</span> <span class="st">"demo_helper"</span>,</span></span>
+<span class="r-in"><span>    script <span class="op">=</span> <span class="st">"py/step.py"</span>,</span></span>
+<span class="r-in"><span>    inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span>, helper_path <span class="op">=</span> <span class="st">"helper_file"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    pre_script <span class="op">=</span> <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span></span></span>
+<span class="r-in"><span>      <span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span>, helper_path <span class="op">=</span> <span class="va">helper_path</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">}</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

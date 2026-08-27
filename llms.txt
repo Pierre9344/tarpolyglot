@@ -340,11 +340,15 @@ file (also surfaced by GitHub’s “Cite this repository” button).
 
 ## Target constructors
 
-Build a targets step that runs Python, Julia, or Rust. The non-`_raw`
-forms use non-standard evaluation on `name`/`pattern` for direct use in
-`_targets.R`; the `_raw` forms take a string `name` for use inside
-targets factories.
+Build a targets step that runs Python, Julia, Rust, or C++. The
+non-`_raw` forms use non-standard evaluation on `name`/`pattern` for
+direct use in `_targets.R`; the `_raw` forms take a string `name` for
+use inside targets factories.
 
+- [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+  : Target that runs a C++ script
+- [`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md)
+  : Target that runs a C++ script (raw / factory form)
 - [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
   : Target that runs a Python script
 - [`tar_target_py_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py_raw.md)
@@ -361,8 +365,8 @@ targets factories.
 ## Helpers
 
 Supply a step’s code inline, track a script file as a dependency, branch
-while compiling Rust once, and a crew controller preconfigured for
-per-step interpreter isolation.
+while compiling Rust or C++ once, and a crew controller preconfigured
+for per-step interpreter isolation.
 
 - [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
   : Inline code for a tarpolyglot step
@@ -375,15 +379,23 @@ per-step interpreter isolation.
 - [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
   : A crew controller preconfigured for polyglot isolation
 
+- [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+  : Configure per-step stdout/stderr logging
+
+- [`toolchain_check()`](https://pierre9344.github.io/tarpolyglot/reference/toolchain_check.md)
+  : Diagnose the Python, Julia, Rust, and C++ toolchains
+
 ## Branching patterns
 
 Dynamic-branching pattern helpers that mirror the `targets` patterns but
-compile the Rust crate once per pattern (in a `<name>_rust_lib` target)
-and reuse it across branches. On the Python/Julia constructors they fall
-back to the plain `targets` pattern.
+compile once per pattern and reuse the result across branches: the Rust
+crate in a `<name>_rust_lib` target, the C++ library in a
+`<name>_cpp_lib` target. On the Python/Julia constructors they fall back
+to the plain `targets` pattern, since a live interpreter has nothing to
+compile.
 
 - [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
-  : Dynamic-branching map that compiles Rust once
+  : Dynamic-branching map that compiles Rust/C++ once
 - [`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md)
   : Dynamic-branching cross that compiles Rust once
 - [`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md)
@@ -401,12 +413,20 @@ Worker functions the constructors call at pipeline run time. Documented
 because the constructor pages link to them; you do not normally call
 them directly.
 
+- [`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
+  : Execute a C++ step (worker behind tar_target_cpp)
 - [`run_py_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_py_step.md)
   : Execute a Python step (worker behind tar_target_py)
 - [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md)
   : Execute a Julia step (worker behind tar_target_jl)
 - [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md)
   : Execute a Rust step (worker behind tar_target_rs)
+- [`compile_cpp_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.md)
+  : Compile a C++ step once for reuse across branches (worker behind
+  tarpolyglot_map)
+- [`run_cpp_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
+  : Run a C++ step from a pre-compiled library (worker behind
+  tarpolyglot_map)
 - [`compile_rs_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md)
   : Compile a Rust step once for reuse across branches (worker behind
   tarpolyglot_map)
@@ -420,9 +440,13 @@ them directly.
 
 - [Get started with
   tarpolyglot](https://pierre9344.github.io/tarpolyglot/articles/get_started.md):
+- [Supplying scripts to tarpolyglot
+  constructors](https://pierre9344.github.io/tarpolyglot/articles/scripts.md):
 - [Using Python inside
   targets](https://pierre9344.github.io/tarpolyglot/articles/python.md):
 - [Using Julia inside
   targets](https://pierre9344.github.io/tarpolyglot/articles/julia.md):
 - [Using Rust inside
   targets](https://pierre9344.github.io/tarpolyglot/articles/rust.md):
+- [Using C++ inside
+  targets](https://pierre9344.github.io/tarpolyglot/articles/cpp.md):

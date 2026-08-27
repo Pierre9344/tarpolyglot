@@ -1,0 +1,247 @@
+# Target that runs a C++ script
+
+Non-standard-evaluation constructor mirroring
+[`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+for C++: pass a bare `name` and unquoted `pattern`, for direct use in
+`_targets.R`. Compiles the `// [[Rcpp::export]]` functions in `script`
+with [`Rcpp::sourceCpp()`](https://rdrr.io/pkg/Rcpp/man/sourceCpp.html)
+and calls them from the R `post_script`. Delegates to
+[`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md);
+see it and
+[`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
+for the full reference. The Rust twin is
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md);
+Python/Julia are
+[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
+/
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md).
+
+## Usage
+
+``` r
+tar_target_cpp(
+  name,
+  script,
+  post_script = NULL,
+  inputs = NULL,
+  output = "object",
+  files = NULL,
+  depends = NULL,
+  pattern = NULL,
+  packages = targets::tar_option_get("packages"),
+  library = targets::tar_option_get("library"),
+  deps = NULL,
+  string = NULL,
+  format = NULL,
+  repository = targets::tar_option_get("repository"),
+  iteration = targets::tar_option_get("iteration"),
+  error = targets::tar_option_get("error"),
+  memory = targets::tar_option_get("memory"),
+  garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
+  deployment = targets::tar_option_get("deployment"),
+  priority = targets::tar_option_get("priority"),
+  resources = targets::tar_option_get("resources"),
+  storage = targets::tar_option_get("storage"),
+  retrieval = targets::tar_option_get("retrieval"),
+  cue = targets::tar_option_get("cue"),
+  description = targets::tar_option_get("description")
+)
+```
+
+## Arguments
+
+- name:
+
+  Symbol, the target name (unquoted).
+
+- script:
+
+  Path to the C++ script with `// [[Rcpp::export]]` functions
+  (required). Accepts a literal path, a
+  [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
+  reference, or inline code from
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md);
+  see the "Script options" section below.
+
+- post_script:
+
+  Path to an R script run after compilation, where the compiled
+  functions and `inputs` are in scope. Its last expression is the value
+  (object mode); it returns file paths (file mode). Required for object
+  mode. Accepts a literal path, a
+  [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
+  reference, or inline code from
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md);
+  see the "Script options" section below.
+
+- inputs:
+
+  Named character vector (or list) mapping the name seen inside the step
+  (in the R environment and, after the hand-off, in the foreign session)
+  to the name of an upstream target, e.g. `c(x = "prepared_x")`. Each
+  upstream target becomes a dependency of this target and is bound by
+  that name in the step environment; under dynamic branching the
+  per-branch slice is bound instead.
+
+- output:
+
+  Output mode: `"object"` (default) returns a converted R object,
+  `"file"` returns a character vector of file paths (and defaults
+  `format` to `"file"`).
+
+- files:
+
+  Optional character vector of file paths to return when no
+  `post_script` is supplied in file mode.
+
+- depends:
+
+  Optional character vector of extension packages (e.g.
+  `c("RcppArmadillo", "RcppEigen")`); see
+  [`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md).
+
+- pattern:
+
+  Optional branching pattern as described in the [targets package
+  documentation](https://books.ropensci.org/targets/dynamic.html#patterns),
+  unquoted (e.g. `map(x)`). The patterns included in the targets package
+  (`map()`, [`head()`](https://rdrr.io/r/utils/head.html), ...) are
+  accepted, but it is recommended to use the tarpolyglot pattern
+  functions instead, as they compile the library once and reuse it
+  across the branches (see
+  [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
+  [`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md),
+  [`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md),
+  [`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md),
+  [`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md),
+  [`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md)).
+
+- packages, library:
+
+  Character vectors of R packages (and library paths) to load for the
+  target, forwarded to
+  [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html).
+
+- deps, string:
+
+  Advanced
+  [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+  arguments: extra dependency names and a string used for change
+  detection.
+
+- format, repository, iteration:
+
+  Storage/iteration settings forwarded to
+  [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html).
+  `format` defaults to `"file"` when `output = "file"`, otherwise to the
+  `targets` option default.
+
+- error, memory, garbage_collection, deployment, priority, resources,
+  storage, retrieval, cue, description:
+
+  Standard
+  [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+  execution/behaviour arguments, forwarded unchanged.
+
+## Value
+
+A `targets` target object. When `pattern` uses
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+it is instead a list of two targets: the `<name>_cpp_lib` compile target
+and the branched `<name>` target.
+
+## Script options
+
+Every script argument (`script`, and `pre_script` / `post_script` where
+the constructor has them) accepts the same three forms. The choice is
+not cosmetic: it decides whether editing the code re-runs the target.
+
+- A literal path string:
+
+  e.g. `script = "py/step.py"`. The file is read when the step runs, but
+  it is **not** tracked, so editing it does **not** invalidate the
+  target: `targets` will happily reuse a stale result until some *other*
+  dependency changes. Simplest form, and a reasonable default once a
+  script has settled.
+
+- A
+  [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
+  reference:
+
+  e.g. `script = tar_target_path("step_py")`, naming an upstream
+  `tar_target(step_py, "py/step.py", format = "file")`. The file becomes
+  a real `targets` dependency, so editing it **does** invalidate this
+  target and the step re-runs. This is what you want while a script is
+  still changing, and the recommended form for reproducible pipelines.
+
+- Inline code via
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md):
+
+  e.g. `script = tar_code("result = sum(x)")`. The code lives in
+  `_targets.R` rather than in a file, and is embedded in the target's
+  command, so `targets` hashes it and editing it **does** invalidate the
+  target. A character string carries foreign source (Python, Julia,
+  Rust, C++) or R source; an R `{ ... }` block carries inline R and is
+  accepted only by `pre_script` / `post_script`, never by the foreign
+  `script`.
+
+Mixing forms in one call is fine: a tracked `script` with a literal
+`post_script`, inline code for one and a file for another, and so on.
+See
+[`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md)
+for worked examples of all three and guidance on choosing.
+
+## See also
+
+[`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md),
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
+[`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md),
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md),
+[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# scripts/square.cpp:
+#   // [[Rcpp::export]]
+#   double square(double x) { return x * x; }
+# scripts/post.R:
+#   square(x)
+list(
+  tarpolyglot::tar_target_cpp(
+    name = cpp_square,
+    script = "scripts/square.cpp",
+    inputs = c(x = "value"),
+    post_script = "scripts/post.R"
+  )
+)
+
+# The three ways to supply a script (see the "Script options" section):
+# 1. Literal path: untracked, editing the file does NOT re-run the step.
+tarpolyglot::tar_target_cpp(
+  name = demo_literal, script = "cpp/step.cpp", post_script = "R/post.R"
+)
+
+# 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+list(
+  targets::tar_target(step_cpp, "cpp/step.cpp", format = "file"),
+  tarpolyglot::tar_target_cpp(
+    name = demo_tracked,
+    script = tarpolyglot::tar_target_path("step_cpp"),
+    post_script = "R/post.R"
+  )
+)
+
+# 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#    carries foreign source; an R { } block carries inline R.
+tarpolyglot::tar_target_cpp(
+  name = demo_inline,
+  script = tarpolyglot::tar_code(
+    "// [[Rcpp::export]]\nint one() { return 1; }"
+  ),
+  post_script = tarpolyglot::tar_code({ one() })
+)
+} # }
+```

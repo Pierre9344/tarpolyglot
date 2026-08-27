@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,9 +39,11 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
+    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
+    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -98,6 +100,9 @@ inside targets factories.</li>
 (<code>pattern</code>, <code>format</code>, <code>iteration</code>,
 <code>deployment</code>, <code>resources</code>, <code>cue</code>,
 …).</p>
+<p>These constructors depend on the <a href="https://github.com/JuliaInterop/JuliaCall" class="external-link">JuliaCall</a> R
+package. As a result, any limitation of JuliaCall is inherited by the
+constructors. Reading JuliaCall’s own documentation is recommended.</p>
 </div>
 <div class="section level2">
 <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
@@ -268,10 +273,19 @@ with <code>jl_call</code> (an alias of
 <div class="section level2">
 <h2 id="file-output">File output<a class="anchor" aria-label="anchor" href="#file-output"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p><code>jl/write.jl</code>: writes <code>x</code> to a file, keeps the
+path in <code>out_path</code> for the post-script to read back:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>out_path <span class="op">=</span> <span class="fu">tempname</span>() <span class="op">*</span> <span class="st">".csv"</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">open</span>(out_path, <span class="st">"w"</span>) <span class="cf">do</span> io</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    <span class="fu">println</span>(io, <span class="fu">join</span>(x, <span class="st">","</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<p><code>R/post_files.R</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">jl_get</span><span class="op">(</span><span class="st">"out_path"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">jl_file</span>,</span>
-<span>  script <span class="op">=</span> <span class="st">"jl/write.jl"</span>,            <span class="co"># writes a file, stores its path in `out_path`</span></span>
+<span>  script <span class="op">=</span> <span class="st">"jl/write.jl"</span>,</span>
 <span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span><span class="op">)</span>,</span>
 <span>  pre_script <span class="op">=</span> <span class="st">"R/pre_push.R"</span>,</span>
 <span>  post_script <span class="op">=</span> <span class="st">"R/post_files.R"</span>,    <span class="co"># returns jl_get("out_path")</span></span>
@@ -281,29 +295,85 @@ with <code>jl_call</code> (an alias of
 <div class="section level2">
 <h2 id="dynamic-branching-iris-example">Dynamic branching (iris example)<a class="anchor" aria-label="anchor" href="#dynamic-branching-iris-example"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p><code>jl/fit.jl</code>: <code>df</code> (a per-species subset of
+<code>iris</code>, auto-converted to a Julia <code>DataFrame</code>) was
+pushed from R by the pre-script:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">sum</span>(df[!, <span class="st">"Petal.Length"</span>]) <span class="op">/</span> <span class="fu">nrow</span>(df)</span></code></pre></div>
+<p><code>R/pre_push_jl.R</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">to_jl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>df <span class="op">=</span> <span class="va">df</span><span class="op">)</span>   <span class="co"># `df` came from inputs = c(df = "iris_groups")</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">iris_groups</span>, <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">iris</span>, <span class="va">iris</span><span class="op">$</span><span class="va">Species</span><span class="op">)</span>, iteration <span class="op">=</span> <span class="st">"list"</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
 <span>    name <span class="op">=</span> <span class="va">fit_by_group</span>,</span>
 <span>    script <span class="op">=</span> <span class="st">"jl/fit.jl"</span>,</span>
 <span>    inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>df <span class="op">=</span> <span class="st">"iris_groups"</span><span class="op">)</span>,</span>
-<span>    pre_script <span class="op">=</span> <span class="st">"R/pre_push_jl.R"</span>,  <span class="co"># to_jl &lt;- list(df = df)</span></span>
+<span>    pre_script <span class="op">=</span> <span class="st">"R/pre_push_jl.R"</span>,</span>
 <span>    retrieve <span class="op">=</span> <span class="st">"result"</span>,</span>
 <span>    pattern <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">iris_groups</span><span class="op">)</span>,      <span class="co"># one branch per species</span></span>
 <span>    iteration <span class="op">=</span> <span class="st">"list"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Run the branches in parallel by setting a <code>crew</code>
+controller (see <code><a href="../articles/get_started.html">vignette("get_started")</a></code>, the “Parallelism
+and isolation with crew” section, which also covers
+<code>polyglot_controller(log = tar_polyglot_log(...))</code> for
+per-step stdout/stderr log files, including a caveat specific to
+branching there, since every branch of a pattern shares one log
+file).</p>
+</div>
+<div class="section level2">
+<h2 id="parallel-computing-distributed-not-threads">Parallel computing (Distributed, not Threads)<a class="anchor" aria-label="anchor" href="#parallel-computing-distributed-not-threads"></a>
+</h2>
+<p>Julia’s native <code>Threads.@threads</code> multi-threading does
+<strong>not</strong> work through JuliaCall:
+<code>Threads.nthreads()</code> reports <code>1</code> from a
+<code><a href="../reference/run_jl_step.html">run_jl_step()</a></code> session regardless of the
+<code>JULIA_NUM_THREADS</code> environment variable, confirmed set both
+to a fixed number and to <code>"auto"</code> before
+<code><a href="https://rdrr.io/pkg/JuliaCall/man/julia_setup.html" class="external-link">JuliaCall::julia_setup()</a></code> runs. This is a limitation of how
+JuliaCall embeds Julia, not something <code><a href="../reference/tar_target_jl.html">tar_target_jl()</a></code> or
+<code>deployment</code> can work around.</p>
+<p><code>Distributed</code>, Julia’s process-based parallelism, works
+correctly instead, confirmed both in the main session and inside a real
+<code>crew</code> worker:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># jl/parallel_sqrt.jl</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="im">using</span> <span class="bu">Distributed</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">addprocs</span>(n_workers)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="pp">@everywhere</span> <span class="fu">sqrt_one</span>(v) <span class="op">=</span> <span class="fu">sqrt</span>(v)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">pmap</span>(sqrt_one, x)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
+<span>  name <span class="op">=</span> <span class="va">jl_parallel</span>,</span>
+<span>  script <span class="op">=</span> <span class="st">"jl/parallel_sqrt.jl"</span>,</span>
+<span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"big_x"</span>, n_workers <span class="op">=</span> <span class="st">"n_workers"</span><span class="op">)</span>,</span>
+<span>  pre_script <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span> <span class="va">to_jl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span>, n_workers <span class="op">=</span> <span class="va">n_workers</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span>,</span>
+<span>  retrieve <span class="op">=</span> <span class="st">"result"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code>addprocs()</code> spawns genuine separate <code>julia</code>
+processes, so the same oversubscription concern from
+<code><a href="../articles/get_started.html">vignette("get_started")</a></code> applies: a <code>crew</code> worker
+has access to every core on the machine, not a restricted slice of it,
+so several workers each calling <code>addprocs()</code> at once can
+oversubscribe the machine. Put the parallel-heavy step on
+<code>deployment = "main"</code> if you have more than one, or cap
+<code>n_workers</code> per step, for the same reason described
+there.</p>
 </div>
 <div class="section level2">
 <h2 id="choosing-the-julia-install-and-project">Choosing the Julia install and project<a class="anchor" aria-label="anchor" href="#choosing-the-julia-install-and-project"></a>
 </h2>
+<p>The use cases below are about the installation-selection arguments,
+not what each script computes.</p>
 <div class="section level3">
 <h3 id="use-case-1-julia-on-path-default">Use case 1: Julia on PATH (default)<a class="anchor" aria-label="anchor" href="#use-case-1-julia-on-path-default"></a>
 </h3>
 <p>Set nothing; JuliaCall discovers the <code>julia</code> on
-<code>PATH</code> and uses the global environment.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code>PATH</code> and uses the global environment.
+<code>jl/probe.jl</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>result <span class="op">=</span> <span class="bu">Sys</span>.<span class="cn">BINDIR</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">probe</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"jl/probe.jl"</span>,</span>
@@ -313,7 +383,11 @@ with <code>jl_call</code> (an alias of
 <div class="section level3">
 <h3 id="use-case-2-a-specific-juliaup-version">Use case 2: a specific juliaup version<a class="anchor" aria-label="anchor" href="#use-case-2-a-specific-juliaup-version"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>Reuses <code>jl/fit.jl</code> from “Dynamic branching” above as a
+stand-in script (without <code>inputs</code> here, so <code>df</code> is
+undefined, the point of this example is <code>julia_version</code>, not
+the computation):</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"jl/fit.jl"</span>,</span>
@@ -327,10 +401,10 @@ with <code>jl_call</code> (an alias of
 <p>If discovery fails (e.g. a fresh install not yet on
 <code>PATH</code>, or the Windows juliaup shim), point at the
 <code>bin</code> directory. You can set it once globally:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tarpolyglot.julia_home <span class="op">=</span> <span class="st">"C:/Users/me/.julia/juliaup/.../bin"</span><span class="op">)</span></span></code></pre></div>
-<p>or per step:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p>or per step, again reusing <code>jl/fit.jl</code> as a stand-in:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"jl/fit.jl"</span>,</span>
@@ -343,8 +417,10 @@ with <code>jl_call</code> (an alias of
 </h3>
 <p>For reproducibility, activate a Julia <strong>project</strong> with a
 committed <code>Manifest.toml</code>, and <code>using</code> the
-packages the script needs:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+packages the script needs. <code>jl/solve.jl</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>A <span class="op">=</span> [<span class="fl">2.0</span> <span class="fl">0.0</span>; <span class="fl">0.0</span> <span class="fl">2.0</span>]</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>result <span class="op">=</span> <span class="fu">tr</span>(A)</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_jl.html">tar_target_jl</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">solve</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"jl/solve.jl"</span>,</span>
@@ -370,7 +446,11 @@ projects in one pipeline, run those targets on separate
 <div class="section level2">
 <h2 id="tracking-scripts-as-dependencies">Tracking scripts as dependencies<a class="anchor" aria-label="anchor" href="#tracking-scripts-as-dependencies"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>Reuses <code>jl/fit.jl</code> from “Dynamic branching” above as a
+stand-in script (again without <code>inputs = c(df = ...)</code>, so
+<code>df</code> is undefined here, the point of this example is
+<code><a href="../reference/tar_target_path.html">tar_target_path()</a></code>, not the computation):</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">fit_jl</span>, <span class="st">"jl/fit.jl"</span>, format <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span>,</span>
 <span></span>

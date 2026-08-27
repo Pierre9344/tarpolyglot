@@ -2,11 +2,13 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
+  cpp: cpp.html
   get_started: get_started.html
   julia: julia.html
   python: python.html
   rust: rust.html
-last_built: 2026-08-27T07:32Z
+  scripts: scripts.html
+last_built: 2026-08-27T07:43Z
 urls:
   reference: https://pierre9344.github.io/tarpolyglot/reference
   article: https://pierre9344.github.io/tarpolyglot/articles

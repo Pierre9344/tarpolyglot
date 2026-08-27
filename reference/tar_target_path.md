@@ -45,12 +45,17 @@ unaffected.
 
 ``` r
 if (FALSE) { # \dontrun{
+# python/fit_step.py:
+#   result = sum(x)
+# scripts/pre.R:
+#   to_py <- list(x = x)
 list(
-  tar_target(mofaflex_pyscript, "python/mofaflex_fit_step.py", format = "file"),
+  tar_target(fit_pyscript, "python/fit_step.py", format = "file"),
   tar_target_py(
-    name = mofaflex,
-    script = tar_target_path("mofaflex_pyscript"),  # re-runs when the file changes
-    pre_script = "scripts/mofaflex_pre.R",           # untracked literal path
+    name = fit,
+    script = tar_target_path("fit_pyscript"),  # re-runs when the file changes
+    pre_script = "scripts/pre.R",              # untracked literal path
+    inputs = c(x = "prepared_x"),
     retrieve = "result"
   )
 )

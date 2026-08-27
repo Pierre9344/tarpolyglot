@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,9 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
+    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
+    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -45,7 +47,13 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">polyglot_controller</span><span class="op">(</span>workers <span class="op">=</span> <span class="fl">2L</span>, tasks_max <span class="op">=</span> <span class="fl">1L</span>, seconds_idle <span class="op">=</span> <span class="fl">30</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">polyglot_controller</span><span class="op">(</span></span>
+<span>  workers <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  tasks_max <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  seconds_idle <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  log <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -64,6 +72,10 @@
 <dd><p>Numeric seconds an idle worker waits before shutting down. Default <code>30</code>.</p></dd>
 
 
+<dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
+<dd><p>Optional <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code> object turning on per-step stdout/stderr log files for Python and Julia steps (see that function; Rust is not covered). Default <code>NULL</code> (no logging, the previous behavior).</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Further arguments passed to <code><a href="https://wlandau.github.io/crew/reference/crew_controller_local.html" class="external-link">crew::crew_controller_local()</a></code>, e.g. <code>seconds_timeout</code>, <code>garbage_collection</code>, or <code>reset_globals</code>.</p></dd>
 
@@ -79,12 +91,14 @@
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="tar_target_py.html">tar_target_py()</a></code>, <code><a href="tar_target_jl.html">tar_target_jl()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="tar_target_py.html">tar_target_py()</a></code>, <code><a href="tar_target_jl.html">tar_target_jl()</a></code>, <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/step.py:</span></span></span>
+<span class="r-in"><span><span class="co">#   result = 42</span></span></span>
 <span class="r-in"><span><span class="co"># _targets.R</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://docs.ropensci.org/targets/" class="external-link">targets</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a></span><span class="op">)</span></span></span>

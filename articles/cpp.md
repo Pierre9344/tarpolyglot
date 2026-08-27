@@ -1,0 +1,895 @@
+# Using C++ inside targets
+
+This vignette covers running **C++** as `targets` steps with
+[Rcpp](https://www.rcpp.org/). A C++ step is deliberately different from
+a Python or Julia one: there is **no live interpreter**. Instead the
+`// [[Rcpp::export]]` tagged functions in your script are *compiled*
+into a shared library and exposed as ordinary R functions, which an R
+**post-script** then calls. This mirrors
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
+(see
+[`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md))
+closely; a C++ step has no live interpreter to reuse either, so most of
+the same ideas apply, with a couple of additions specific to C++ covered
+below (extension packages, and bringing an R function into C++). For a
+gentler tour start with
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md).
+
+Code blocks are illustrative and **not executed** when the vignette
+builds (compiling C++ needs a compiler).
+
+## Do you need `tar_target_cpp()`?
+
+Often not, and it is worth being honest about when it earns its keep.
+Unlike Python and Julia, a C++ step has no live interpreter and no data
+hand off to abstract away:
+[`Rcpp::sourceCpp()`](https://rdrr.io/pkg/Rcpp/man/sourceCpp.html)
+compiles your `// [[Rcpp::export]]` tagged functions and hands them back
+as ordinary R functions. For the simple case you can call it directly
+inside a plain
+[`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html),
+keeping every native `targets` convenience (automatic dependency
+detection, inline R, a single file):
+
+``` r
+
+library(targets)
+
+list(
+  tar_target(petal_length, iris$Petal.Length),
+
+  tar_target(petal_z, {
+    Rcpp::sourceCpp("cpp/scale.cpp")   # compiles zscore() and puts it in scope
+    zscore(petal_length)               # petal_length is auto-detected as a dependency
+  })
+)
+```
+
+`cpp/scale.cpp` defines `zscore()`, a small function used throughout
+this vignette, its full content is shown in “Object output” just below.
+
+`sourceCpp()` needs a real C++ compiler, R CMD SHLIB runs one just as
+surely as rextendr runs cargo, but it is not a separate toolchain to
+install: it is the same compiler R itself already needs for any package
+with compiled code (Rtools on Windows, Xcode’s command line tools on
+macOS), so this is the recommended starting point whenever
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html)
+can already build a source package on your machine, with nothing further
+to set up.
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+is a convenience wrapper that becomes worth it when you want one or more
+of the following:
+
+- **Robust builds in bare or `crew` worker processes.**
+  [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+  puts R’s own `bin` directory, and on Windows Rtools, on `PATH` for the
+  compilation; a plain
+  [`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+  does not, so a build in a fresh worker can fail to find the compiler
+  unless you arrange that yourself.
+- **File output, script tracking, and the full
+  [`tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+  argument set** bundled in one call (`output = "file"`,
+  [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md),
+  `pattern`, `resources`, `cue`, and so on).
+- **Compile the library only once across branches**, with a
+  `tarpolyglot_*()` pattern helper (see “Compile the C++ code only once
+  across branches” below); this needs no manual orchestration once you
+  use the constructor.
+- **API symmetry** with
+  [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
+  [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+  and
+  [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md),
+  so a polyglot pipeline reads the same way across all four languages.
+
+If none of those apply, the plain
+[`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+above is simpler and gives up nothing. The rest of this vignette
+documents
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+for when they do.
+
+## The two constructors
+
+- [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md):
+  bare `name` (and unquoted `pattern`), for direct use in `_targets.R`.
+- [`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md):
+  string `name`, for use inside targets factories.
+
+Both forward every
+[`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+argument and return a single `targets` target, except with a
+`tarpolyglot_*()` pattern helper (see “Compile the C++ code only once
+across branches”), where they return a compile target plus the branched
+target.
+
+These constructors depend on the [Rcpp](https://www.rcpp.org/) R
+package. As a result, any limitation of Rcpp is inherited by the
+constructors. Reading Rcpp’s own documentation is recommended.
+
+## How a C++ step differs
+
+- **No pre-script.** There is no foreign session to push variables into.
+  The `inputs` are bound directly in the **post-script**, where you call
+  the compiled functions with them.
+- **The post-script is where the work happens.** After compilation, the
+  C++ functions are in scope in the post-script’s environment (alongside
+  `inputs`). Its last expression is the target value (object mode); it
+  returns file paths (file mode).
+- **As many `// [[Rcpp::export]]` functions as you like.** A single
+  script may define multiple functions; all of them become R functions
+  in scope in the post-script.
+- **Real type conversion** (via Rcpp), not JSON, but return values still
+  have to be R representable, or use `output = "file"`.
+- **No separate toolchain or ABI to select**, unlike Rust. `sourceCpp()`
+  compiles against whatever toolchain R itself already uses
+  (`R CMD SHLIB`), so there is no GNU versus MSVC style concern on
+  Windows, and
+  [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+  has no `toolchain` argument.
+
+## Arguments
+
+| Argument | Meaning |
+|----|----|
+| `script` | Path to the C++ file with `// [[Rcpp::export]]` functions (**required**). |
+| `post_script` | R script run after compilation; the compiled functions and `inputs` are in scope. Required for object mode. |
+| `inputs` | Named vector mapping in step names to upstream targets, e.g. `c(x = "value")`. |
+| `output` | `"object"` (default) or `"file"`. |
+| `files` | Paths to return when there is no post-script (file mode). |
+| `depends` | Extension packages (e.g. `c("RcppArmadillo", "RcppEigen")`), passed straight through as `// [[Rcpp::depends(...)]]` would be. |
+
+As with the other languages, `script` and `post_script` may be a literal
+path or a `tar_target_path("name")` reference to track the file.
+
+## Installing Rcpp
+
+1.  Install Rcpp and check it works:
+
+    ``` r
+
+    install.packages("Rcpp")
+    Rcpp::sourceCpp(code = "
+      #include <Rcpp.h>
+      // [[Rcpp::export]]
+      double double_it(double x) { return x * 2.0; }
+    ")
+    double_it(21)   # 42
+    ```
+
+2.  **On Windows**, the compiler comes from
+    [Rtools](https://cran.r-project.org/bin/windows/Rtools/), matched to
+    your R version:
+
+    ``` r
+
+    pkgbuild::has_build_tools(debug = TRUE)
+    ```
+
+    If that reports `FALSE`, install Rtools and restart R. Unlike Rust’s
+    GNU versus MSVC concern, there is nothing to choose here: Rtools
+    already matches R’s own ABI by construction, so there is no
+    toolchain argument to set.
+
+3.  **On macOS**, install Xcode’s command line tools
+    (`xcode-select --install`); **on Linux**, a `g++`/`clang++` and R’s
+    own development package (e.g. `r-base-dev` on Debian/Ubuntu) are
+    normally already present or a single package manager install away.
+
+[`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
+puts R’s own `bin` directory, and on Windows Rtools, on `PATH` for the
+build itself, so a C++ step usually works even in a bare `crew` worker,
+but the compiler must be installed.
+
+## Object output (iris example)
+
+`cpp/scale.cpp`: one `// [[Rcpp::export]]` function:
+
+``` cpp
+#include <Rcpp.h>
+
+// [[Rcpp::export]]
+Rcpp::NumericVector zscore(Rcpp::NumericVector x) {
+  double n = x.size();
+  double m = Rcpp::sum(x) / n;
+  double sd = std::sqrt(Rcpp::sum(Rcpp::pow(x - m, 2.0)) / n);
+  return (x - m) / sd;
+}
+```
+
+`R/scale_post.R`: the compiled `zscore()` and the input `petal` are in
+scope:
+
+``` r
+
+# `petal` is bound from inputs = c(petal = "petal_length").
+scaled <- zscore(petal)
+data.frame(petal = petal, z = scaled)   # last expression = target value
+```
+
+`_targets.R`:
+
+``` r
+
+library(targets)
+library(tarpolyglot)
+
+list(
+  tar_target(petal_length, iris$Petal.Length),
+
+  tar_target_cpp(
+    name = petal_z,
+    script = "cpp/scale.cpp",
+    inputs = c(petal = "petal_length"),
+    post_script = "R/scale_post.R"
+  )
+)
+```
+
+## File output
+
+`cpp/write.cpp`: writes a value to disk and returns nothing, the path
+itself is built in the post-script:
+
+``` cpp
+#include <Rcpp.h>
+#include <fstream>
+
+// [[Rcpp::export]]
+void write_value(double x, std::string path) {
+  std::ofstream out(path);
+  out << x;
+}
+```
+
+`R/cpp_files_post.R`: builds the path, calls the compiled function, then
+returns the path (file mode needs the post-script’s last expression to
+be the path(s), not the function’s own return value):
+
+``` r
+
+path <- tempfile(fileext = ".txt")
+write_value(x, path)
+path
+```
+
+``` r
+
+tar_target_cpp(
+  name = cpp_file,
+  script = "cpp/write.cpp",
+  inputs = c(x = "value"),
+  post_script = "R/cpp_files_post.R", # returns the path(s)
+  output = "file"
+)
+```
+
+## Extension packages
+
+Header only extension packages such as
+[RcppArmadillo](https://cran.r-project.org/package=RcppArmadillo) and
+[RcppEigen](https://cran.r-project.org/package=RcppEigen) need no
+tarpolyglot specific handling: they self declare with a
+`// [[Rcpp::depends(pkgname)]]` source attribute that `sourceCpp()`
+already knows how to parse. `depends` is a convenience alternative,
+useful when you would rather not repeat the attribute in the source
+itself:
+
+``` cpp
+// cpp/arma_stats.cpp
+#include <RcppArmadillo.h>
+
+// [[Rcpp::export]]
+double arma_mean(arma::vec x) {
+  return arma::mean(x);
+}
+```
+
+`R/arma_stats_post.R`: the compiled `arma_mean()` and the input `x` are
+in scope:
+
+``` r
+
+arma_mean(x)
+```
+
+``` r
+
+tar_target_cpp(
+  name = arma_demo,
+  script = "cpp/arma_stats.cpp",
+  inputs = c(x = "values"),
+  post_script = "R/arma_stats_post.R",
+  depends = "RcppArmadillo"   # equivalent to // [[Rcpp::depends(RcppArmadillo)]] in the source
+)
+```
+
+RcppEigen behaves the same way.
+[RcppParallel](https://cran.r-project.org/package=RcppParallel) is
+different: it has a runtime threading component of its own, covered on
+its own below.
+
+## Parallel computing with RcppParallel
+
+[RcppParallel](https://cran.r-project.org/package=RcppParallel) works
+correctly inside a `crew` worker: `RcppParallel::defaultNumThreads()`
+reports the machine’s real core count from a worker exactly as it would
+in the main session, a worker is a full OS process, not a slice of one,
+and `RcppParallel::parallelFor()` genuinely parallelizes there.
+Confirmed directly: `RcppParallel::setThreadOptions(numThreads = N)` in
+the post-script, called before the compiled function, controls how many
+threads that call uses.
+
+``` cpp
+// [[Rcpp::depends(RcppParallel)]]
+#include <RcppParallel.h>
+#include <Rcpp.h>
+
+struct SquareRoot : public RcppParallel::Worker {
+  const std::vector<double> input;
+  std::vector<double> output;
+  SquareRoot(const std::vector<double>& input) : input(input), output(input.size()) {}
+  void operator()(std::size_t begin, std::size_t end) {
+    for (std::size_t i = begin; i < end; i++) output[i] = std::sqrt(input[i]);
+  }
+};
+
+// [[Rcpp::export]]
+Rcpp::NumericVector parallel_sqrt(std::vector<double> x) {
+  SquareRoot sr(x);
+  RcppParallel::parallelFor(0, x.size(), sr);
+  return Rcpp::wrap(sr.output);
+}
+```
+
+``` r
+
+# R/parallel_sqrt_post.R
+RcppParallel::setThreadOptions(numThreads = n_threads)
+parallel_sqrt(x)
+```
+
+The one real risk is not access to cores, it is claiming the same cores
+twice over. A `crew` worker is an ordinary OS process with access to
+every core on the machine, the same as the main session, it is not
+restricted to one core the way a single thread might be. That means
+several workers running at once, each spawning its own full width
+RcppParallel thread pool, can genuinely oversubscribe the machine: `N`
+concurrent workers each grabbing every core adds up to far more threads
+than the machine has, which degrades performance and, on a machine with
+few cores, can exhaust it rather than merely slow it down. Put the
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+step that does the parallel work on `deployment = "main"` to avoid this:
+`targets` only ever builds one `main`-deployed target at a time, so
+parallel-heavy steps never compound with each other, while ordinary
+worker-deployed steps keep running alongside them:
+
+``` r
+
+tar_target_cpp(
+  name = heavy_parallel,
+  script = "cpp/parallel_sqrt.cpp",
+  inputs = c(x = "big_x", n_threads = "n_threads"),
+  post_script = "R/parallel_sqrt_post.R",
+  deployment = "main"
+)
+```
+
+If several different steps each need the full machine, keeping them all
+on `deployment = "main"` serializes them relative to each other, exactly
+like running them one after another in a plain R script, which is the
+safe default. An alternative that keeps worker-based isolation is to cap
+`numThreads` per step (e.g. `parallel::detectCores() / workers`) so that
+even if every worker’s step runs at once, the total across all of them
+does not exceed the machine’s core count.
+
+## Bringing an R function into C++
+
+A compiled function can declare a parameter of type `Rcpp::Function`,
+which accepts an ordinary R function, including one the caller supplies,
+and calls it back from inside the compiled code:
+
+``` cpp
+#include <Rcpp.h>
+
+// [[Rcpp::export]]
+double apply_r_function(Rcpp::NumericVector x, Rcpp::Function f) {
+  Rcpp::NumericVector result = f(x);
+  return result[0];
+}
+```
+
+``` r
+
+apply_r_function(values, mean)   # R's own mean(), called back from compiled code
+```
+
+No pre-script or other tarpolyglot specific plumbing is needed for this:
+once `sourceCpp()` compiles the script, `apply_r_function()` is an
+ordinary R function, so the post-script hands it `f` exactly like it
+hands `x`, both are just arguments. Any R closure works the same way,
+not only base functions. This is unrelated to Rcpp sugar, the vectorized
+C++ syntax Rcpp itself provides (`x + y`, `sum(x)`, and so on): sugar is
+a compile time convenience with no runtime R involvement at all, while
+`Rcpp::Function` is a genuine runtime call back into R’s own evaluator.
+
+## Dynamic branching
+
+Like the other constructors, `inputs` are real dependencies, so
+`pattern` branches them (and `crew` spreads the branches):
+
+``` r
+
+list(
+  tar_target(groups, split(iris$Petal.Length, iris$Species), iteration = "list"),
+  tar_target_cpp(
+    name = z_by_group,
+    script = "cpp/scale.cpp",
+    inputs = c(petal = "groups"),
+    post_script = "R/scale_post.R",
+    pattern = map(groups),
+    iteration = "list"
+  )
+)
+```
+
+Plain `map(groups)` here recompiles the library in **every** branch: a
+C++ step has no live interpreter to reuse, so each branch runs
+`sourceCpp()` from scratch. With many branches that repeated compilation
+is the dominant cost.
+
+## Compile the C++ code only once across branches
+
+`tarpolyglot` provides dynamic branching pattern helpers that mirror the
+`targets` patterns but compile the C++ library a **single time** and
+reuse it across all branches. Each is named after its `targets`
+equivalent:
+
+| tarpolyglot helper | `targets` pattern |
+|----|----|
+| [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md) | `map()` |
+| [`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md) | `cross()` |
+| [`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md) | `slice()` |
+| [`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md) | [`head()`](https://rdrr.io/r/utils/head.html) |
+| [`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md) | [`tail()`](https://rdrr.io/r/utils/head.html) |
+| [`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md) | [`sample()`](https://rdrr.io/r/base/sample.html) |
+
+Use one exactly where you would use the plain pattern:
+
+``` r
+
+list(
+  tar_target(groups, split(iris$Petal.Length, iris$Species), iteration = "list"),
+  tar_target_cpp(
+    name = z_by_group,
+    script = "cpp/scale.cpp",
+    inputs = c(petal = "groups"),
+    post_script = "R/scale_post.R",
+    pattern = tarpolyglot_map(groups),   # was map(groups): now compiles once
+    iteration = "list"
+  )
+)
+```
+
+On a C++ step,
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+expands that single constructor call into **two** targets:
+
+- `z_by_group_cpp_lib`: compiles the library once (this target is not
+  branched). Its value is the compiled library, embedded so any `crew`
+  worker can reload it without a compiler.
+- `z_by_group`: branches over `groups` as before, but each branch
+  reloads the pre compiled library (in milliseconds) instead of
+  recompiling.
+
+You still write one
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md);
+the companion `<name>_cpp_lib` target appears automatically in the
+pipeline (visible in
+[`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html)),
+and `targets` recompiles it only when the C++ source changes. So
+`pattern = tarpolyglot_map(x)` turns `N x compile` into `1 x compile`
+plus `N` near instant reloads.
+
+The other pattern helpers behave the same way, differing only in which
+branches `targets` builds
+([`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md)
+for all combinations of several inputs,
+[`tarpolyglot_head()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.md)
+/
+[`tarpolyglot_tail()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.md)
+/
+[`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md)
+/
+[`tarpolyglot_sample()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.md)
+for a subset). The plain `targets` patterns (`map()`, `cross()`, and so
+on) keep working unchanged; the `tarpolyglot_*` helpers are simply the
+opt in that adds compile once on C++.
+
+### They fall back to the plain pattern on Python and Julia
+
+The same helpers are accepted by
+[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
+and
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+where they are rewritten to the plain `targets` pattern: Python and
+Julia reuse a live interpreter, so there is nothing to compile and
+nothing to reuse.
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+on a Python step is therefore exactly `map()`. On
+[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
+the same helpers compile the Rust crate once instead, the same idea as
+here but for a different toolchain (see
+[`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
+This lets one pipeline branch every language with the same helper. The
+four files involved:
+
+`py/sq.py`:
+
+``` python
+result = x ** 2
+```
+
+`R/push.R` (pre-script for the Python step, `to_py` hands `x` over):
+
+``` r
+
+to_py <- list(x = x)
+```
+
+`cpp/square.cpp`:
+
+``` cpp
+#include <Rcpp.h>
+
+// [[Rcpp::export]]
+double square(double x) { return x * x; }
+```
+
+`R/post.R` (post-script for the C++ step):
+
+``` r
+
+square(x)
+```
+
+``` r
+
+list(
+  tar_target(vals, c(10, 20, 30)),
+  # Python: behaves exactly as map(vals).
+  tar_target_py(
+    name = py_b, script = "py/sq.py", inputs = c(x = "vals"),
+    pre_script = "R/push.R", retrieve = "result",
+    pattern = tarpolyglot_map(vals)
+  ),
+  # C++: compiles once in cpp_b's sibling cpp_b_cpp_lib, reuses across branches.
+  tar_target_cpp(
+    name = cpp_b, script = "cpp/square.cpp", inputs = c(x = "vals"),
+    post_script = "R/post.R",
+    pattern = tarpolyglot_map(vals)
+  )
+)
+```
+
+The `tarpolyglot_*` helpers are recognised only inside the tarpolyglot
+constructors, which rewrite them before handing the pattern to
+`targets`. Used directly in a plain
+[`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+or
+[`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
+they **raise an error**
+(`invalid dynamic branching pattern ... Illegal symbols found: tarpolyglot_map`),
+because `targets` validates a pattern against its own fixed set of
+pattern functions and does not know these helpers. This cannot be
+corrected from tarpolyglot: `targets` looks its pattern functions up in
+a locked internal environment, so teaching it a new one would require
+modifying the `targets` package itself. In a plain `targets` target
+(which has no foreign code to compile, so nothing to gain) use the
+native `map()` / `cross()` / … directly.
+
+## Several C++ steps in one pipeline
+
+A pipeline can contain as many
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+steps as you like, mixing branching
+([`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+and friends) and non branching steps freely. Each step compiles its own
+library independently (or once, with a pattern helper), and (following
+the same fix Rust needed) `tarpolyglot` makes sure the libraries do not
+interfere with one another, even when several run in the same `crew`
+worker or share the same internal module name (see “Current
+limitations”). `z` reuses `cpp/scale.cpp` (content shown in “Object
+output” above); `noise` is a second, unrelated step in the same
+pipeline, `cpp/rng.cpp`:
+
+``` cpp
+#include <Rcpp.h>
+#include <random>
+
+// [[Rcpp::export]]
+Rcpp::NumericVector rng_normal(int n, int seed) {
+  std::mt19937 gen(seed);
+  std::normal_distribution<double> dist(0.0, 1.0);
+  Rcpp::NumericVector out(n);
+  for (int i = 0; i < n; i++) out[i] = dist(gen);
+  return out;
+}
+```
+
+`R/rng_post.R`:
+
+``` r
+
+rng_normal(5, seed)
+```
+
+``` r
+
+list(
+  tar_target(vals, c(10, 20, 30)),
+  tar_target(seed, 42),
+  # Branching, compile once.
+  tar_target_cpp(
+    z, script = "cpp/scale.cpp",
+    inputs = c(petal = "vals"),
+    post_script = "R/scale_post.R",
+    pattern = tarpolyglot_map(vals)
+  ),
+  # A second, non branching C++ step in the same pipeline.
+  tar_target_cpp(
+    noise, script = "cpp/rng.cpp",
+     inputs = c(seed = "seed"),
+    post_script = "R/rng_post.R"
+  )
+)
+```
+
+## Compile once, reuse in other steps
+
+The library a C++ step compiles is an ordinary R object, so you can
+compile once in one target and reuse the functions in other, unrelated
+steps, with no recompilation. Two exported helpers make this explicit:
+
+- [`compile_cpp_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.md)
+  compiles a script’s `// [[Rcpp::export]]` functions and returns a self
+  contained library object (the compiled code plus its R wrappers). It
+  is what the `tarpolyglot_*()` pattern helpers use under the hood.
+- [`run_cpp_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
+  reloads such a library (in milliseconds, no compiler needed) and
+  evaluates a post-script against it, exactly like
+  [`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
+  does after compiling.
+
+`cpp/math.cpp`:
+
+``` cpp
+#include <Rcpp.h>
+
+// [[Rcpp::export]]
+double add_one(double x) { return x + 1.0; }
+```
+
+`R/use_math.R`: the compiled `add_one()` and the input `x` are in scope:
+
+``` r
+
+add_one(x)
+```
+
+``` r
+
+list(
+  tar_target(x, 5),
+  # Compile once; the result is stored like any target value (rds by default, or qs).
+  tar_target(
+    mathlib,
+    tarpolyglot::compile_cpp_lib("cpp/math.cpp")
+  ),
+  # Reuse it in a different step, with no recompilation.
+  tar_target(
+    y, tarpolyglot::run_cpp_step_prebuilt(
+    mathlib, post_script = "R/use_math.R",
+    inputs = list(x = x))
+  )
+)
+```
+
+Because a script can define several `// [[Rcpp::export]]` functions, one
+compiled library can serve many steps. This is the recommended way to
+share C++ code across a pipeline: compile the functions once, then call
+them wherever you need them.
+
+### Reusing a `tar_target_cpp()` companion library elsewhere
+
+`y` above does not have to come from a plain
+`tar_target(mathlib, compile_cpp_lib(...))`: the `<name>_cpp_lib`
+companion target a `tarpolyglot_*()` pattern helper creates (see
+“Compile the C++ code only once across branches”) is an ordinary target
+too, holding an ordinary `tp_cpp_lib` value, so a completely unrelated
+step can reuse it the exact same way, confirmed directly:
+
+``` r
+
+list(
+  tar_target(x, 5),
+  tar_target(groups, c(1, 2, 3)),
+
+  # Compiles cpp/math.cpp ONCE into the companion mathlib_branch_cpp_lib,
+  # then branches over groups, reloading that library each time.
+  tar_target_cpp(
+    name = mathlib_branch,
+    script = "cpp/math.cpp",
+    inputs = c(x = "groups"),
+    post_script = "R/use_math.R",
+    pattern = tarpolyglot_map(groups)
+  ),
+
+  # A wholly separate, non-branching step reusing the SAME companion library,
+  # referenced by name (mathlib_branch_cpp_lib), with no recompilation.
+  tar_target(
+    y,
+    tarpolyglot::run_cpp_step_prebuilt(
+      mathlib_branch_cpp_lib, post_script = "R/use_math.R", inputs = list(x = x)
+    )
+  )
+)
+```
+
+`mathlib_branch_cpp_lib` is not a name you choose, `tarpolyglot` builds
+it from `<name>_cpp_lib`, so it is visible in
+[`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html)
+and referenceable like any other target once you know the convention.
+
+### Using more than one library in a step
+
+A single step can also use several compiled libraries at once, whether
+they come from plain
+[`compile_cpp_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.md)
+targets,
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+companions, or a mix of both. Call
+[`run_cpp_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
+once per library and combine the results. `cpp/lib_b.cpp` (a second,
+independent script):
+
+``` cpp
+#include <Rcpp.h>
+
+// [[Rcpp::export]]
+double times_ten(double x) { return x * 10.0; }
+```
+
+`R/b.R`:
+
+``` r
+
+times_ten(x)
+```
+
+``` r
+
+list(
+  tar_target(x, 5),
+  tar_target(groups, c(1, 2, 3)),
+
+  # libA: a tar_target_cpp() companion (see above); libB: a plain compile_cpp_lib().
+  tar_target_cpp(
+    name = mathlib_branch,
+    script = "cpp/math.cpp",
+    inputs = c(x = "groups"),
+    post_script = "R/use_math.R",
+    pattern = tarpolyglot_map(groups)
+  ),
+  tar_target(libB, tarpolyglot::compile_cpp_lib("cpp/lib_b.cpp")),
+
+  tar_target(combined, {
+    a <- tarpolyglot::run_cpp_step_prebuilt(
+      mathlib_branch_cpp_lib, post_script = "R/use_math.R", inputs = list(x = x)
+    )
+    b <- tarpolyglot::run_cpp_step_prebuilt(
+      libB, post_script = "R/b.R", inputs = list(x = x)
+    )
+    list(a = a, b = b)
+  })
+)
+```
+
+The libraries are loaded one at a time (see “Current limitations”), so
+call them in sequence like this rather than trying to use functions from
+two libraries in the same expression.
+
+## Current limitations
+
+- **One compiled library resident at a time (per module name).**
+  `sourceCpp()` names every compiled library `sourceCpp_<N>` from a per
+  session counter, so two libraries built in separate workers often
+  share the name `sourceCpp_1`. `tarpolyglot` handles this by loading
+  the library you are calling and swapping it out when you switch to
+  another, so results are always correct. It does mean you cannot hold
+  two such libraries live at once to interleave their functions in a
+  single expression. When you need several functions available together,
+  put them in one script (a script may define any number of
+  `// [[Rcpp::export]]` functions) rather than in separate libraries.
+- **A pattern helper adds a companion target.**
+  [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+  (and the other helpers) create a `<name>_cpp_lib` compile target
+  alongside the branched target. This is intentional, it is what makes
+  compile once work, and it shows up in
+  [`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html).
+- **RcppParallel and `crew` worker oversubscription.** See “Parallel
+  computing with RcppParallel” above: a worker has full access to every
+  core, so several workers each running their own full width thread pool
+  at once can oversubscribe the machine. Use `deployment = "main"` on
+  the parallel-heavy step, or cap `numThreads` per step, to avoid it.
+
+## Step output and tar_polyglot_log()
+
+C++ steps are covered by
+[tar_polyglot_log()](https://pierre9344.github.io/tarpolyglot/articles/tar_polyglot_log.md),
+with one caveat: `Rcpp::Rcout` and `Rcpp::Rcerr`, the idiomatic Rcpp
+printing calls, route through R’s own output connection system, so they
+are captured the same way [`cat()`](https://rdrr.io/r/base/cat.html)
+output is. Raw `std::cout` / `std::cerr` / `printf()` write straight to
+the OS file descriptor and bypass that system entirely, so they are
+**not** captured, use `Rcpp::Rcout` / `Rcpp::Rcerr` in compiled code
+instead of raw C++ streams if you want step output in these logs:
+
+``` r
+
+tar_option_set(
+  controller = polyglot_controller(
+    log = tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+  )
+)
+```
+
+``` cpp
+// [[Rcpp::export]]
+double loud_square(double x) {
+  Rcpp::Rcout << "computing square of " << x << std::endl;   // captured
+  return x * x;
+}
+```
+
+## Rtools note (Windows)
+
+Unlike Rust’s GNU versus MSVC ABI matching concern, there is nothing to
+choose on Windows: Rtools already matches R’s own ABI by construction,
+so
+[`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+has no `toolchain` argument. Make sure Rtools is installed and
+discoverable (`pkgbuild::has_build_tools(debug = TRUE)`), the same way
+it already needs to be for any R package with compiled code.
+
+## Trade-offs vs Python/Julia
+
+Because a C++ step compiles rather than using a live interpreter:
+
+- **No interpreter per session or global state issues.** Each step
+  compiles and loads its own library, so different steps can freely use
+  different extension packages in the same session.
+- **Compilation cost instead of interpreter start up.** The first build
+  compiles your code (a few seconds); to avoid recompiling in every
+  branch, use a `tarpolyglot_*()` pattern helper (compile once across
+  branches); to avoid recompiling across steps, compile once with
+  [`compile_cpp_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.md)
+  and reuse it with
+  [`run_cpp_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
+  (see the sections above).
+
+See
+[`?tar_target_cpp`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+and
+[`?run_cpp_step`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
+for the full argument reference,
+[`?tarpolyglot_map`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
+[`?compile_cpp_lib`](https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.md),
+and
+[`?run_cpp_step_prebuilt`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
+for compile once and library reuse,
+[`?tar_polyglot_log`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+for step logging, and
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
+for how C++ steps fit alongside Python/Julia/Rust and `crew`.

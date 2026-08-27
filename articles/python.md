@@ -26,6 +26,11 @@ argument, so anything an ordinary target supports (`pattern`, `format`,
 `iteration`, `deployment`, `resources`, `cue`, `memory`, `error`,
 `priority`, `description`, …) works exactly as usual.
 
+These constructors depend on the
+[reticulate](https://rstudio.github.io/reticulate/) R package. As a
+result, any limitation of reticulate is inherited by the constructors.
+Reading reticulate’s own documentation is recommended.
+
 ## Arguments
 
 ### Scripts
@@ -138,11 +143,30 @@ Set `output = "file"` when the script writes to disk; return the path(s)
 from the post-script (or via `files` when there is no post-script). The
 target `format` becomes `"file"` automatically.
 
+`py/write_csv.py`: writes `x` to a CSV, keeps the path in `out_path` for
+the post-script to read back:
+
+``` python
+import csv
+import tempfile
+
+out_path = tempfile.mktemp(suffix=".csv")
+with open(out_path, "w", newline="") as f:
+    csv.writer(f).writerow(x)
+```
+
+`R/post_files.R`:
+
+``` r
+
+py_get("out_path")
+```
+
 ``` r
 
 tar_target_py(
   name = py_file,
-  script = "py/write_csv.py",       # writes a CSV, stores its path in `out_path`
+  script = "py/write_csv.py",
   inputs = c(x = "prepared_x"),
   pre_script = "R/pre_push.R",
   post_script = "R/post_files.R",   # returns py_get("out_path")
@@ -171,7 +195,62 @@ list(
 
 Run the branches in parallel by setting a `crew` controller (see
 [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md),
-the “Parallelism and isolation with crew” section).
+the “Parallelism and isolation with crew” section, which also covers
+`polyglot_controller(log = tar_polyglot_log(...))` for per-step
+stdout/stderr log files, including a caveat specific to branching there,
+since every branch of a pattern shares one log file).
+
+## Parallel computing (multiprocessing)
+
+Python’s own `multiprocessing` /
+`concurrent.futures.ProcessPoolExecutor` work correctly through
+[`run_py_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_py_step.md),
+confirmed both in the main session and inside a real `crew` worker, with
+one hard constraint: the pool has to be created and used at the **top
+level of the script itself**, guarded by the usual
+`if __name__ == "__main__":`, not inside a function that the script only
+defines and that a later `post_script` calls. That second shape breaks
+on Windows:
+[`reticulate::py_run_file()`](https://rstudio.github.io/reticulate/reference/py_run.html)
+runs your script directly into `__main__`, and when the pool is created
+later from a separate reticulate call, the worker processes
+`multiprocessing` spawns cannot find the function it needs to unpickle,
+and the pool fails with a pickling error. Doing the parallel work at the
+top level of `script`, with `retrieve` (or a top-level result variable a
+`post_script` reads with `py_get()`) to bring the value back, avoids
+this entirely, and is also the standard, portable way to write this in
+plain Python:
+
+``` python
+# py/parallel_sqrt.py
+from concurrent.futures import ProcessPoolExecutor
+
+def _sqrt_one(v):
+    return v ** 0.5
+
+if __name__ == "__main__":
+    with ProcessPoolExecutor(max_workers=n_workers) as ex:
+        result = list(ex.map(_sqrt_one, x))
+```
+
+``` r
+
+tar_target_py(
+  name = py_parallel,
+  script = "py/parallel_sqrt.py",
+  inputs = c(x = "big_x", n_workers = "n_workers"),
+  pre_script = tar_code({ to_py <- list(x = x, n_workers = n_workers) }),
+  retrieve = "result"
+)
+```
+
+The same oversubscription concern from
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
+applies here too: a `crew` worker is a full process with access to every
+core, not a slice of one, so several workers each spawning their own
+multiprocessing pool at once can oversubscribe the machine. Put the
+parallel-heavy step on `deployment = "main"` if you have more than one,
+or cap `n_workers` per step, for the same reason described there.
 
 ## Choosing the Python environment
 
@@ -217,11 +296,21 @@ that is an existing directory is expanded to an absolute path, so
 through unchanged, so a genuine named environment still resolves.
 Setting `env` while `env_manager = "system"` is an error.
 
+The use cases below are about the environment-selection arguments, not
+what each script computes, so the script bodies are deliberately
+trivial, one line assigning the variable named in `retrieve`.
+
 ### Use case 1: global / system default
 
 Set nothing; reticulate uses the computer’s default Python (on recent
 versions, an ephemeral uv-managed one provisioned on first use).
 Convenient for exploration; pin a real environment for reproducibility.
+`py/probe.py` (reused in use case 5 below):
+
+``` python
+import sys
+result = sys.executable
+```
 
 ``` r
 
@@ -243,6 +332,12 @@ uv venv .venv
 uv pip install --python .venv/Scripts/python.exe numpy pandas scikit-learn
 ```
 
+`py/fit.py`:
+
+``` python
+model = {"coef": 1.5, "intercept": 0.2}
+```
+
 ``` r
 
 tar_target_py(
@@ -257,7 +352,11 @@ tar_target_py(
 ### Use case 3: a poetry project
 
 Give the **project directory** (the folder with `pyproject.toml`); its
-virtualenv is resolved for you with `poetry env info -p`.
+virtualenv is resolved for you with `poetry env info -p`. `py/embed.py`:
+
+``` python
+vectors = [[0.1, 0.2], [0.3, 0.4]]
+```
 
 ``` r
 
@@ -274,6 +373,18 @@ If the `poetry` on `PATH` is not the one you want, select a specific
 executable with `options(tarpolyglot.poetry = "/path/to/poetry")`.
 
 ### Use case 4: a plain venv or a conda env
+
+`py/score.py`:
+
+``` python
+result = 0.87
+```
+
+`py/classify.py`:
+
+``` python
+labels = ["setosa", "versicolor", "virginica"]
+```
 
 ``` r
 
@@ -323,7 +434,14 @@ tar_target_py(
 By default `script` / `pre_script` / `post_script` are untracked literal
 paths. To have the step re-run when a script changes, track it with a
 `format = "file"` target and reference it with
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md):
+[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md).
+`py/fit.py` is the same script shown in “Use case 2” above;
+`R/pre_fit.R`:
+
+``` r
+
+to_py <- list(x = x)   # `x` came from inputs = c(x = "data")
+```
 
 ``` r
 
