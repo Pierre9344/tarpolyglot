@@ -88,13 +88,22 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_option_set.html" class="external-link">tar_option_set</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  controller <span class="op">=</span> <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="polyglot_controller.html">polyglot_controller</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    log <span class="op">=</span> <span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu">tar_polyglot_log</span><span class="op">(</span>stdout <span class="op">=</span> <span class="st">"./logs/out"</span>, stderr <span class="op">=</span> <span class="st">"./logs/err"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># tar_polyglot_log() only builds a configuration object; nothing is written</span></span></span>
+<span class="r-in"><span><span class="co"># and no directory is created until a step actually runs.</span></span></span>
+<span class="r-in"><span><span class="va">log</span> <span class="op">&lt;-</span> <span class="fu">tar_polyglot_log</span><span class="op">(</span>stdout <span class="op">=</span> <span class="st">"./logs/out"</span>, stderr <span class="op">=</span> <span class="st">"./logs/err"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">log</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> List of 4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ stdout: chr "./logs/out"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ stderr: chr "./logs/err"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ append: logi FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  $ header: logi TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  - attr(*, "class")= chr "tp_log"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># It is passed to polyglot_controller(), which every Python/Julia/C++ step</span></span></span>
+<span class="r-in"><span><span class="co"># then inherits from.</span></span></span>
+<span class="r-in"><span><span class="va">controller</span> <span class="op">&lt;-</span> <span class="fu"><a href="polyglot_controller.html">polyglot_controller</a></span><span class="op">(</span>log <span class="op">=</span> <span class="va">log</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">inherits</a></span><span class="op">(</span><span class="va">controller</span>, <span class="st">"crew_class_controller"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

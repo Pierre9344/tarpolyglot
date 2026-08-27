@@ -105,11 +105,20 @@ one-file-per-worker-process log.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-targets::tar_option_set(
-  controller = tarpolyglot::polyglot_controller(
-    log = tarpolyglot::tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
-  )
-)
-} # }
+# tar_polyglot_log() only builds a configuration object; nothing is written
+# and no directory is created until a step actually runs.
+log <- tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+str(log)
+#> List of 4
+#>  $ stdout: chr "./logs/out"
+#>  $ stderr: chr "./logs/err"
+#>  $ append: logi FALSE
+#>  $ header: logi TRUE
+#>  - attr(*, "class")= chr "tp_log"
+
+# It is passed to polyglot_controller(), which every Python/Julia/C++ step
+# then inherits from.
+controller <- polyglot_controller(log = log)
+inherits(controller, "crew_class_controller")
+#> [1] TRUE
 ```

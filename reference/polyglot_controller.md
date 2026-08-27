@@ -79,15 +79,58 @@ top of `_targets.R`:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# scripts/step.py:
-#   result = 42
-# _targets.R
-library(targets)
-library(tarpolyglot)
-tar_option_set(controller = polyglot_controller(workers = 4))
+# Constructing a controller starts no worker process: targets launches them
+# when the pipeline runs, so this example needs no Python.
+controller <- polyglot_controller(workers = 4L)
+inherits(controller, "crew_class_controller")
+#> [1] TRUE
+
+# In _targets.R you hand it to targets::tar_option_set(), alongside the
+# steps that will use it. The option is reset here so the example leaves
+# no global state behind.
+targets::tar_option_set(controller = controller)
 list(
   tar_target_py(x, "scripts/step.py", retrieve = "result")
 )
-} # }
+#> [[1]]
+#> <tar_stem> 
+#>   name: x 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = "scripts/step.py", 
+#>         pre_script = NULL, post_script = NULL, inputs = list(), output = "object", 
+#>         retrieve = "result", files = NULL, python_version = NULL, 
+#>         env = NULL, env_manager = "system", python = NULL, name = "x") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+targets::tar_option_reset()
 ```

@@ -100,14 +100,13 @@ The constructors that accept them:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 # rs/square.rs:
 #   #[extendr]
 #   fn square(x: f64) -> f64 { x * x }
 # R/post_square.R:
 #   square(x)
 list(
-  tar_target(vals, c(10, 20, 30)),
+  targets::tar_target(vals, c(10, 20, 30)),
   # Rust: compiles rs/square.rs once in `rs_branch_rust_lib`, then squares
   # each branch value reusing that compiled library.
   tarpolyglot::tar_target_rs(
@@ -118,5 +117,122 @@ list(
     pattern = tarpolyglot_map(vals)
   )
 )
-} # }
+#> [[1]]
+#> <tar_stem> 
+#>   name: vals 
+#>   description:  
+#>   command:
+#>     c(10, 20, 30) 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> [[2]][[1]]
+#> <tar_stem> 
+#>   name: rs_branch_rust_lib 
+#>   description: Compile the Rust crate once for rs_branch 
+#>   command:
+#>     tarpolyglot::compile_rs_lib(script = "rs/square.rs", 
+#>         dependencies = NULL, features = NULL, profile = NULL, toolchain = NULL) 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]][[2]]
+#> <tar_pattern> 
+#>   name: rs_branch 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_rs_step_prebuilt(lib = rs_branch_rust_lib, 
+#>         post_script = "R/post_square.R", inputs = list(x = vals), 
+#>         output = "object", files = NULL) 
+#>   pattern:
+#>     map(vals) 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> 
 ```

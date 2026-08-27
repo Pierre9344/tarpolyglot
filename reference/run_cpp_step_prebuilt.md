@@ -121,14 +121,20 @@ are covered in
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
-# scripts/square.cpp:
-#   // [[Rcpp::export]]
-#   double square(double x) { return x * x; }
-# scripts/post.R:
-#   square(x)
-lib <- compile_cpp_lib(script = "scripts/square.cpp")
-run_cpp_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
-} # }
+# Reloading needs a library built by compile_cpp_lib(), which needs a C++
+# compiler, so this is gated on TARPOLYGLOT_EXAMPLES=true.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
+    writeLines(
+      c("#include <Rcpp.h>",
+        "// [[Rcpp::export]]",
+        "double square(double x) { return x * x; }"),
+      "square.cpp"
+    )
+    writeLines("square(x)", "post.R")
+    lib <- compile_cpp_lib(script = "square.cpp")
+    run_cpp_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "post.R")
+  })
+}
 ```

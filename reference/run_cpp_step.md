@@ -135,17 +135,24 @@ are covered in
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Normally invoked by tar_target_cpp(); shown here as a direct call.
-# scripts/square.cpp:
-#   // [[Rcpp::export]]
-#   double square(double x) { return x * x; }
-# scripts/post.R:
-#   square(x)
-run_cpp_step(
-  script = "scripts/square.cpp",
-  inputs = list(x = 21),
-  post_script = "scripts/post.R"
-)
-} # }
+# This worker compiles C++, so it only runs when TARPOLYGLOT_EXAMPLES=true
+# says a compiler reachable by R is available. tar_dir() runs the code in a
+# temporary directory.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_cpp(); shown here as a direct call.
+    writeLines(
+      c("#include <Rcpp.h>",
+        "// [[Rcpp::export]]",
+        "double square(double x) { return x * x; }"),
+      "square.cpp"
+    )
+    writeLines("square(x)", "post.R")
+    run_cpp_step(
+      script = "square.cpp",
+      inputs = list(x = 21),
+      post_script = "post.R"
+    )
+  })
+}
 ```

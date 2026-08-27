@@ -78,7 +78,6 @@ The constructors that accept them:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 # square.rs:
 #   #[extendr]
 #   fn square(x: f64) -> f64 { x * x }
@@ -88,5 +87,83 @@ tarpolyglot::tar_target_rs(
   name = rs_grid, script = "square.rs", inputs = c(x = "a", y = "b"),
   post_script = "post.R", pattern = tarpolyglot_cross(a, b)
 )
-} # }
+#> [[1]]
+#> <tar_stem> 
+#>   name: rs_grid_rust_lib 
+#>   description: Compile the Rust crate once for rs_grid 
+#>   command:
+#>     tarpolyglot::compile_rs_lib(script = "square.rs", 
+#>         dependencies = NULL, features = NULL, profile = NULL, toolchain = NULL) 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_pattern> 
+#>   name: rs_grid 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_rs_step_prebuilt(lib = rs_grid_rust_lib, 
+#>         post_script = "post.R", inputs = list(x = a, y = b), output = "object", 
+#>         files = NULL) 
+#>   pattern:
+#>     cross(a, b) 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 ```

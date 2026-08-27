@@ -263,7 +263,7 @@ for worked examples of all three and guidance on choosing.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Building a target does not run it, so these examples need no Python.
 # Inside a targets factory:
 # scripts/pre.R:
 #   to_py <- list(x = x)
@@ -278,12 +278,91 @@ tarpolyglot::tar_target_py_raw(
   pre_script = "scripts/pre.R",
   post_script = "scripts/post.R"
 )
+#> <tar_stem> 
+#>   name: py_sum 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = "scripts/sum.py", 
+#>         pre_script = "scripts/pre.R", post_script = "scripts/post.R", 
+#>         inputs = list(x = prepared_x), output = "object", retrieve = NULL, 
+#>         files = NULL, python_version = NULL, env = NULL, env_manager = "system", 
+#>         python = NULL, name = "py_sum") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # The three ways to supply a script (see the "Script options" section):
 # 1. Literal path: untracked, editing the file does NOT re-run the step.
 tarpolyglot::tar_target_py_raw(
   name = "demo_literal", script = "py/step.py", retrieve = "result"
 )
+#> <tar_stem> 
+#>   name: demo_literal 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = "py/step.py", pre_script = NULL, 
+#>         post_script = NULL, inputs = list(), output = "object", retrieve = "result", 
+#>         files = NULL, python_version = NULL, env = NULL, env_manager = "system", 
+#>         python = NULL, name = "demo_literal") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
 list(
@@ -294,6 +373,83 @@ list(
     retrieve = "result"
   )
 )
+#> [[1]]
+#> <tar_stem> 
+#>   name: step_py 
+#>   description:  
+#>   command:
+#>     "py/step.py" 
+#>   format: file 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_stem> 
+#>   name: demo_tracked 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = step_py, pre_script = NULL, 
+#>         post_script = NULL, inputs = list(), output = "object", retrieve = "result", 
+#>         files = NULL, python_version = NULL, env = NULL, env_manager = "system", 
+#>         python = NULL, name = "demo_tracked") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # 3. tar_code(): inline, editing the code DOES re-run the step. A string
 #    carries foreign source; an R { } block carries inline R.
@@ -302,6 +458,48 @@ tarpolyglot::tar_target_py_raw(
   script = tarpolyglot::tar_code("result = 1 + 1"),
   post_script = tarpolyglot::tar_code({ py_get("result") })
 )
+#> <tar_stem> 
+#>   name: demo_inline 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = structure(list(code = "result = 1 + 1"), 
+#>         class = c("tp_inline", "tp_source")), pre_script = NULL, 
+#>         post_script = structure(list(code = quote({
+#>             py_get("result")
+#>         })), class = c("tp_inline", "tp_expr")), inputs = list(), 
+#>         output = "object", retrieve = NULL, files = NULL, python_version = NULL, 
+#>         env = NULL, env_manager = "system", python = NULL, name = "demo_inline") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # Tracking a helper module the script imports. Point `inputs` at a
 # format = "file" target so editing the helper also re-runs the step;
@@ -323,5 +521,83 @@ list(
     retrieve = "result"
   )
 )
-} # }
+#> [[1]]
+#> <tar_stem> 
+#>   name: helper_file 
+#>   description:  
+#>   command:
+#>     "py/helper.py" 
+#>   format: file 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_stem> 
+#>   name: demo_helper 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = "py/step.py", pre_script = structure(list(code = quote({
+#>         to_py <- list(x = x, helper_path = helper_path)
+#>     })), class = c("tp_inline", "tp_expr")), post_script = NULL, 
+#>         inputs = list(x = prepared_x, helper_path = helper_file), 
+#>         output = "object", retrieve = "result", files = NULL, python_version = NULL, 
+#>         env = NULL, env_manager = "system", python = NULL, name = "demo_helper") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 ```

@@ -126,19 +126,23 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Normally invoked by tar_target_py(); shown here as a direct call.</span></span></span>
-<span class="r-in"><span><span class="co"># scripts/pre.R:</span></span></span>
-<span class="r-in"><span><span class="co">#   to_py &lt;- list(x = x)</span></span></span>
-<span class="r-in"><span><span class="co"># scripts/sum.py:</span></span></span>
-<span class="r-in"><span><span class="co">#   result = sum(x)</span></span></span>
-<span class="r-in"><span><span class="fu">run_py_step</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  script <span class="op">=</span> <span class="st">"scripts/sum.py"</span>,</span></span>
-<span class="r-in"><span>  pre_script <span class="op">=</span> <span class="st">"scripts/pre.R"</span>,</span></span>
-<span class="r-in"><span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># This worker binds a live Python interpreter, so it only runs when</span></span></span>
+<span class="r-in"><span><span class="co"># TARPOLYGLOT_EXAMPLES=true says a Python toolchain is available.</span></span></span>
+<span class="r-in"><span><span class="co"># tar_dir() runs the code in a temporary directory, so nothing is written</span></span></span>
+<span class="r-in"><span><span class="co"># to the working directory.</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"TARPOLYGLOT_EXAMPLES"</span><span class="op">)</span>, <span class="st">"true"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_dir.html" class="external-link">tar_dir</a></span><span class="op">(</span><span class="op">{</span></span></span>
+<span class="r-in"><span>    <span class="co"># Normally invoked by tar_target_py(); shown here as a direct call.</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="st">"to_py &lt;- list(x = x)"</span>, <span class="st">"pre.R"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="st">"result = float(sum(x))"</span>, <span class="st">"sum.py"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="fu">run_py_step</span><span class="op">(</span></span></span>
+<span class="r-in"><span>      script <span class="op">=</span> <span class="st">"sum.py"</span>,</span></span>
+<span class="r-in"><span>      pre_script <span class="op">=</span> <span class="st">"pre.R"</span>,</span></span>
+<span class="r-in"><span>      inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

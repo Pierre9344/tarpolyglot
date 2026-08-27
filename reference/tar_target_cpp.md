@@ -203,7 +203,7 @@ for worked examples of all three and guidance on choosing.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Building a target does not run it, so these examples need no C++ compiler.
 # scripts/square.cpp:
 #   // [[Rcpp::export]]
 #   double square(double x) { return x * x; }
@@ -217,12 +217,89 @@ list(
     post_script = "scripts/post.R"
   )
 )
+#> [[1]]
+#> <tar_stem> 
+#>   name: cpp_square 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_cpp_step(script = "scripts/square.cpp", 
+#>         post_script = "scripts/post.R", inputs = list(x = value), 
+#>         output = "object", files = NULL, depends = NULL, name = "cpp_square") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # The three ways to supply a script (see the "Script options" section):
 # 1. Literal path: untracked, editing the file does NOT re-run the step.
 tarpolyglot::tar_target_cpp(
   name = demo_literal, script = "cpp/step.cpp", post_script = "R/post.R"
 )
+#> <tar_stem> 
+#>   name: demo_literal 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_cpp_step(script = "cpp/step.cpp", 
+#>         post_script = "R/post.R", inputs = list(), output = "object", 
+#>         files = NULL, depends = NULL, name = "demo_literal") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # 2. tar_target_path(): tracked, editing the file DOES re-run the step.
 list(
@@ -233,6 +310,82 @@ list(
     post_script = "R/post.R"
   )
 )
+#> [[1]]
+#> <tar_stem> 
+#>   name: step_cpp 
+#>   description:  
+#>   command:
+#>     "cpp/step.cpp" 
+#>   format: file 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_stem> 
+#>   name: demo_tracked 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_cpp_step(script = step_cpp, post_script = "R/post.R", 
+#>         inputs = list(), output = "object", files = NULL, depends = NULL, 
+#>         name = "demo_tracked") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # 3. tar_code(): inline, editing the code DOES re-run the step. A string
 #    carries foreign source; an R { } block carries inline R.
@@ -243,5 +396,44 @@ tarpolyglot::tar_target_cpp(
   ),
   post_script = tarpolyglot::tar_code({ one() })
 )
-} # }
+#> <tar_stem> 
+#>   name: demo_inline 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_cpp_step(script = structure(list(code = "// [[Rcpp::export]]\nint one() { return 1; }"), 
+#>         class = c("tp_inline", "tp_source")), post_script = structure(list(code = quote({
+#>         one()
+#>     })), class = c("tp_inline", "tp_expr")), inputs = list(), output = "object", 
+#>         files = NULL, depends = NULL, name = "demo_inline") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 ```

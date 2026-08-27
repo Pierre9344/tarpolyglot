@@ -144,6 +144,10 @@
   using more than one Rust library in a single step all behave
   correctly. See
   [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md).
+- The name argument of tar_target_py_raw() was documented as the
+  worker’s logging argument (“Supplied automatically by the constructor;
+  used only to name this step’s log files”), inherited by mistake from
+  run_py_step(). It is now documented as the target name.
 
 #### Documentation
 
@@ -156,7 +160,6 @@
   a file path instead of a target name, and why code assembled with
   `glue()` can use R objects that exist when `_targets.R` is sourced but
   cannot see the values of upstream targets.
-
 - [`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md)
   also documents tracking helper files that a script imports, by
   pointing `inputs` at a `format = "file"` target, with matching
@@ -177,7 +180,6 @@
   `include!("helper.rs")` does not resolve. Listing the helper in
   `inputs` still registers it as a dependency there, so editing it
   re-runs and recompiles the step; only the loading half is unavailable.
-
 - [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)
   now documents compiling a Rust library once and reusing it across
   unrelated steps
@@ -186,7 +188,6 @@
   [`run_rs_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)),
   defining several `#[extendr]` functions in one script, using more than
   one library in a step, and the accompanying limitations.
-
 - [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)
   and the `tarpolyglot_*()` pattern helpers
   ([`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
@@ -200,13 +201,11 @@
   [`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
   and
   [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html).
-
 - [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md),
   [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md),
   and
   [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)
   were modified to improve their examples.
-
 - New
   [`vignette("cpp")`](https://pierre9344.github.io/tarpolyglot/articles/cpp.md)
   covers the new C++ (Rcpp) workflow of tarpolyglot: when to use it over
@@ -219,7 +218,6 @@
   across steps, and
   [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
   support.
-
 - Parallel computing under `crew` workers documented for the first time,
   in
   [`vignette("cpp")`](https://pierre9344.github.io/tarpolyglot/articles/cpp.md),
@@ -238,7 +236,6 @@
   time. Demonstrated with a working `deployment = "main"` target in each
   of `examples/tarpolyglot_cpp`, `examples/tarpolyglot_py`, and
   `examples/tarpolyglot_jl`.
-
 - All eight constructors
   ([`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
   [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
@@ -254,7 +251,6 @@
   (hashed as part of the target’s command, so editing it does). Each of
   the eight gained `\dontrun{}` examples showing the three forms side by
   side.
-
 - The step workers
   ([`run_py_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_py_step.md),
   [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md),
@@ -271,7 +267,29 @@
   carrier; handing the result of
   [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
   straight to a worker therefore does not resolve to a file.
-
+- Examples no longer use , following the rOpenSci packaging guide.
+  Building a target does not run it, so the examples for the eight
+  constructors and for tar_code(), tar_target_path(),
+  tar_polyglot_log(), polyglot_controller() and the tarpolyglot\_*()
+  pattern helpers now execute during R CMD check on any machine, with no
+  toolchain required. The nine topics that genuinely execute foreign
+  code (run_py_step(), run_jl_step(), run_rs_step(), run_cpp_step(), the
+  compile\_*\_lib() / run\_\*\_step_prebuilt() helpers, and
+  toolchain_check()) are gated on Sys.getenv(“TARPOLYGLOT_EXAMPLES”) ==
+  “true” and run inside targets::tar_dir(), mirroring how targets gates
+  its own TAR_EXAMPLES examples. Continuous integration runs those gated
+  examples, one R process per topic.
+- Parameter documentation shared between constructors is now defined
+  once and pulled in with
+  [@inheritParams](https://github.com/inheritParams). Seven internal
+  documentation targets were added for the arguments whose wording is
+  common but whose meaning splits by form (\_raw() versus non-standard
+  evaluation) or by language family (a live interpreter for Python and
+  Julia, a compiled library for Rust and C++), removing eighteen
+  duplicated [@param](https://github.com/param) descriptions with no
+  change to the rendered help pages.
+- New CONTRIBUTING.md describes how to report an issue or contribute to
+  the package development.
 - The hex logo was updated to reflect the addition of C++ support.
   `man/figures/logo.svg`, `man/figures/logo.png`, and every file in
   `pkgdown/favicon/` were regenerated to use this new logo. It was
@@ -321,6 +339,11 @@
   file. Use `append = TRUE` to keep all branches’ output instead, or
   `crew`’s own `options_local(log_directory = ...)` for a genuinely one
   file per worker process log.
+
+#### Notes
+
+- Changes in this release respond to rOpenSci pre-submission feedback
+  (ropensci/software-review#804).
 
 ## tarpolyglot 0.2.0
 

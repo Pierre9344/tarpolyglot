@@ -73,13 +73,13 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Building a target does not run it, so this example needs no Python.</span></span></span>
 <span class="r-in"><span><span class="co"># python/fit_step.py:</span></span></span>
 <span class="r-in"><span><span class="co">#   result = sum(x)</span></span></span>
 <span class="r-in"><span><span class="co"># scripts/pre.R:</span></span></span>
 <span class="r-in"><span><span class="co">#   to_py &lt;- list(x = x)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">fit_pyscript</span>, <span class="st">"python/fit_step.py"</span>, format <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">fit_pyscript</span>, <span class="st">"python/fit_step.py"</span>, format <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu"><a href="tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    name <span class="op">=</span> <span class="va">fit</span>,</span></span>
 <span class="r-in"><span>    script <span class="op">=</span> <span class="fu">tar_target_path</span><span class="op">(</span><span class="st">"fit_pyscript"</span><span class="op">)</span>,  <span class="co"># re-runs when the file changes</span></span></span>
@@ -88,7 +88,83 @@
 <span class="r-in"><span>    retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tar_stem&gt; </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   name: fit_pyscript </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   description:  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   command:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     "python/fit_step.py" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   format: file </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   repository: local </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   iteration method: vector </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   error mode: stop </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   memory mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   storage mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   retrieval mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   deployment mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   priority: 0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   resources:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     list() </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   cue:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     seed: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     file: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     iteration: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     repository: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     format: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     depend: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     command: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     mode: thorough </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   packages:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     stats</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     graphics</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     grDevices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     utils</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     methods</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   library:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[2]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tar_stem&gt; </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   name: fit </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   description:  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   command:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot::run_py_step(script = fit_pyscript, pre_script = "scripts/pre.R", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         post_script = NULL, inputs = list(x = prepared_x), output = "object", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         retrieve = "result", files = NULL, python_version = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         env = NULL, env_manager = "system", python = NULL, name = "fit") </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   format: rds </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   repository: local </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   iteration method: vector </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   error mode: stop </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   memory mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   storage mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   retrieval mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   deployment mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   priority: 0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   resources:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     list() </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   cue:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     seed: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     file: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     iteration: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     repository: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     format: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     depend: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     command: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     mode: thorough </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   packages:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     stats</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     graphics</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     grDevices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     utils</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     methods</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   library:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     NULL</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

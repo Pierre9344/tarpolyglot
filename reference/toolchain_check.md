@@ -109,13 +109,15 @@ caller's own choice via `depends` (see
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-toolchain_check()                      # everything
-toolchain_check("py")                  # Python only
-toolchain_check(c("jl", "rs"))         # Julia and Rust
-toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
-toolchain_check("cpp")                 # C++ only
-res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
-res[res$status != "ok", ]              # anything that needs attention
-} # }
+# Every check runs in a fresh callr subprocess, and with deep = TRUE it also
+# compiles a trivial function, so this is gated on TARPOLYGLOT_EXAMPLES=true
+# rather than run on machines with no toolchain installed.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  toolchain_check("py")                  # Python only
+  toolchain_check(c("jl", "rs"))         # Julia and Rust
+  toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
+
+  res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
+  res[res$status != "ok", ]              # anything that needs attention
+}
 ```

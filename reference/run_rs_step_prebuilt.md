@@ -106,14 +106,15 @@ are covered in
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
-# scripts/square.rs:
-#   #[extendr]
-#   fn square(x: f64) -> f64 { x * x }
-# scripts/post.R:
-#   square(x)
-lib <- compile_rs_lib(script = "scripts/square.rs")
-run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
-} # }
+# Reloading needs a library built by compile_rs_lib(), which needs a Rust
+# toolchain, so this is gated on TARPOLYGLOT_EXAMPLES=true.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+    writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
+    writeLines("square(x)", "post.R")
+    lib <- compile_rs_lib(script = "square.rs")
+    run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "post.R")
+  })
+}
 ```

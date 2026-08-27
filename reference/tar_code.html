@@ -93,7 +93,7 @@ which is untracked).</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Building a target does not run it, so these examples need no Python.</span></span></span>
 <span class="r-in"><span><span class="co"># Inline R (pre/post) plus a one-line inline Python `script`:</span></span></span>
 <span class="r-in"><span><span class="fu">tarpolyglot</span><span class="fu">::</span><span class="fu"><a href="tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  name        <span class="op">=</span> <span class="va">m</span>,</span></span>
@@ -102,6 +102,49 @@ which is untracked).</p>
 <span class="r-in"><span>  script      <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="st">"result = float(sum(x))"</span><span class="op">)</span>,   <span class="co"># inline Python</span></span></span>
 <span class="r-in"><span>  post_script <span class="op">=</span> <span class="fu">tar_code</span><span class="op">(</span><span class="op">{</span> <span class="fu">py_get</span><span class="op">(</span><span class="st">"result"</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tar_stem&gt; </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   name: m </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   description:  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   command:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot::run_py_step(script = structure(list(code = "result = float(sum(x))"), </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         class = c("tp_inline", "tp_source")), pre_script = structure(list(code = quote({</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         to_py &lt;- list(x = x)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     })), class = c("tp_inline", "tp_expr")), post_script = structure(list(code = quote({</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         py_get("result")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     })), class = c("tp_inline", "tp_expr")), inputs = list(x = prepared_x), </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         output = "object", retrieve = NULL, files = NULL, python_version = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         env = NULL, env_manager = "system", python = NULL, name = "m") </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   format: rds </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   repository: local </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   iteration method: vector </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   error mode: stop </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   memory mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   storage mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   retrieval mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   deployment mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   priority: 0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   resources:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     list() </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   cue:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     seed: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     file: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     iteration: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     repository: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     format: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     depend: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     command: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     mode: thorough </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   packages:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     stats</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     graphics</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     grDevices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     utils</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     methods</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   library:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     NULL</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Multi-line inline Python. Indent the code to line up with `_targets.R`;</span></span></span>
 <span class="r-in"><span><span class="co"># tar_code() dedents it, so Python's own block indentation stays correct.</span></span></span>
@@ -115,7 +158,46 @@ which is untracked).</p>
 <span class="r-in"><span><span class="st">            result += v</span></span></span>
 <span class="r-in"><span><span class="st">  )"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tar_stem&gt; </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   name: pos_sum </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   description:  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   command:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot::run_py_step(script = structure(list(code = "result = 0\nfor v in x:\n    if v &gt; 0:\n        result += v"), </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         class = c("tp_inline", "tp_source")), pre_script = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         post_script = NULL, inputs = list(x = prepared_x), output = "object", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         retrieve = NULL, files = NULL, python_version = NULL, env = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         env_manager = "system", python = NULL, name = "pos_sum") </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   format: rds </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   repository: local </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   iteration method: vector </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   error mode: stop </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   memory mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   storage mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   retrieval mode: auto </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   deployment mode: worker </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   priority: 0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   resources:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     list() </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   cue:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     seed: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     file: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     iteration: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     repository: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     format: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     depend: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     command: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     mode: thorough </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   packages:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     tarpolyglot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     stats</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     graphics</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     grDevices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     utils</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     datasets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     methods</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   library:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     NULL</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

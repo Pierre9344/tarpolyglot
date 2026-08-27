@@ -165,17 +165,21 @@ are covered in
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Normally invoked by tar_target_py(); shown here as a direct call.
-# scripts/pre.R:
-#   to_py <- list(x = x)
-# scripts/sum.py:
-#   result = sum(x)
-run_py_step(
-  script = "scripts/sum.py",
-  pre_script = "scripts/pre.R",
-  inputs = list(x = c(1, 2, 3)),
-  retrieve = "result"
-)
-} # }
+# This worker binds a live Python interpreter, so it only runs when
+# TARPOLYGLOT_EXAMPLES=true says a Python toolchain is available.
+# tar_dir() runs the code in a temporary directory, so nothing is written
+# to the working directory.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_py(); shown here as a direct call.
+    writeLines("to_py <- list(x = x)", "pre.R")
+    writeLines("result = float(sum(x))", "sum.py")
+    run_py_step(
+      script = "sum.py",
+      pre_script = "pre.R",
+      inputs = list(x = c(1, 2, 3)),
+      retrieve = "result"
+    )
+  })
+}
 ```

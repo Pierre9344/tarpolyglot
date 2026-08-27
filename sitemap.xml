@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://pierre9344.github.io/tarpolyglot/404.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/CODE_OF_CONDUCT.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/CONTRIBUTING.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/LICENSE-text.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/LICENSE.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/articles/cpp.html</loc></url>
@@ -35,6 +36,13 @@
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-package.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-params-nse.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-params-raw.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-nse-compiled.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-nse-interpreted.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-raw-compiled.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-raw-interpreted.html</loc></url>
+<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-post-script-compiled.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-shared-params.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.html</loc></url>
