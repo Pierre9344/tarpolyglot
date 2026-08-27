@@ -22,6 +22,8 @@ Code blocks are illustrative and **not executed** when the vignette builds.
 
 Both return a single `targets` target and forward **every** `targets::tar_target_raw()` argument (`pattern`, `format`, `iteration`, `deployment`, `resources`, `cue`, ...).
 
+These constructors depend on the [JuliaCall](https://github.com/JuliaInterop/JuliaCall) R package. As a result, any limitation of JuliaCall is inherited by the constructors. Reading JuliaCall's own documentation is recommended.
+
 ## Arguments
 
 ### Scripts, data, and output

@@ -17,49 +17,31 @@
       <circle cx="50" cy="50" r="18" fill="none" stroke="#111" stroke-width="5"/>
       <circle cx="50" cy="50" r="7" fill="#E5342B"/>
     </g>
-    <g transform="translate(50 173) scale(0.44)">
-      <circle cx="50" cy="50" r="40" fill="#fff" stroke="#8a9199" stroke-width="3"/>
-      <text x="50" y="69" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="52" fill="#276DC3">R</text>
-    </g>
-    <circle cx="210" cy="136" r="19" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
-    <g transform="translate(194.515 120.515) scale(0.31)">
-      <path fill="#3776AB" d="M49.5 10 C36 10 37 16 37 16 L37 27 L50 27 L50 31 L29 31 C29 31 20 30 20 44 C20 58 28 57 28 57 L34 57 L34 48 C34 40 41 39 41 39 L58 39 C58 39 65 39 65 32 L65 18 C65 18 66 10 49.5 10 Z"/>
-      <circle cx="41" cy="19" r="3.2" fill="#fff"/>
-      <g transform="rotate(180 50 50)">
-        <path fill="#FFD43B" d="M49.5 10 C36 10 37 16 37 16 L37 27 L50 27 L50 31 L29 31 C29 31 20 30 20 44 C20 58 28 57 28 57 L34 57 L34 48 C34 40 41 39 41 39 L58 39 C58 39 65 39 65 32 L65 18 C65 18 66 10 49.5 10 Z"/>
-        <circle cx="41" cy="19" r="3.2" fill="#fff"/>
+    <g font-family="Consolas,'DejaVu Sans Mono','Courier New',monospace" font-weight="700" text-anchor="middle">
+      <g>
+        <rect x="54" y="179" width="36" height="32" rx="7" fill="#0d1b2a"/>
+        <text x="72" y="199" font-size="17" fill="#e6edf3">R</text>
+        <rect x="61" y="204" width="22" height="3" rx="1.5" fill="#276DC3"/>
       </g>
-    </g>
-    <circle cx="230" cy="173" r="19" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
-    <g transform="translate(214.515 157.515) scale(0.31)">
-      <circle cx="50" cy="30" r="17" fill="#9558B2"/>
-      <circle cx="33" cy="63" r="17" fill="#CB3C33"/>
-      <circle cx="67" cy="63" r="17" fill="#389826"/>
-    </g>
-    <circle cx="230" cy="217" r="19" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
-    <g transform="translate(214.515 201.515) scale(0.31)">
-      <g fill="#111">
-        <rect x="46" y="3" width="8" height="13" rx="2"/>
-        <g transform="rotate(45 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
-        <g transform="rotate(90 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
-        <g transform="rotate(135 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
-        <g transform="rotate(180 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
-        <g transform="rotate(225 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
-        <g transform="rotate(270 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
-        <g transform="rotate(315 50 50)"><rect x="46" y="3" width="8" height="13" rx="2"/></g>
+      <g>
+        <rect x="192" y="120" width="36" height="32" rx="7" fill="#0d1b2a"/>
+        <text x="210" y="140" font-size="14" fill="#e6edf3">py</text>
+        <rect x="199" y="145" width="22" height="3" rx="1.5" fill="#3776AB"/>
       </g>
-      <circle cx="50" cy="50" r="33" fill="none" stroke="#111" stroke-width="9"/>
-      <text x="50" y="66" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="40" fill="#111">R</text>
-    </g>
-    <circle cx="210" cy="254" r="19" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
-    <g transform="translate(196.225 240.225) scale(0.276)">
-      <g transform="translate(5.57 0) scale(0.290401)">
-        <path fill="#00599C" d="M302.107,258.262c2.401-4.159,3.893-8.845,3.893-13.053V99.14c0-4.208-1.49-8.893-3.892-13.052L153,172.175L302.107,258.262z"/>
-        <path fill="#004482" d="M166.25,341.193l126.5-73.034c3.644-2.104,6.956-5.737,9.357-9.897L153,172.175L3.893,258.263c2.401,4.159,5.714,7.793,9.357,9.896l126.5,73.034C147.037,345.401,158.963,345.401,166.25,341.193z"/>
-        <path fill="#659AD2" d="M302.108,86.087c-2.402-4.16-5.715-7.793-9.358-9.897L166.25,3.156c-7.287-4.208-19.213-4.208-26.5,0L13.25,76.19C5.962,80.397,0,90.725,0,99.14v146.069c0,4.208,1.491,8.894,3.893,13.053L153,172.175L302.108,86.087z"/>
-        <path fill="#fff" d="M153,274.175c-56.243,0-102-45.757-102-102s45.757-102,102-102c36.292,0,70.139,19.53,88.331,50.968l-44.143,25.544c-9.105-15.736-26.038-25.512-44.188-25.512c-28.122,0-51,22.878-51,51c0,28.121,22.878,51,51,51c18.152,0,35.085-9.776,44.191-25.515l44.143,25.543C223.142,254.644,189.294,274.175,153,274.175z"/>
-        <polygon fill="#fff" points="255,166.508 243.666,166.508 243.666,155.175 232.334,155.175 232.334,166.508 221,166.508 221,177.841 232.334,177.841 232.334,189.175 243.666,189.175 243.666,177.841 255,177.841"/>
-        <polygon fill="#fff" points="297.5,166.508 286.166,166.508 286.166,155.175 274.834,155.175 274.834,166.508 263.5,166.508 263.5,177.841 274.834,177.841 274.834,189.175 286.166,189.175 286.166,177.841 297.5,177.841"/>
+      <g>
+        <rect x="212" y="157" width="36" height="32" rx="7" fill="#0d1b2a"/>
+        <text x="230" y="177" font-size="14" fill="#e6edf3">jl</text>
+        <rect x="219" y="182" width="22" height="3" rx="1.5" fill="#9558B2"/>
+      </g>
+      <g>
+        <rect x="212" y="201" width="36" height="32" rx="7" fill="#0d1b2a"/>
+        <text x="230" y="221" font-size="14" fill="#e6edf3">rs</text>
+        <rect x="219" y="226" width="22" height="3" rx="1.5" fill="#C65B1E"/>
+      </g>
+      <g>
+        <rect x="190" y="238" width="40" height="32" rx="7" fill="#0d1b2a"/>
+        <text x="210" y="258" font-size="13.5" fill="#e6edf3">cpp</text>
+        <rect x="197" y="263" width="26" height="3" rx="1.5" fill="#00599C"/>
       </g>
     </g>
   </g>

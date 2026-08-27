@@ -26,7 +26,7 @@
 * All eight constructors (`tar_target_py()`, `tar_target_jl()`, `tar_target_rs()`, `tar_target_cpp()`, and their `_raw()` forms) now document the three ways to supply `script`, `pre_script`, and `post_script`, in a shared "Script options" section with identical wording everywhere: a literal path (untracked, so editing the file does not re-run the step), a `tar_target_path()` reference (tracked, so editing it does), or inline code from `tar_code()` (hashed as part of the target's command, so editing it does). Each of the eight gained `\dontrun{}` examples showing the three forms side by side.
 * The step workers (`run_py_step()`, `run_jl_step()`, `run_rs_step()`, `run_cpp_step()`, and the `compile_*_lib()` / `run_*_step_prebuilt()` helpers) gained a deliberately separate "Script arguments" section rather than repeating the constructors' three forms, because a worker never sees three. By the time one runs, the constructor has already rewritten any `tar_target_path()` reference into the upstream target's own file path, so a worker receives either a path on disk or an inline `tar_code()` carrier; handing the result of `tar_target_path()` straight to a worker therefore does not resolve to a file.
 
-* The hex logo was updated to reflect the addition of C++ support. `man/figures/logo.svg`, `man/figures/logo.png`, and every file in `pkgdown/favicon/` were regenerated to use this new logo.
+* The hex logo was updated to reflect the addition of C++ support. `man/figures/logo.svg`, `man/figures/logo.png`, and every file in `pkgdown/favicon/` were regenerated to use this new logo. It was redraw to use original type-set marks (no third-party logo artwork).
 
 ### Known limitations
 

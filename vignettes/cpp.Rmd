@@ -50,6 +50,8 @@ If none of those apply, the plain `tar_target()` above is simpler and gives up n
 
 Both forward every `targets::tar_target_raw()` argument and return a single `targets` target, except with a `tarpolyglot_*()` pattern helper (see "Compile the C++ code only once across branches"), where they return a compile target plus the branched target.
 
+These constructors depend on the [Rcpp](https://www.rcpp.org/) R package. As a result, any limitation of Rcpp is inherited by the constructors. Reading Rcpp's own documentation is recommended.
+
 ## How a C++ step differs
 
 - **No pre-script.** There is no foreign session to push variables into. The `inputs` are bound directly in the **post-script**, where you call the compiled functions with them.
