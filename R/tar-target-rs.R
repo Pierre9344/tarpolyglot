@@ -8,18 +8,18 @@
 #'
 #' @inheritParams tarpolyglot-shared-params
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Character string, the target name.
+#' @inheritParams tarpolyglot-params-raw
+#' @inheritParams tarpolyglot-pattern-raw-compiled
 #' @param script Path to the Rust script with `#[extendr]` functions (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
-#' @param post_script Path to an R script run after compilation, where the compiled functions and `inputs` are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @inheritParams tarpolyglot-post-script-compiled
 #' @param dependencies,features,profile Passed to [rextendr::rust_source()]: crate `dependencies` (named list), Cargo `features`, and build `profile`.
 #' @param toolchain Optional rustup toolchain (e.g. `"stable-x86_64-pc-windows-gnu"`); sets `RUSTUP_TOOLCHAIN` for the build.
-#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
 #'
 #' @return A `targets` target object. When `pattern` uses [tarpolyglot_map()] it is instead a list of two targets: the `<name>_rust_lib` compile target and the branched `<name>` target.
 #' @seealso [tar_target_rs()], [tarpolyglot_map()], [run_rs_step()], [tar_target_py_raw()], [tar_target_jl_raw()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Rust toolchain.
 #' # scripts/square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -55,7 +55,6 @@
 #'   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
 #'   post_script = tarpolyglot::tar_code({ one() })
 #' )
-#' }
 tar_target_rs_raw <- function(name,
                               script,
                               post_script = NULL,
@@ -249,16 +248,16 @@ tar_target_rs_raw <- function(name,
 #'
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()] for Rust: pass a bare `name` and unquoted `pattern`, for direct use in `_targets.R`. Compiles the `#[extendr]` functions in `script` with [rextendr::rust_source()] and calls them from the R `post_script`. Delegates to [tar_target_rs_raw()]; see it and [run_rs_step()] for the full reference. The Python/Julia twins are [tar_target_py()] / [tar_target_jl()].
 #'
+#' @inheritParams tarpolyglot-params-nse
+#' @inheritParams tarpolyglot-pattern-nse-compiled
 #' @inheritParams tar_target_rs_raw
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Symbol, the target name (unquoted).
-#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), unquoted (e.g. `map(x)`). The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
 #'
 #' @return A `targets` target object. When `pattern` uses [tarpolyglot_map()] it is instead a list of two targets: the `<name>_rust_lib` compile target and the branched `<name>` target.
 #' @seealso [tar_target_rs_raw()], [tarpolyglot_map()], [run_rs_step()], [tar_target_py()], [tar_target_jl()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Rust toolchain.
 #' # scripts/square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -296,7 +295,6 @@ tar_target_rs_raw <- function(name,
 #'   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
 #'   post_script = tarpolyglot::tar_code({ one() })
 #' )
-#' }
 tar_target_rs <- function(name,
                           script,
                           post_script = NULL,

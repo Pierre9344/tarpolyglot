@@ -8,17 +8,17 @@
 #'
 #' @inheritParams tarpolyglot-shared-params
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Character string, the target name.
+#' @inheritParams tarpolyglot-params-raw
+#' @inheritParams tarpolyglot-pattern-raw-compiled
 #' @param script Path to the C++ script with `// [[Rcpp::export]]` functions (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
-#' @param post_script Path to an R script run after compilation, where the compiled functions and `inputs` are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#' @inheritParams tarpolyglot-post-script-compiled
 #' @param depends Optional character vector of extension packages (e.g. `c("RcppArmadillo", "RcppEigen")`); see [run_cpp_step()].
-#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
 #'
 #' @return A `targets` target object. When `pattern` uses [tarpolyglot_map()] it is instead a list of two targets: the `<name>_cpp_lib` compile target and the branched `<name>` target.
 #' @seealso [tar_target_cpp()], [tarpolyglot_map()], [run_cpp_step()], [tar_target_rs_raw()], [tar_target_py_raw()], [tar_target_jl_raw()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no C++ compiler.
 #' # scripts/square.cpp:
 #' #   // [[Rcpp::export]]
 #' #   double square(double x) { return x * x; }
@@ -56,7 +56,6 @@
 #'   ),
 #'   post_script = tarpolyglot::tar_code({ one() })
 #' )
-#' }
 tar_target_cpp_raw <- function(name,
                                script,
                                post_script = NULL,
@@ -244,16 +243,16 @@ tar_target_cpp_raw <- function(name,
 #'
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()] for C++: pass a bare `name` and unquoted `pattern`, for direct use in `_targets.R`. Compiles the `// [[Rcpp::export]]` functions in `script` with [Rcpp::sourceCpp()] and calls them from the R `post_script`. Delegates to [tar_target_cpp_raw()]; see it and [run_cpp_step()] for the full reference. The Rust twin is [tar_target_rs()]; Python/Julia are [tar_target_py()] / [tar_target_jl()].
 #'
+#' @inheritParams tarpolyglot-params-nse
+#' @inheritParams tarpolyglot-pattern-nse-compiled
 #' @inheritParams tar_target_cpp_raw
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Symbol, the target name (unquoted).
-#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), unquoted (e.g. `map(x)`). The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
 #'
 #' @return A `targets` target object. When `pattern` uses [tarpolyglot_map()] it is instead a list of two targets: the `<name>_cpp_lib` compile target and the branched `<name>` target.
 #' @seealso [tar_target_cpp_raw()], [tarpolyglot_map()], [run_cpp_step()], [tar_target_rs()], [tar_target_py()], [tar_target_jl()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no C++ compiler.
 #' # scripts/square.cpp:
 #' #   // [[Rcpp::export]]
 #' #   double square(double x) { return x * x; }
@@ -293,7 +292,6 @@ tar_target_cpp_raw <- function(name,
 #'   ),
 #'   post_script = tarpolyglot::tar_code({ one() })
 #' )
-#' }
 tar_target_cpp <- function(name,
                            script,
                            post_script = NULL,

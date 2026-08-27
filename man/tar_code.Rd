@@ -35,7 +35,7 @@ editing inline code re-runs the target automatically (unlike a literal path stri
 which is untracked).
 }
 \examples{
-\dontrun{
+# Building a target does not run it, so these examples need no Python.
 # Inline R (pre/post) plus a one-line inline Python `script`:
 tarpolyglot::tar_target_py(
   name        = m,
@@ -57,7 +57,6 @@ tarpolyglot::tar_target_py(
             result += v
   )")
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_path]{tar_target_path()}}, \code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}, \code{\link[=tar_target_rs]{tar_target_rs()}}

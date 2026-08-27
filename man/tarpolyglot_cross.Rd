@@ -21,7 +21,6 @@ The \verb{tarpolyglot_*()} pattern helpers work only inside the \code{pattern} a
 }
 
 \examples{
-\dontrun{
 # square.rs:
 #   #[extendr]
 #   fn square(x: f64) -> f64 { x * x }
@@ -31,7 +30,6 @@ tarpolyglot::tar_target_rs(
   name = rs_grid, script = "square.rs", inputs = c(x = "a", y = "b"),
   post_script = "post.R", pattern = tarpolyglot_cross(a, b)
 )
-}
 }
 \seealso{
 The other pattern helpers: \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=tarpolyglot_slice]{tarpolyglot_slice()}}, \code{\link[=tarpolyglot_head]{tarpolyglot_head()}}, \code{\link[=tarpolyglot_tail]{tarpolyglot_tail()}}, \code{\link[=tarpolyglot_sample]{tarpolyglot_sample()}}. The constructors that accept them: \code{\link[=tar_target_rs]{tar_target_rs()}}, \code{\link[=tar_target_cpp]{tar_target_cpp()}}, \code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}

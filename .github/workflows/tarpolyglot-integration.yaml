@@ -206,3 +206,43 @@ jobs:
             stop_on_failure = TRUE,
             reporter = "progress"
           )
+
+      # --- Run the toolchain-gated examples ---
+      # The examples in these topics are wrapped in
+      #   if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) { tar_dir({ ... }) }
+      # so that R CMD check on CRAN (where no toolchain exists) skips them
+      # without needing \dontrun{}. That gate means nothing here verifies them,
+      # hence this step.
+      #
+      # Each topic runs in its OWN R process, deliberately. R CMD check
+      # concatenates every example into a single pkgname-Ex.R and runs it in one
+      # session; with this gate on that would bind Python and Julia in the same
+      # process and segfault, which is the documented one-interpreter-per-session
+      # limitation polyglot_controller() exists to work around. Never set
+      # TARPOLYGLOT_EXAMPLES for a whole-package check.
+      - name: Run the toolchain-gated examples (one process per topic)
+        shell: bash
+        run: |
+          set -e
+          topics="run_py_step run_jl_step run_rs_step run_cpp_step \
+                  compile_rs_lib run_rs_step_prebuilt \
+                  compile_cpp_lib run_cpp_step_prebuilt toolchain_check"
+          failed=""
+          for t in $topics; do
+            echo "::group::example: $t"
+            # Kept on ONE line on purpose: a multi-line string passed to
+            # `Rscript -e` is mangled by the Windows shell and the process dies
+            # with a segfault rather than a useful error.
+            if TARPOLYGLOT_EXAMPLES=true Rscript -e "library(tarpolyglot); ex <- tempfile(fileext='.R'); tools::Rd2ex(file.path('man', paste0('$t','.Rd')), out=ex); d <- tempfile(); dir.create(d); setwd(d); source(ex, echo=TRUE, local=new.env())"; then
+              echo "OK: $t"
+            else
+              echo "FAILED: $t"
+              failed="$failed $t"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "Gated examples failed:$failed"
+            exit 1
+          fi
+          echo "All gated examples ran successfully."

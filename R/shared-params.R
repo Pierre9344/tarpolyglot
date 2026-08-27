@@ -34,3 +34,77 @@
 #' @name tarpolyglot-shared-params
 #' @keywords internal
 NULL
+
+# `name` and `pattern` are the two arguments whose *meaning* changes between the
+# character-based `_raw()` constructors and their non-standard-evaluation twins,
+# so they cannot live in the block above. They are split along the two axes that
+# actually vary:
+#
+#   * `name`    depends only on the form  (string vs symbol).
+#   * `pattern` depends on the form *and* on the language: on Python/Julia the
+#     tarpolyglot_*() helpers fall back to the plain targets patterns, while on
+#     Rust/C++ they additionally compile the library once per pattern.
+#
+# Each wording is therefore defined once here and inherited, instead of being
+# repeated across the four constructor files.
+
+#' Target name argument for the character-based (`_raw`) constructors
+#'
+#' @param name Character string, the target name.
+#'
+#' @name tarpolyglot-params-raw
+#' @keywords internal
+NULL
+
+#' Target name argument for the non-standard-evaluation constructors
+#'
+#' @param name Symbol, the target name (unquoted).
+#'
+#' @name tarpolyglot-params-nse
+#' @keywords internal
+NULL
+
+#' Branching pattern for the interpreted-language `_raw` constructors
+#'
+#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
+#'
+#' @name tarpolyglot-pattern-raw-interpreted
+#' @keywords internal
+NULL
+
+#' Branching pattern for the interpreted-language NSE constructors
+#'
+#' @param pattern Optional dynamic-branching pattern, unquoted (e.g. `map(x)`).
+#'
+#' @name tarpolyglot-pattern-nse-interpreted
+#' @keywords internal
+NULL
+
+#' Branching pattern for the compiled-language `_raw` constructors
+#'
+#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
+#'
+#' @name tarpolyglot-pattern-raw-compiled
+#' @keywords internal
+NULL
+
+#' Post-script argument for the compiled-language constructors
+#'
+#' Rust and C++ share the same post-script contract: there is no pre-script and
+#' no live interpreter, so the compiled functions are called from an R script
+#' run after the build. Python and Julia differ (they have a pre-script and an
+#' interpreter hand-off), so they keep their own wording.
+#'
+#' @param post_script Path to an R script run after compilation, where the compiled functions and `inputs` are in scope. Its last expression is the value (object mode); it returns file paths (file mode). Required for object mode. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
+#'
+#' @name tarpolyglot-post-script-compiled
+#' @keywords internal
+NULL
+
+#' Branching pattern for the compiled-language NSE constructors
+#'
+#' @param pattern Optional branching pattern as described in the [targets package documentation](https://books.ropensci.org/targets/dynamic.html#patterns), unquoted (e.g. `map(x)`). The patterns included in the \pkg{targets} package (`map()`, `head()`, ...) are accepted, but it is recommended to use the \pkg{tarpolyglot} pattern functions instead, as they compile the library once and reuse it across the branches (see [tarpolyglot_map()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_sample()]).
+#'
+#' @name tarpolyglot-pattern-nse-compiled
+#' @keywords internal
+NULL

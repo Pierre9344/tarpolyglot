@@ -19,13 +19,13 @@ Use as the \code{script}, \code{pre_script}, or \code{post_script} argument of \
 This mirrors how \code{inputs = c(x = "some_target")} already wires an upstream target in by name: the target's name is given as a string, and the constructor turns it into a real dependency. A plain string passed directly as \code{script}/\code{pre_script}/\code{post_script} keeps meaning what it always has (an untracked literal path), so existing pipelines are unaffected.
 }
 \examples{
-\dontrun{
+# Building a target does not run it, so this example needs no Python.
 # python/fit_step.py:
 #   result = sum(x)
 # scripts/pre.R:
 #   to_py <- list(x = x)
 list(
-  tar_target(fit_pyscript, "python/fit_step.py", format = "file"),
+  targets::tar_target(fit_pyscript, "python/fit_step.py", format = "file"),
   tar_target_py(
     name = fit,
     script = tar_target_path("fit_pyscript"),  # re-runs when the file changes
@@ -34,7 +34,6 @@ list(
     retrieve = "result"
   )
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}, \code{\link[=tar_target_rs]{tar_target_rs()}}

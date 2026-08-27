@@ -31,14 +31,16 @@ Every check that would bind an interpreter (Python, Julia) or compile code (Rust
 When more than one version is found, each language also reports every installed version it can enumerate, with its path and which one is the default (the one a step would actually use if you set nothing): Python via \verb{uv python list --only-installed} (matched against the resolved interpreter primarily by exact version, since reticulate's default is often an \emph{ephemeral} uv-provisioned interpreter that lives under uv's cache rather than its "installed" registry, so the two rarely share a literal path even when they are, in fact, the same build); Julia via the juliaup depot; Rust via \verb{rustup toolchain list -v} (which marks its own default inline, no cross-referencing needed). With only one version found, this is a single summary line instead. C++ has no separate version-manager concept to enumerate this way (see \code{tar_target_cpp()}): it compiles via R's own configured toolchain, so its checks are presence (Rcpp; the OS-appropriate compiler, Rtools on Windows or the actual \verb{R CMD config CXX} compiler command on macOS/Linux, queried rather than guessed so it is correct under gcc or clang alike) plus, with \code{deep = TRUE}, a compile-reachability check. Extension packages such as RcppArmadillo/RcppEigen/RcppParallel are not checked here since tarpolyglot itself does not depend on any of them; they are entirely the caller's own choice via \code{depends} (see \code{tar_target_cpp()}).
 }
 \examples{
-\dontrun{
-toolchain_check()                      # everything
-toolchain_check("py")                  # Python only
-toolchain_check(c("jl", "rs"))         # Julia and Rust
-toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
-toolchain_check("cpp")                 # C++ only
-res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
-res[res$status != "ok", ]              # anything that needs attention
+# Every check runs in a fresh callr subprocess, and with deep = TRUE it also
+# compiles a trivial function, so this is gated on TARPOLYGLOT_EXAMPLES=true
+# rather than run on machines with no toolchain installed.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  toolchain_check("py")                  # Python only
+  toolchain_check(c("jl", "rs"))         # Julia and Rust
+  toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
+
+  res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
+  res[res$status != "ok", ]              # anything that needs attention
 }
 }
 \seealso{

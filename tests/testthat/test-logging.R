@@ -152,7 +152,10 @@ test_that(".tp_jl_source_with_redirect falls back to plain julia_source() when l
 
 test_that(".tp_cpp_with_redirect is a transparent passthrough when logging is off", {
   called <- FALSE
-  out <- .tp_cpp_with_redirect(NULL, NULL, function() { called <<- TRUE; 42 })
+  out <- .tp_cpp_with_redirect(NULL, NULL, function() {
+    called <<- TRUE
+    42
+  })
   expect_true(called)
   expect_equal(out, 42)
 })

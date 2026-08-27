@@ -6,19 +6,19 @@
 #'
 #' @inheritParams tarpolyglot-shared-params
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Character string, the target name.
+#' @inheritParams tarpolyglot-params-raw
+#' @inheritParams tarpolyglot-pattern-raw-interpreted
 #' @param script Path to the Julia script to run (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param pre_script Optional path to an R script run before the Julia script. See [run_jl_step()]; assign a named list `to_jl` to hand objects to Julia. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param post_script Optional path to an R script run after the Julia script. See [run_jl_step()]; helpers `jl_get()` and `jl_call()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param julia_version Optional Julia version to select (e.g. `"1.11"`), used when `julia_home` is not given; resolved to a juliaup-managed install. Forwarded to [run_jl_step()]. Default `NULL` uses the computer/global Julia.
 #' @param julia_home,julia_project,julia_packages Julia environment selection, forwarded to [run_jl_step()]. `julia_home` is the directory containing the julia executable (defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`). `julia_project` is a Julia project environment to `Pkg.activate()`. `julia_packages` is a character vector of packages to `using` before the script.
-#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_jl()], [run_jl_step()], [tar_target_py_raw()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Julia.
 #' # scripts/sum.jl (uses the `using Statistics` julia_packages requests):
 #' #   result = mean(x)
 #' # scripts/post.R:
@@ -74,7 +74,6 @@
 #'     retrieve = "result"
 #'   )
 #' )
-#' }
 tar_target_jl_raw <- function(name,
                               script,
                               pre_script = NULL,
@@ -171,16 +170,16 @@ tar_target_jl_raw <- function(name,
 #'
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()]: pass a bare `name` and unquoted `pattern`, for direct use in `_targets.R`. Delegates to [tar_target_jl_raw()]; see it and [run_jl_step()] for the full reference. The Python twin is [tar_target_py()].
 #'
+#' @inheritParams tarpolyglot-params-nse
+#' @inheritParams tarpolyglot-pattern-nse-interpreted
 #' @inheritParams tar_target_jl_raw
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Symbol, the target name (unquoted).
-#' @param pattern Optional dynamic-branching pattern, unquoted (e.g. `map(x)`).
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_jl_raw()], [run_jl_step()], [tar_target_py()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Julia.
 #' # scripts/sum.jl:
 #' #   result = sum(x)
 #' # scripts/post.R:
@@ -237,7 +236,6 @@ tar_target_jl_raw <- function(name,
 #'     retrieve = "result"
 #'   )
 #' )
-#' }
 tar_target_jl <- function(name,
                           script,
                           pre_script = NULL,

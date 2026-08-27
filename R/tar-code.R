@@ -30,7 +30,7 @@
 #' @seealso [tar_target_path()], [tar_target_py()], [tar_target_jl()], [tar_target_rs()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Python.
 #' # Inline R (pre/post) plus a one-line inline Python `script`:
 #' tarpolyglot::tar_target_py(
 #'   name        = m,
@@ -52,7 +52,6 @@
 #'             result += v
 #'   )")
 #' )
-#' }
 tar_code <- function(x) {
   expr <- substitute(x)
   # A brace block is inline R, captured unevaluated (valid only in pre/post slots).

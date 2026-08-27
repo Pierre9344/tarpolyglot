@@ -6,20 +6,20 @@
 #'
 #' The interpreter/environment selection arguments (`python`, `env`, `env_manager`, `python_version`) are forwarded to [run_py_step()], which documents them (they are *alternatives*: normally set only one; precedence `python` > `env`/`env_manager` > `python_version` > none). See also `vignette("python")` for a decision guide with examples.
 #'
+#' @inheritParams tarpolyglot-params-raw
+#' @inheritParams tarpolyglot-pattern-raw-interpreted
 #' @inheritParams tarpolyglot-shared-params
 #' @inheritSection tarpolyglot-shared-params Script options
 #' @inheritParams run_py_step
-#' @param name Character string, the target name.
 #' @param script Path to the Python script to run (required). Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param pre_script Optional path to an R script run before the Python script. See [run_py_step()]; assign a named list `to_py` to hand objects to Python. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param post_script Optional path to an R script run after the Python script. See [run_py_step()]; helpers `py` and `py_get()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
-#' @param pattern Optional \pkg{targets} dynamic-branching pattern as a language object (e.g. `quote(map(x))`), forwarded to [targets::tar_target_raw()]. The [tarpolyglot_map()] family is also accepted and behaves identically to the plain `targets` patterns here (they only differ on the Rust constructor).
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_py()], [run_py_step()], [tar_target_jl_raw()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Python.
 #' # Inside a targets factory:
 #' # scripts/pre.R:
 #' #   to_py <- list(x = x)
@@ -79,7 +79,6 @@
 #'     retrieve = "result"
 #'   )
 #' )
-#' }
 tar_target_py_raw <- function(name,
                               script,
                               pre_script = NULL,
@@ -176,16 +175,16 @@ tar_target_py_raw <- function(name,
 #'
 #' Non-standard-evaluation constructor mirroring [targets::tar_target()]: pass a bare `name` and an unquoted `pattern`, for direct use in `_targets.R`. It quotes those and delegates to [tar_target_py_raw()]. See that function and [run_py_step()] for the full argument reference and the pre/post-script contract. The Julia twin is [tar_target_jl()].
 #'
+#' @inheritParams tarpolyglot-params-nse
+#' @inheritParams tarpolyglot-pattern-nse-interpreted
 #' @inheritParams tar_target_py_raw
 #' @inheritSection tarpolyglot-shared-params Script options
-#' @param name Symbol, the target name (unquoted).
-#' @param pattern Optional dynamic-branching pattern, unquoted (e.g. `map(x)`).
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_py_raw()], [run_py_step()], [tar_target_jl()]
 #' @export
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so these examples need no Python.
 #' # Inside _targets.R:
 #' # scripts/sum.py:
 #' #   result = sum(x)
@@ -244,7 +243,6 @@ tar_target_py_raw <- function(name,
 #'     retrieve = "result"
 #'   )
 #' )
-#' }
 tar_target_py <- function(name,
                           script,
                           pre_script = NULL,

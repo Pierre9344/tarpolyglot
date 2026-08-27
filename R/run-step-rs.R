@@ -26,7 +26,10 @@
     rt <- Sys.getenv("RTOOLS45_HOME", unset = "")
     for (d in c(if (nzchar(rt)) file.path(rt, "usr", "bin"),
                 "C:/rtools45/usr/bin", "C:/rtools44/usr/bin")) {
-      if (dir.exists(d)) { add <- c(add, d); break }
+      if (dir.exists(d)) {
+        add <- c(add, d)
+        break
+      }
     }
   }
   add <- add[dir.exists(add)]
@@ -53,18 +56,20 @@
 #' @seealso [tar_target_rs()], [run_py_step()], [run_jl_step()]
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_rs(); shown here as a direct call.
-#' # scripts/square.rs:
-#' #   #[extendr]
-#' #   fn square(x: f64) -> f64 { x * x }
-#' # scripts/post.R:
-#' #   square(x)
-#' run_rs_step(
-#'   script = "scripts/square.rs",
-#'   inputs = list(x = 21),
-#'   post_script = "scripts/post.R"
-#' )
+#' # This worker compiles Rust with cargo, so it only runs when
+#' # TARPOLYGLOT_EXAMPLES=true says a Rust toolchain is available.
+#' # tar_dir() runs the code in a temporary directory.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_rs(); shown here as a direct call.
+#'     writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
+#'     writeLines("square(x)", "post.R")
+#'     run_rs_step(
+#'       script = "square.rs",
+#'       inputs = list(x = 21),
+#'       post_script = "post.R"
+#'     )
+#'   })
 #' }
 run_rs_step <- function(script,
                         post_script = NULL,
@@ -148,12 +153,15 @@ run_rs_step <- function(script,
 #' @keywords internal
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
-#' # scripts/square.rs:
-#' #   #[extendr]
-#' #   fn square(x: f64) -> f64 { x * x }
-#' lib <- compile_rs_lib(script = "scripts/square.rs")
+#' # Compiling needs a Rust toolchain, so this is gated on
+#' # TARPOLYGLOT_EXAMPLES=true and runs in a temporary directory.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+#'     writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
+#'     lib <- compile_rs_lib(script = "square.rs")
+#'     class(lib)
+#'   })
 #' }
 compile_rs_lib <- function(script,
                            dependencies = NULL,
@@ -206,7 +214,7 @@ compile_rs_lib <- function(script,
   dll_path <- paths[[hits[length(hits)]]]
 
   bytes <- readBin(dll_path, what = "raw", n = file.info(dll_path)$size)
-  objs <- stats::setNames(lapply(ls(e), function(n) get(n, envir = e)), ls(e))
+  objs <- stats::setNames(lapply(ls(e), get, envir = e), ls(e))
 
   structure(
     list(basename = basename(dll_path), bytes = bytes, objs = objs),
@@ -229,15 +237,16 @@ compile_rs_lib <- function(script,
 #' @keywords internal
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
-#' # scripts/square.rs:
-#' #   #[extendr]
-#' #   fn square(x: f64) -> f64 { x * x }
-#' # scripts/post.R:
-#' #   square(x)
-#' lib <- compile_rs_lib(script = "scripts/square.rs")
-#' run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
+#' # Reloading needs a library built by compile_rs_lib(), which needs a Rust
+#' # toolchain, so this is gated on TARPOLYGLOT_EXAMPLES=true.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+#'     writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
+#'     writeLines("square(x)", "post.R")
+#'     lib <- compile_rs_lib(script = "square.rs")
+#'     run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "post.R")
+#'   })
 #' }
 run_rs_step_prebuilt <- function(lib,
                                  post_script = NULL,

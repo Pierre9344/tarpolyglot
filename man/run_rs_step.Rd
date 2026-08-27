@@ -49,18 +49,20 @@ A worker receives whatever the constructor already resolved, which is one of two
 }
 
 \examples{
-\dontrun{
-# Normally invoked by tar_target_rs(); shown here as a direct call.
-# scripts/square.rs:
-#   #[extendr]
-#   fn square(x: f64) -> f64 { x * x }
-# scripts/post.R:
-#   square(x)
-run_rs_step(
-  script = "scripts/square.rs",
-  inputs = list(x = 21),
-  post_script = "scripts/post.R"
-)
+# This worker compiles Rust with cargo, so it only runs when
+# TARPOLYGLOT_EXAMPLES=true says a Rust toolchain is available.
+# tar_dir() runs the code in a temporary directory.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_rs(); shown here as a direct call.
+    writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
+    writeLines("square(x)", "post.R")
+    run_rs_step(
+      script = "square.rs",
+      inputs = list(x = 21),
+      post_script = "post.R"
+    )
+  })
 }
 }
 \seealso{

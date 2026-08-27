@@ -89,7 +89,7 @@ Mixing forms in one call is fine: a tracked \code{script} with a literal \code{p
 }
 
 \examples{
-\dontrun{
+# Building a target does not run it, so these examples need no Python.
 # Inside _targets.R:
 # scripts/sum.py:
 #   result = sum(x)
@@ -148,7 +148,6 @@ list(
     retrieve = "result"
   )
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}, \code{\link[=run_py_step]{run_py_step()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}

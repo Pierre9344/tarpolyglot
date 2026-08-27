@@ -16,7 +16,9 @@ test_that(".tp_inputs_call builds a list() call with bare symbols", {
   expect_identical(.tp_inputs_call(character(0)), quote(list()))
 
   cl <- .tp_inputs_call(c(x = "up1", y = "up2"))
-  expect_true(is.call(cl))
+  # expect_type() compares typeof(), and a call's typeof() is "language" (its
+  # *class* is "call"), so "language" is the type to assert here.
+  expect_type(cl, "language")
   # The upstream target names appear as bare symbols -> targets sees them as deps.
   expect_setequal(all.vars(cl), c("up1", "up2"))
   # Names on the list() are the in-session names.
@@ -100,7 +102,8 @@ test_that("tar_code() captures a { } block as an R expression carrier", {
   m <- tar_code({ to_py <- list(x = x) })
   expect_s3_class(m, "tp_inline")
   expect_s3_class(m, "tp_expr")
-  expect_true(is.call(m$code))
+  # A captured { } block is a call, whose typeof() is "language".
+  expect_type(m$code, "language")
 })
 
 test_that("inline carriers are internal (not exported)", {
@@ -165,7 +168,11 @@ test_that(".tp_eval_script evaluates inline R (expr and source) in the environme
   e <- new.env()
   assign("x", 21, envir = e)
   # tp_expr block: last value is returned
-  expect_identical(.tp_eval_script(.tp_inline_expr(quote({ y <- x * 2; y })), e), 42)
+  inline <- .tp_inline_expr(quote({
+    y <- x * 2
+    y
+  }))
+  expect_identical(.tp_eval_script(inline, e), 42)
   # tp_source string of R: parsed and evaluated
   expect_identical(.tp_eval_script(.tp_inline_source("x + 1"), e), 22)
 })

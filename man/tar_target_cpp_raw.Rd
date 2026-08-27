@@ -83,7 +83,7 @@ Mixing forms in one call is fine: a tracked \code{script} with a literal \code{p
 }
 
 \examples{
-\dontrun{
+# Building a target does not run it, so these examples need no C++ compiler.
 # scripts/square.cpp:
 #   // [[Rcpp::export]]
 #   double square(double x) { return x * x; }
@@ -121,7 +121,6 @@ tarpolyglot::tar_target_cpp_raw(
   ),
   post_script = tarpolyglot::tar_code({ one() })
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_cpp]{tar_target_cpp()}}, \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=run_cpp_step]{run_cpp_step()}}, \code{\link[=tar_target_rs_raw]{tar_target_rs_raw()}}, \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}, \code{\link[=tar_target_jl_raw]{tar_target_jl_raw()}}

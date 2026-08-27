@@ -18,18 +18,22 @@
 #' @seealso [run_jl_step()], [tar_target_py()]
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_py(); shown here as a direct call.
-#' # scripts/pre.R:
-#' #   to_py <- list(x = x)
-#' # scripts/sum.py:
-#' #   result = sum(x)
-#' run_py_step(
-#'   script = "scripts/sum.py",
-#'   pre_script = "scripts/pre.R",
-#'   inputs = list(x = c(1, 2, 3)),
-#'   retrieve = "result"
-#' )
+#' # This worker binds a live Python interpreter, so it only runs when
+#' # TARPOLYGLOT_EXAMPLES=true says a Python toolchain is available.
+#' # tar_dir() runs the code in a temporary directory, so nothing is written
+#' # to the working directory.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_py(); shown here as a direct call.
+#'     writeLines("to_py <- list(x = x)", "pre.R")
+#'     writeLines("result = float(sum(x))", "sum.py")
+#'     run_py_step(
+#'       script = "sum.py",
+#'       pre_script = "pre.R",
+#'       inputs = list(x = c(1, 2, 3)),
+#'       retrieve = "result"
+#'     )
+#'   })
 #' }
 run_py_step <- function(script,
                         pre_script = NULL,
@@ -87,6 +91,8 @@ run_py_step <- function(script,
   # 4. Retrieve output.
   py <- reticulate::import_main(convert = TRUE)
   assign("py", py, envir = e)
+  # `py` is the local bound two lines above; the closure captures it from this
+  # frame, which codetools cannot see through.
   assign("py_get", function(name) reticulate::py_to_r(py[[name]]), envir = e)
 
   if (identical(output, "file")) {
@@ -136,18 +142,21 @@ run_py_step <- function(script,
 #' @seealso [run_py_step()], [tar_target_jl()]
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_jl(); shown here as a direct call.
-#' # scripts/pre.R:
-#' #   to_jl <- list(x = x)
-#' # scripts/sum.jl:
-#' #   result = sum(x)
-#' run_jl_step(
-#'   script = "scripts/sum.jl",
-#'   pre_script = "scripts/pre.R",
-#'   inputs = list(x = c(1, 2, 3)),
-#'   retrieve = "result"
-#' )
+#' # This worker starts a live Julia session, so it only runs when
+#' # TARPOLYGLOT_EXAMPLES=true says a Julia toolchain is available.
+#' # tar_dir() runs the code in a temporary directory.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_jl(); shown here as a direct call.
+#'     writeLines("to_jl <- list(x = x)", "pre.R")
+#'     writeLines("result = sum(x)", "sum.jl")
+#'     run_jl_step(
+#'       script = "sum.jl",
+#'       pre_script = "pre.R",
+#'       inputs = list(x = c(1, 2, 3)),
+#'       retrieve = "result"
+#'     )
+#'   })
 #' }
 run_jl_step <- function(script,
                         pre_script = NULL,
@@ -230,7 +239,7 @@ run_jl_step <- function(script,
     return(.tp_eval_script(post_script, e))
   }
   if (!is.null(retrieve)) {
-    vals <- lapply(retrieve, function(n) JuliaCall::julia_eval(n))
+    vals <- lapply(retrieve, JuliaCall::julia_eval)
     if (length(retrieve) == 1L) return(vals[[1L]])
     return(stats::setNames(vals, retrieve))
   }

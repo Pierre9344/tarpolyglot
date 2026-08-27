@@ -86,14 +86,13 @@
 #' @return This function is a marker consumed by the tarpolyglot constructors and is not meant to be evaluated on its own; calling it directly raises an error.
 #' @seealso The other pattern helpers: [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_sample()]. The constructors that accept them: [tar_target_rs()], [tar_target_cpp()], [tar_target_py()], [tar_target_jl()]
 #' @examples
-#' \dontrun{
 #' # rs/square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
 #' # R/post_square.R:
 #' #   square(x)
 #' list(
-#'   tar_target(vals, c(10, 20, 30)),
+#'   targets::tar_target(vals, c(10, 20, 30)),
 #'   # Rust: compiles rs/square.rs once in `rs_branch_rust_lib`, then squares
 #'   # each branch value reusing that compiled library.
 #'   tarpolyglot::tar_target_rs(
@@ -104,7 +103,6 @@
 #'     pattern = tarpolyglot_map(vals)
 #'   )
 #' )
-#' }
 #' @export
 tarpolyglot_map <- function(...) {
   .tp_pattern_marker("tarpolyglot_map")
@@ -131,7 +129,6 @@ tarpolyglot_map <- function(...) {
 #' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso The other pattern helpers: [tarpolyglot_map()], [tarpolyglot_slice()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_sample()]. The constructors that accept them: [tar_target_rs()], [tar_target_cpp()], [tar_target_py()], [tar_target_jl()]
 #' @examples
-#' \dontrun{
 #' # square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -141,7 +138,6 @@ tarpolyglot_map <- function(...) {
 #'   name = rs_grid, script = "square.rs", inputs = c(x = "a", y = "b"),
 #'   post_script = "post.R", pattern = tarpolyglot_cross(a, b)
 #' )
-#' }
 #' @export
 tarpolyglot_cross <- function(...) {
   .tp_pattern_marker("tarpolyglot_cross")
@@ -158,7 +154,6 @@ tarpolyglot_cross <- function(...) {
 #' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso The other pattern helpers: [tarpolyglot_map()], [tarpolyglot_cross()], [tarpolyglot_head()], [tarpolyglot_tail()], [tarpolyglot_sample()]. The constructors that accept them: [tar_target_rs()], [tar_target_cpp()], [tar_target_py()], [tar_target_jl()]
 #' @examples
-#' \dontrun{
 #' # square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -168,7 +163,6 @@ tarpolyglot_cross <- function(...) {
 #'   name = rs_some, script = "square.rs", inputs = c(x = "vals"),
 #'   post_script = "post.R", pattern = tarpolyglot_slice(vals, index = c(1, 3))
 #' )
-#' }
 #' @export
 tarpolyglot_slice <- function(..., index) {
   .tp_pattern_marker("tarpolyglot_slice")
@@ -185,7 +179,6 @@ tarpolyglot_slice <- function(..., index) {
 #' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso The other pattern helpers: [tarpolyglot_map()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_tail()], [tarpolyglot_sample()]. The constructors that accept them: [tar_target_rs()], [tar_target_cpp()], [tar_target_py()], [tar_target_jl()]
 #' @examples
-#' \dontrun{
 #' # square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -195,7 +188,6 @@ tarpolyglot_slice <- function(..., index) {
 #'   name = rs_first, script = "square.rs", inputs = c(x = "vals"),
 #'   post_script = "post.R", pattern = tarpolyglot_head(vals, n = 2)
 #' )
-#' }
 #' @export
 tarpolyglot_head <- function(..., n) {
   .tp_pattern_marker("tarpolyglot_head")
@@ -212,7 +204,6 @@ tarpolyglot_head <- function(..., n) {
 #' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso The other pattern helpers: [tarpolyglot_map()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_head()], [tarpolyglot_sample()]. The constructors that accept them: [tar_target_rs()], [tar_target_cpp()], [tar_target_py()], [tar_target_jl()]
 #' @examples
-#' \dontrun{
 #' # square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -222,7 +213,6 @@ tarpolyglot_head <- function(..., n) {
 #'   name = rs_last, script = "square.rs", inputs = c(x = "vals"),
 #'   post_script = "post.R", pattern = tarpolyglot_tail(vals, n = 2)
 #' )
-#' }
 #' @export
 tarpolyglot_tail <- function(..., n) {
   .tp_pattern_marker("tarpolyglot_tail")
@@ -239,7 +229,6 @@ tarpolyglot_tail <- function(..., n) {
 #' @inheritSection tarpolyglot_map Only recognised by tarpolyglot constructors
 #' @seealso The other pattern helpers: [tarpolyglot_map()], [tarpolyglot_cross()], [tarpolyglot_slice()], [tarpolyglot_head()], [tarpolyglot_tail()]. The constructors that accept them: [tar_target_rs()], [tar_target_cpp()], [tar_target_py()], [tar_target_jl()]
 #' @examples
-#' \dontrun{
 #' # square.rs:
 #' #   #[extendr]
 #' #   fn square(x: f64) -> f64 { x * x }
@@ -249,7 +238,6 @@ tarpolyglot_tail <- function(..., n) {
 #'   name = rs_rand, script = "square.rs", inputs = c(x = "vals"),
 #'   post_script = "post.R", pattern = tarpolyglot_sample(vals, n = 2)
 #' )
-#' }
 #' @export
 tarpolyglot_sample <- function(..., n) {
   .tp_pattern_marker("tarpolyglot_sample")

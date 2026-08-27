@@ -12,8 +12,9 @@ test_that(".tp_resolve_env_path passes NULL and non-existent names through untou
 
 test_that(".tp_resolve_env_path normalises an existing directory to an absolute path", {
   d <- withr::local_tempdir()
-  old <- setwd(dirname(d))
-  withr::defer(setwd(old))
+  # local_dir() changes and restores the working directory for the duration of
+  # the test, so no bare setwd() is needed.
+  withr::local_dir(dirname(d))
   rel <- basename(d)
   res <- .tp_resolve_env_path(rel)
   expect_true(res != rel)

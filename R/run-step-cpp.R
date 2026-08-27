@@ -19,7 +19,10 @@
     rt <- Sys.getenv("RTOOLS45_HOME", unset = "")
     for (d in c(if (nzchar(rt)) file.path(rt, "usr", "bin"),
                 "C:/rtools45/usr/bin", "C:/rtools44/usr/bin")) {
-      if (dir.exists(d)) { add <- c(add, d); break }
+      if (dir.exists(d)) {
+        add <- c(add, d)
+        break
+      }
     }
   }
   add <- add[dir.exists(add)]
@@ -75,18 +78,25 @@
 #' @seealso [tar_target_cpp()], [run_py_step()], [run_jl_step()], [run_rs_step()]
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_cpp(); shown here as a direct call.
-#' # scripts/square.cpp:
-#' #   // [[Rcpp::export]]
-#' #   double square(double x) { return x * x; }
-#' # scripts/post.R:
-#' #   square(x)
-#' run_cpp_step(
-#'   script = "scripts/square.cpp",
-#'   inputs = list(x = 21),
-#'   post_script = "scripts/post.R"
-#' )
+#' # This worker compiles C++, so it only runs when TARPOLYGLOT_EXAMPLES=true
+#' # says a compiler reachable by R is available. tar_dir() runs the code in a
+#' # temporary directory.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_cpp(); shown here as a direct call.
+#'     writeLines(
+#'       c("#include <Rcpp.h>",
+#'         "// [[Rcpp::export]]",
+#'         "double square(double x) { return x * x; }"),
+#'       "square.cpp"
+#'     )
+#'     writeLines("square(x)", "post.R")
+#'     run_cpp_step(
+#'       script = "square.cpp",
+#'       inputs = list(x = 21),
+#'       post_script = "post.R"
+#'     )
+#'   })
 #' }
 run_cpp_step <- function(script,
                          post_script = NULL,
@@ -153,12 +163,20 @@ run_cpp_step <- function(script,
 #' @keywords internal
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
-#' # scripts/square.cpp:
-#' #   // [[Rcpp::export]]
-#' #   double square(double x) { return x * x; }
-#' lib <- compile_cpp_lib(script = "scripts/square.cpp")
+#' # Compiling needs a C++ compiler reachable by R, so this is gated on
+#' # TARPOLYGLOT_EXAMPLES=true and runs in a temporary directory.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
+#'     writeLines(
+#'       c("#include <Rcpp.h>",
+#'         "// [[Rcpp::export]]",
+#'         "double square(double x) { return x * x; }"),
+#'       "square.cpp"
+#'     )
+#'     lib <- compile_cpp_lib(script = "square.cpp")
+#'     class(lib)
+#'   })
 #' }
 compile_cpp_lib <- function(script, depends = NULL) {
   .tp_assert_script(script, "script", must_exist = TRUE)
@@ -215,15 +233,21 @@ compile_cpp_lib <- function(script, depends = NULL) {
 #' @keywords internal
 #' @export
 #' @examples
-#' \dontrun{
-#' # Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
-#' # scripts/square.cpp:
-#' #   // [[Rcpp::export]]
-#' #   double square(double x) { return x * x; }
-#' # scripts/post.R:
-#' #   square(x)
-#' lib <- compile_cpp_lib(script = "scripts/square.cpp")
-#' run_cpp_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "scripts/post.R")
+#' # Reloading needs a library built by compile_cpp_lib(), which needs a C++
+#' # compiler, so this is gated on TARPOLYGLOT_EXAMPLES=true.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   targets::tar_dir({
+#'     # Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
+#'     writeLines(
+#'       c("#include <Rcpp.h>",
+#'         "// [[Rcpp::export]]",
+#'         "double square(double x) { return x * x; }"),
+#'       "square.cpp"
+#'     )
+#'     writeLines("square(x)", "post.R")
+#'     lib <- compile_cpp_lib(script = "square.cpp")
+#'     run_cpp_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "post.R")
+#'   })
 #' }
 run_cpp_step_prebuilt <- function(lib,
                                   post_script = NULL,
@@ -273,7 +297,7 @@ run_cpp_step_prebuilt <- function(lib,
     bind_env <- new.env(parent = globalenv())
     eval(parse(text = new_src), envir = bind_env)
     objs <- stats::setNames(
-      lapply(lib$objs_names, function(nm) get(nm, envir = bind_env)),
+      lapply(lib$objs_names, get, envir = bind_env),
       lib$objs_names
     )
     cached <- list(bytes = lib$bytes, objs = objs)

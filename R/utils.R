@@ -42,13 +42,13 @@
 #' @return An object marking `name` for dependency-wiring by the `tar_target_*` constructors.
 #' @seealso [tar_target_py()], [tar_target_jl()], [tar_target_rs()]
 #' @examples
-#' \dontrun{
+#' # Building a target does not run it, so this example needs no Python.
 #' # python/fit_step.py:
 #' #   result = sum(x)
 #' # scripts/pre.R:
 #' #   to_py <- list(x = x)
 #' list(
-#'   tar_target(fit_pyscript, "python/fit_step.py", format = "file"),
+#'   targets::tar_target(fit_pyscript, "python/fit_step.py", format = "file"),
 #'   tar_target_py(
 #'     name = fit,
 #'     script = tar_target_path("fit_pyscript"),  # re-runs when the file changes
@@ -57,7 +57,6 @@
 #'     retrieve = "result"
 #'   )
 #' )
-#' }
 #' @export
 tar_target_path <- function(name) {
   if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name)) {
@@ -104,7 +103,7 @@ tar_target_path <- function(name) {
   }
   inputs <- unlist(inputs, use.names = TRUE)
   nms <- names(inputs)
-  if (is.null(nms) || any(!nzchar(nms))) {
+  if (is.null(nms) || !all(nzchar(nms))) {
     stop("`inputs` must be a *named* character vector/list mapping ",
       "in-session names to upstream target names, e.g. c(x = \"up_target\").",
       call. = FALSE)

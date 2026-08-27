@@ -29,12 +29,20 @@ A worker receives whatever the constructor already resolved, which is one of two
 }
 
 \examples{
-\dontrun{
-# Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
-# scripts/square.cpp:
-#   // [[Rcpp::export]]
-#   double square(double x) { return x * x; }
-lib <- compile_cpp_lib(script = "scripts/square.cpp")
+# Compiling needs a C++ compiler reachable by R, so this is gated on
+# TARPOLYGLOT_EXAMPLES=true and runs in a temporary directory.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_cpp(pattern = tarpolyglot_map(...)).
+    writeLines(
+      c("#include <Rcpp.h>",
+        "// [[Rcpp::export]]",
+        "double square(double x) { return x * x; }"),
+      "square.cpp"
+    )
+    lib <- compile_cpp_lib(script = "square.cpp")
+    class(lib)
+  })
 }
 }
 \seealso{

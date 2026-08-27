@@ -37,12 +37,15 @@ A worker receives whatever the constructor already resolved, which is one of two
 }
 
 \examples{
-\dontrun{
-# Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
-# scripts/square.rs:
-#   #[extendr]
-#   fn square(x: f64) -> f64 { x * x }
-lib <- compile_rs_lib(script = "scripts/square.rs")
+# Compiling needs a Rust toolchain, so this is gated on
+# TARPOLYGLOT_EXAMPLES=true and runs in a temporary directory.
+if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+  targets::tar_dir({
+    # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+    writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
+    lib <- compile_rs_lib(script = "square.rs")
+    class(lib)
+  })
 }
 }
 \seealso{

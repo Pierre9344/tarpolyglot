@@ -11,7 +11,7 @@
   if (length(hits) == 0L) {
     installed <- basename(dirname(Sys.glob(file.path(root, "julia-*", "bin"))))
     stop("No juliaup Julia matching version '", version, "' under ", root,
-      if (length(installed)) paste0(". Installed: ", paste(installed, collapse = ", ")) else "",
+      if (length(installed)) paste0(". Installed: ", paste0(installed)) else "",
       ". Install it with `juliaup add ", version, "`, or set `julia_home` explicitly.",
       call. = FALSE)
   }

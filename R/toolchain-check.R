@@ -47,16 +47,16 @@
 .tp_which_check <- function(toolchain, check, exe, version_flag = "--version", quiet = FALSE) {
   row <- tryCatch({
     path <- Sys.which(exe)
-    if (!nzchar(path)) {
-      .tp_check_row(toolchain, check, "warn", "not found on PATH")
-    } else {
+    if (nzchar(path)) {
       ver <- tryCatch(
         system2(exe, version_flag, stdout = TRUE, stderr = TRUE),
         error = function(e) character(0), warning = function(w) character(0)
       )
       ver1 <- if (length(ver)) ver[[1]] else ""
       .tp_check_row(toolchain, check, "ok",
-        paste0(path, if (nzchar(ver1)) paste0(" (", ver1, ")") else ""))
+                    paste0(path, if (nzchar(ver1)) paste0(" (", ver1, ")") else ""))
+    } else {
+      .tp_check_row(toolchain, check, "warn", "not found on PATH")
     }
   }, error = function(e) .tp_check_row(toolchain, check, "fail", conditionMessage(e)))
   .tp_check_report(row, quiet)
@@ -243,7 +243,7 @@
     }
     installed <- .tp_juliaup_installed()
     detail <- if (!is.null(installed)) {
-      paste0(path, " (installed: ", paste(installed$version, collapse = ", "), ")")
+      paste0(path, " (installed: ", toString(installed$version), ")")
     } else {
       paste0(path, " (no versions installed)")
     }
@@ -562,14 +562,16 @@
 #' @return Invisibly, a `data.frame` with one row per check and columns `toolchain` (`"py"`/`"jl"`/`"rs"`/`"cpp"`), `check` (a short label), `status` (`"ok"`, `"warn"`, or `"fail"`), and `detail` (a human-readable description, e.g. the resolved path and version, or an error message).
 #' @seealso [tar_target_py()], [tar_target_jl()], [tar_target_rs()], [tar_target_cpp()]
 #' @examples
-#' \dontrun{
-#' toolchain_check()                      # everything
-#' toolchain_check("py")                  # Python only
-#' toolchain_check(c("jl", "rs"))         # Julia and Rust
-#' toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
-#' toolchain_check("cpp")                 # C++ only
-#' res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
-#' res[res$status != "ok", ]              # anything that needs attention
+#' # Every check runs in a fresh callr subprocess, and with deep = TRUE it also
+#' # compiles a trivial function, so this is gated on TARPOLYGLOT_EXAMPLES=true
+#' # rather than run on machines with no toolchain installed.
+#' if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
+#'   toolchain_check("py")                  # Python only
+#'   toolchain_check(c("jl", "rs"))         # Julia and Rust
+#'   toolchain_check("rs", deep = FALSE)    # skip the Rust compile test
+#'
+#'   res <- toolchain_check(quiet = TRUE)   # no console output, just the data.frame
+#'   res[res$status != "ok", ]              # anything that needs attention
 #' }
 #' @export
 toolchain_check <- function(toolchains = c("py", "jl", "rs", "cpp"), deep = TRUE, quiet = FALSE) {
@@ -578,11 +580,13 @@ toolchain_check <- function(toolchains = c("py", "jl", "rs", "cpp"), deep = TRUE
   choices <- c("py", "jl", "rs", "cpp")
   bad <- setdiff(toolchains, choices)
   if (length(bad)) {
-    stop("`toolchains` must be a subset of ", paste(shQuote(choices), collapse = ", "),
+    stop("`toolchains` must be a subset of ", toString(shQuote(choices)),
       "; got unrecognised value", if (length(bad) > 1L) "s" else "", ": ",
-      paste(shQuote(bad), collapse = ", "), call. = FALSE)
+      toString(shQuote(bad)), call. = FALSE)
   }
   toolchains <- unique(toolchains)
+  # Used below inside a cli glue string ("{labels[[tc]]} toolchain"), which
+  # codetools does not parse.
   labels <- c(py = "Python", jl = "Julia", rs = "Rust", cpp = "C++")
 
   all_rows <- list()

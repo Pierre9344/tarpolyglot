@@ -88,7 +88,7 @@ Mixing forms in one call is fine: a tracked \code{script} with a literal \code{p
 }
 
 \examples{
-\dontrun{
+# Building a target does not run it, so these examples need no Rust toolchain.
 # scripts/square.rs:
 #   #[extendr]
 #   fn square(x: f64) -> f64 { x * x }
@@ -124,7 +124,6 @@ tarpolyglot::tar_target_rs_raw(
   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
   post_script = tarpolyglot::tar_code({ one() })
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_rs]{tar_target_rs()}}, \code{\link[=tarpolyglot_map]{tarpolyglot_map()}}, \code{\link[=run_rs_step]{run_rs_step()}}, \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}, \code{\link[=tar_target_jl_raw]{tar_target_jl_raw()}}

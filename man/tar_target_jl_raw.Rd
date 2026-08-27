@@ -92,7 +92,7 @@ Mixing forms in one call is fine: a tracked \code{script} with a literal \code{p
 }
 
 \examples{
-\dontrun{
+# Building a target does not run it, so these examples need no Julia.
 # scripts/sum.jl (uses the `using Statistics` julia_packages requests):
 #   result = mean(x)
 # scripts/post.R:
@@ -148,7 +148,6 @@ list(
     retrieve = "result"
   )
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_jl]{tar_target_jl()}}, \code{\link[=run_jl_step]{run_jl_step()}}, \code{\link[=tar_target_py_raw]{tar_target_py_raw()}}

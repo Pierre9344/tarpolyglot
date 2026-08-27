@@ -94,7 +94,7 @@ Mixing forms in one call is fine: a tracked \code{script} with a literal \code{p
 }
 
 \examples{
-\dontrun{
+# Building a target does not run it, so these examples need no Python.
 # Inside a targets factory:
 # scripts/pre.R:
 #   to_py <- list(x = x)
@@ -154,7 +154,6 @@ list(
     retrieve = "result"
   )
 )
-}
 }
 \seealso{
 \code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=run_py_step]{run_py_step()}}, \code{\link[=tar_target_jl_raw]{tar_target_jl_raw()}}

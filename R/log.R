@@ -25,13 +25,15 @@
 #' @seealso [polyglot_controller()]
 #' @export
 #' @examples
-#' \dontrun{
-#' targets::tar_option_set(
-#'   controller = tarpolyglot::polyglot_controller(
-#'     log = tarpolyglot::tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
-#'   )
-#' )
-#' }
+#' # tar_polyglot_log() only builds a configuration object; nothing is written
+#' # and no directory is created until a step actually runs.
+#' log <- tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+#' str(log)
+#'
+#' # It is passed to polyglot_controller(), which every Python/Julia/C++ step
+#' # then inherits from.
+#' controller <- polyglot_controller(log = log)
+#' inherits(controller, "crew_class_controller")
 tar_polyglot_log <- function(stdout = "./logs/out",
                              stderr = "./logs/err",
                              append = FALSE,
@@ -210,23 +212,23 @@ tar_polyglot_log <- function(stdout = "./logs/out",
     c(
       sprintf('open(raw"%s", "a") do out_io', normalizePath(out_path, winslash = "/", mustWork = TRUE)),
       sprintf('open(raw"%s", "a") do err_io', normalizePath(err_path, winslash = "/", mustWork = TRUE)),
-      'redirect_stdio(stdout=out_io, stderr=err_io) do',
+      "redirect_stdio(stdout=out_io, stderr=err_io) do",
       include_line,
-      'end', 'end', 'end'
+      "end", "end", "end"
     )
   } else if (!is.null(out_path)) {
     c(
       sprintf('open(raw"%s", "a") do out_io', normalizePath(out_path, winslash = "/", mustWork = TRUE)),
-      'redirect_stdio(stdout=out_io, stderr=stderr) do',
+      "redirect_stdio(stdout=out_io, stderr=stderr) do",
       include_line,
-      'end', 'end'
+      "end", "end"
     )
   } else {
     c(
       sprintf('open(raw"%s", "a") do err_io', normalizePath(err_path, winslash = "/", mustWork = TRUE)),
-      'redirect_stdio(stdout=stdout, stderr=err_io) do',
+      "redirect_stdio(stdout=stdout, stderr=err_io) do",
       include_line,
-      'end', 'end'
+      "end", "end"
     )
   }
 
@@ -281,5 +283,5 @@ tar_polyglot_log <- function(stdout = "./logs/out",
   if (is.null(depends) || !length(depends)) {
     return("no Rcpp::depends() extension packages")
   }
-  sprintf("yes, depends = %s", paste(depends, collapse = ", "))
+  sprintf("yes, depends = %s", toString(depends))
 }

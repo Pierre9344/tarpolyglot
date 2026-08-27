@@ -32,13 +32,15 @@ C++ steps (\code{\link[=tar_target_cpp]{tar_target_cpp()}}) \strong{are} covered
 \strong{Branches of one \code{pattern} share a single log file, language-agnostically.} The log file name is fixed to the \emph{target}'s name at the moment its command is built, before branching happens -- so every branch of a \code{map()}/\code{tarpolyglot_map()}-driven step (Python, Julia, or C++ alike) writes to the same \verb{<name>.out}/\verb{<name>.err}, and since \code{append = FALSE} truncates at the start of \emph{each} branch's run, only the last branch to run leaves its output in the file; earlier branches' output is overwritten, not lost-and-gone from disk but never actually visible. Not specific to C++ -- confirmed while investigating C++ logging, but the same file-per-target-name design applies to every constructor. Use \code{append = TRUE} to at least keep all branches' output (separated, in run order) instead of losing all but the last, or \code{crew}'s own \code{options_local(log_directory = ...)} for a genuinely one-file-per-worker-process log.
 }
 \examples{
-\dontrun{
-targets::tar_option_set(
-  controller = tarpolyglot::polyglot_controller(
-    log = tarpolyglot::tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
-  )
-)
-}
+# tar_polyglot_log() only builds a configuration object; nothing is written
+# and no directory is created until a step actually runs.
+log <- tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+str(log)
+
+# It is passed to polyglot_controller(), which every Python/Julia/C++ step
+# then inherits from.
+controller <- polyglot_controller(log = log)
+inherits(controller, "crew_class_controller")
 }
 \seealso{
 \code{\link[=polyglot_controller]{polyglot_controller()}}

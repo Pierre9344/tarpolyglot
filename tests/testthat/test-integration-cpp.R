@@ -67,22 +67,22 @@ test_that("two libraries sharing the sourceCpp module name do not collide", {
     on.exit(unlink(script), add = TRUE)
     callr::r(function(s) tarpolyglot::compile_cpp_lib(s), args = list(script))
   }
-  libA <- compile_fresh(c(
+  lib_a <- compile_fresh(c(
     "#include <Rcpp.h>", "// [[Rcpp::export]]",
     "double f(double x) { return x + 1.0; }"
   ))
-  libB <- compile_fresh(c(
+  lib_b <- compile_fresh(c(
     "#include <Rcpp.h>", "// [[Rcpp::export]]",
     "double f(double x) { return x + 100.0; }"
   ))
-  expect_identical(libA$basename, libB$basename)  # same module name => collision risk
+  expect_identical(lib_a$basename, lib_b$basename)  # same module name => collision risk
 
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("f(x)", post)
   # Hot-swap must give each library its own behaviour, in both directions.
-  expect_equal(run_cpp_step_prebuilt(libA, post_script = post, inputs = list(x = 5)), 6)
-  expect_equal(run_cpp_step_prebuilt(libB, post_script = post, inputs = list(x = 5)), 105)
-  expect_equal(run_cpp_step_prebuilt(libA, post_script = post, inputs = list(x = 5)), 6)
+  expect_equal(run_cpp_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)), 6)
+  expect_equal(run_cpp_step_prebuilt(lib_b, post_script = post, inputs = list(x = 5)), 105)
+  expect_equal(run_cpp_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)), 6)
 })
 
 test_that("compile_cpp_lib() builds a reusable bundle that run_cpp_step_prebuilt reloads", {

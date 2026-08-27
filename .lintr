@@ -1,0 +1,14 @@
+linters: linters_with_defaults(
+    line_length_linter = NULL,
+    indentation_linter = NULL,
+    infix_spaces_linter = NULL,
+    object_length_linter = NULL,
+    object_name_linter = NULL,
+    object_usage_linter = NULL,
+    return_linter = NULL)
+exclusions: list(
+    # The header of every toolchain-gated test file documents the exact call
+    # used to run it (Sys.setenv(...); devtools::test()). That is a runnable
+    # instruction for contributors, not commented-out dead code.
+    "tests/testthat" = list(commented_code_linter = Inf)
+  )
