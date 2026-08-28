@@ -239,7 +239,9 @@ argument set in one call, and keeps the same API as the Python and Julia
 constructors (see
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
 
-## Comparison to `{rixpress}`
+## Comparison with other similar tools
+
+### Comparison to `{rixpress}`
 
 I am also aware of [rixpress](https://docs.ropensci.org/rixpress), which
 supports reproducible polyglot pipelines using Nix.
@@ -267,6 +269,51 @@ environments where Nix is unavailable or cannot be installed.
 This distinction is relevant for my own work because I use a public
 computing cluster with restricted user permissions, and the
 administrators are not currently considering a Nix installation.
+
+### Comparison with T (`tlang`)
+
+I am also aware of [T](https://tstats-project.org/), a domain-specific
+language for orchestrating polyglot analyses, currently in active
+development.
+
+T and [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) differ
+more fundamentally than [rixpress](https://docs.ropensci.org/rixpress)
+and [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) do, because
+T is a language rather than an R package. T owns the orchestration layer
+itself: pipelines are written in T, which coordinates R, Python, and
+Julia as computation backends, serialises artifacts across language
+boundaries automatically, and runs each node in its own sandboxed
+environment. Its design is strictly functional and immutable, with
+computation graphs as first-class values.
+
+[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) does not own
+the orchestration layer and does not try to. The pipeline stays an
+ordinary [targets](https://docs.ropensci.org/targets/) pipeline written
+in R, and a multilingual step is one more constructor call in
+`_targets.R`. Everything a user already knows about
+[targets](https://docs.ropensci.org/targets/) (change detection, dynamic
+branching, storage formats, `crew` parallelism) continues to apply
+unchanged, and nothing outside the individual step needs to move.
+
+The trade-off is the same shape as with
+[rixpress](https://docs.ropensci.org/rixpress), and in the same
+direction. T offers stronger guarantees: mandatory Nix environments,
+per-node sandboxing, and automatic cross-language serialisation remove
+classes of error that
+[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) leaves to the
+user’s own environment management. In exchange, T asks the user to adopt
+a new language and to have Nix available, whereas
+[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) asks for one
+function call inside a pipeline they already have.
+
+The two therefore suit different starting points. T is attractive when a
+polyglot workflow is being designed from scratch and reproducibility
+guarantees are the priority.
+[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) is aimed at an
+existing R-centric [targets](https://docs.ropensci.org/targets/)
+pipeline that needs one or two steps in another language, and like for
+[rixpress](https://docs.ropensci.org/rixpress) to the people for which
+installing Nix is not an option.
 
 ## Where to go next
 
