@@ -119,7 +119,9 @@ A Julia step is identical apart from the constructor and helper names: use `tar_
 
 The gains above are largest for **Python and Julia**, where a live interpreter has to be bound and data marshalled across the R boundary on every step. **Rust is different**: `rextendr::rust_source()` compiles your `#[extendr]` functions and hands them back as ordinary R functions, so there is no interpreter to bind and no conversion layer to abstract, and for simple cases a plain `tar_target()` calling `rust_source()` already works. `tar_target_rs()` is still worth using because it puts R, `cargo`, and (on Windows) Rtools on `PATH` and sets `R_HOME` so the build succeeds in a bare or `crew` worker, lets you pick a toolchain per step with `toolchain`, bundles file output, script tracking, and the full `targets::tar_target_raw()` argument set in one call, and keeps the same API as the Python and Julia constructors (see `vignette("rust")`).
 
-## Comparison to `{rixpress}`
+## Comparison with other similar tools
+
+### Comparison to `{rixpress}`
 
 I am also aware of `{rixpress}`, which supports reproducible polyglot pipelines using Nix.
 
@@ -130,6 +132,18 @@ I see `{rixpress}` and `{tarpolyglot}` as addressing related needs with differen
 The intention is not to reproduce the reproducibility guarantees provided by Nix. Instead, `{tarpolyglot}` is intended for users who want to add multilingual steps incrementally to an existing `{targets}` pipeline, including environments where Nix is unavailable or cannot be installed.
 
 This distinction is relevant for my own work because I use a public computing cluster with restricted user permissions, and the administrators are not currently considering a Nix installation.
+
+### Comparison with T (`tlang`)
+
+I am also aware of [T](https://tstats-project.org/), a domain-specific language for orchestrating polyglot analyses, currently in active development.
+
+T and `{tarpolyglot}` differ more fundamentally than `{rixpress}` and `{tarpolyglot}` do, because T is a language rather than an R package. T owns the orchestration layer itself: pipelines are written in T, which coordinates R, Python, and Julia as computation backends, serialises artifacts across language boundaries automatically, and runs each node in its own sandboxed environment. Its design is strictly functional and immutable, with computation graphs as first-class values.
+
+`{tarpolyglot}` does not own the orchestration layer and does not try to. The pipeline stays an ordinary `{targets}` pipeline written in R, and a multilingual step is one more constructor call in `_targets.R`. Everything a user already knows about `{targets}` (change detection, dynamic branching, storage formats, `crew` parallelism) continues to apply unchanged, and nothing outside the individual step needs to move.
+
+The trade-off is the same shape as with `{rixpress}`, and in the same direction. T offers stronger guarantees: mandatory Nix environments, per-node sandboxing, and automatic cross-language serialisation remove classes of error that `{tarpolyglot}` leaves to the user's own environment management. In exchange, T asks the user to adopt a new language and to have Nix available, whereas `{tarpolyglot}` asks for one function call inside a pipeline they already have.
+
+The two therefore suit different starting points. T is attractive when a polyglot workflow is being designed from scratch and reproducibility guarantees are the priority. `{tarpolyglot}` is aimed at an existing R-centric `{targets}` pipeline that needs one or two steps in another language, and like for `{rixpress}` to the people for which installing Nix is not an option.
 
 ## Where to go next
 
