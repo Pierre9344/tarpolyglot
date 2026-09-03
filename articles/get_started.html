@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,11 +39,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
-    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -68,7 +66,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Get started with tarpolyglot</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/vignettes/get_started.Rmd" class="external-link"><code>vignettes/get_started.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/v0.2.1/vignettes/get_started.Rmd" class="external-link"><code>vignettes/get_started.Rmd</code></a></small>
       <div class="d-none name"><code>get_started.Rmd</code></div>
     </div>
 
@@ -200,22 +198,14 @@ environments in one pipeline, put those steps on <strong>separate
 each Rust step compiles its own library, so different steps can use
 different crates freely.)</em></p></li>
 <li><p><strong>Foreign global state is shared within a session.</strong>
-Your Python script runs in Python’s top-level module,
-<code>__main__</code>, and your Julia script in Julia’s,
-<code>Main</code>. Those namespaces belong to the <em>interpreter</em>,
-not to the step, so steps sharing one R session share them too: a later
-step does not start from a clean slate, it reuses the interpreter an
-earlier step already bound, variables and all. Beware of three
-similar-looking names here: Python’s <code>__main__</code> and Julia’s
-<code>Main</code> are foreign-language modules, while
-<code>deployment = "main"</code> refers to the main <strong>R</strong>
-process, and that is where this bites most often, because
-<code>targets</code> runs every <code>main</code>-deployed step in that
-one session. Giving each step its own <code>crew</code> worker avoids it
-(point 3). Either way, never rely on those leftovers: pass data in
-explicitly (<code>inputs</code> + <code>to_py</code>/<code>to_jl</code>)
-and read results back with <code>retrieve</code> or a
-post-script.</p></li>
+The Python script runs in <code>__main__</code> and the Julia script in
+<code>Main</code>. As such, a step running on <code>main</code> will
+re-initialises the interpreter of previous tarpolyglot steps that were
+running on main. This results in the variables left behing by previous
+steps to be visible by later step in the same session. Never rely on it
+and always pass data explicitly (<code>inputs</code> +
+<code>to_py</code>/<code>to_jl</code>) and read results back with
+<code>retrieve</code> or a post-script.</p></li>
 <li><p><strong>Start-up cost vs isolation.</strong> A fresh process
 re-initialises the interpreter (and, on the default ephemeral env, may
 fetch packages). The recommended <code><a href="../reference/polyglot_controller.html">polyglot_controller()</a></code>
@@ -227,7 +217,7 @@ for throughput, at the cost of the shared-session caveats in points
 boundaries.</strong> A step can return an R object produced by
 conversion, or <strong>file paths</strong>
 (<code>output = "file"</code>). A live Python/Julia object (an open
-handle, an in-memory model) cannot be a target value. Or you can instead
+handle, an in-memory model) cannot be a target value. You can eventually
 write it to disk in one step and load it in the next.</p></li>
 <li><p><strong>Reproducibility is on you.</strong> The default ephemeral
 Python drifts over time; pin a real environment (<code>env</code> +
@@ -235,23 +225,6 @@ Python drifts over time; pin a real environment (<code>env</code> +
 <code>julia_project</code> with a committed <code>Manifest.toml</code>.
 You should also make sure to use some targets steps to keep track of
 your script files.</p></li>
-<li><p><strong>A <code>crew</code> worker is a full process, not a slice
-of one.</strong> It is not restricted to a single CPU core the way a
-lightweight thread might be, it sees every core the machine has, exactly
-like the main session. This matters when a step itself does internal
-multi-core work (RcppParallel, Python’s <code>multiprocessing</code>,
-Julia’s <code>Distributed</code>): running several such steps at once on
-separate workers means each one may try to claim every core, so
-<code>N</code> concurrent workers each spawning a full-width thread or
-process pool can genuinely oversubscribe the machine, degrading
-performance or, on a machine with few cores, exhausting it.
-<code>deployment = "main"</code> on the specific step that does the
-internal parallel work is the fix: <code>targets</code> only ever builds
-one <code>main</code>-deployed target at a time, so those steps never
-compound with each other, while ordinary worker-deployed steps keep
-running alongside them. See <code><a href="../articles/cpp.html">vignette("cpp")</a></code>,
-<code><a href="../articles/python.html">vignette("python")</a></code>, and <code><a href="../articles/julia.html">vignette("julia")</a></code> for
-the working pattern in each language.</p></li>
 </ol>
 </div>
 <div class="section level2">
@@ -488,65 +461,9 @@ fresh interpreter under <code>tasks_max = 1</code>):</p>
 <span>    iteration <span class="op">=</span> <span class="st">"list"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><strong>Per-step log files.</strong>
-<code><a href="../reference/polyglot_controller.html">polyglot_controller()</a></code> accepts a <code>log</code> argument
-(built with <code><a href="../reference/tar_polyglot_log.html">tar_polyglot_log()</a></code>) that writes one
-stdout/stderr file per Python or Julia step, named after the target:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_option_set.html" class="external-link">tar_option_set</a></span><span class="op">(</span></span>
-<span>  controller <span class="op">=</span> <span class="fu"><a href="../reference/polyglot_controller.html">polyglot_controller</a></span><span class="op">(</span></span>
-<span>    workers <span class="op">=</span> <span class="fl">2L</span>,</span>
-<span>    log <span class="op">=</span> <span class="fu"><a href="../reference/tar_polyglot_log.html">tar_polyglot_log</a></span><span class="op">(</span>stdout <span class="op">=</span> <span class="st">"logs/out"</span>, stderr <span class="op">=</span> <span class="st">"logs/err"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The <code>km</code> step above would then get
-<code>logs/out/km.out</code> / <code>logs/err/km.err</code>, starting
-with a header (the step name, <code><a href="https://rdrr.io/r/base/date.html" class="external-link">date()</a></code>, the resolved
-interpreter’s version and path, and whether an explicit environment was
-used) followed by whatever the script itself printed. By default
-(<code>append = FALSE</code>) a step’s log is truncated at the start of
-its run, so it only ever holds the latest attempt; set
-<code>append = TRUE</code> to accumulate history instead, with new
-content separated from old by two blank lines – this also means that if
-<code>crew</code> silently retries a step after a worker crash, both
-attempts show up in the same file, which can be useful for
-debugging.</p>
-<p><code><a href="../reference/tar_polyglot_log.html">tar_polyglot_log()</a></code> covers Python and Julia only, not
-Rust: <code>rextendr</code>-compiled code writes straight to the OS file
-descriptor, bypassing the redirection reticulate/JuliaCall provide for
-their embedded interpreters – and Rust doesn’t pay a per-branch
-interpreter start-up cost the way Python/Julia do to begin with, so
-there is less need for a per-step Rust log (see
-<code><a href="../reference/tarpolyglot_map.html">tarpolyglot_map()</a></code> in <code><a href="../articles/rust.html">vignette("rust")</a></code> for how
-a Rust step’s compiled library is instead built once and reused across
-branches). Use <code>crew</code>’s own
-<code>options_local(log_directory = ...)</code> for Rust step output; it
-also works for Python/Julia when <code>log</code> is left unset, since
-tarpolyglot never spawns a subprocess for them – reticulate/JuliaCall’s
-output shares the worker process’s own stdout/stderr, so
-<code>crew</code>’s process-level capture sees it too. Setting
-<em>both</em> is fine, and the two are complementary rather than
-redundant: <code>options_local(log_directory = ...)</code> also captures
-ordinary R-level output (pre/post-script messages, warnings) that
-<code><a href="../reference/tar_polyglot_log.html">tar_polyglot_log()</a></code> does not touch, while
-<code><a href="../reference/tar_polyglot_log.html">tar_polyglot_log()</a></code>’s file is named after the step rather
-than a <code>crew</code>-generated worker name. They do
-<strong>split</strong> the foreign output between the two files rather
-than duplicate it, though: while a step’s script body is running,
-<code><a href="../reference/tar_polyglot_log.html">tar_polyglot_log()</a></code> diverts the foreign print output
-specifically into its own file, so for that window it will not also
-appear in <code>crew</code>’s log.</p>
-<p>One caveat under <strong>dynamic branching</strong>: every branch of
-a pattern target shares the <em>same</em> target name, so with
-<code>append = FALSE</code> (the default) each branch’s log write
-truncates whatever the previous branch wrote – only the last-finishing
-branch’s log survives. Set <code>append = TRUE</code> if you need every
-branch’s output; they land in one file, interleaved by finish order, not
-split into one file per branch.</p>
 <p>See <code><a href="../articles/python.html">vignette("python")</a></code>, <code><a href="../articles/julia.html">vignette("julia")</a></code>,
 and <code><a href="../articles/rust.html">vignette("rust")</a></code> for the full per-language reference,
-and <code><a href="../reference/polyglot_controller.html">?polyglot_controller</a></code> / <code><a href="../reference/tar_polyglot_log.html">?tar_polyglot_log</a></code>
-for the controller and logging options.</p>
+and <code><a href="../reference/polyglot_controller.html">?polyglot_controller</a></code> for the controller options.</p>
 </div>
 </div>
 <div class="section level2">
@@ -571,7 +488,7 @@ rules).</li>
 <strong>Julia</strong>: each element is
 <code>julia_assign()</code>ed as a variable in <code>Main</code>.</li>
 </ul>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># R/iris_pre.R  (inputs = c(df = "iris_data"))</span></span>
 <span><span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  df   <span class="op">=</span> <span class="va">df</span>,                       <span class="co"># R data.frame -&gt; pandas DataFrame</span></span>
@@ -599,7 +516,7 @@ shortcut for <code>JuliaCall::julia_eval("name")</code> (JuliaCall has
 no <code>py</code>-style proxy), and <code>jl_call</code>, an alias of
 <code><a href="https://rdrr.io/pkg/JuliaCall/man/call.html" class="external-link">JuliaCall::julia_call()</a></code>.</li>
 </ul>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># R/iris_post.R  (Python)</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">py_get</span><span class="op">(</span><span class="st">"result"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>n <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">n</span>, k <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">centers</span><span class="op">)</span><span class="op">)</span>   <span class="co"># last expression = target value</span></span></code></pre></div>

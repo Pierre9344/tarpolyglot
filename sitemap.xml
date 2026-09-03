@@ -1,33 +1,24 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://pierre9344.github.io/tarpolyglot/404.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/CODE_OF_CONDUCT.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/CONTRIBUTING.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/LICENSE-text.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/LICENSE.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/articles/cpp.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/articles/get_started.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/articles/index.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/articles/julia.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/articles/python.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/articles/rust.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/articles/scripts.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/authors.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/index.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/news/index.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/index.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_py_step.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_code.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.html</loc></url>
@@ -36,13 +27,6 @@
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-package.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-params-nse.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-params-raw.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-nse-compiled.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-nse-interpreted.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-raw-compiled.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-pattern-raw-interpreted.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-post-script-compiled.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot-shared-params.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_head.html</loc></url>
@@ -50,6 +34,5 @@
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_sample.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.html</loc></url>
 <url><loc>https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_tail.html</loc></url>
-<url><loc>https://pierre9344.github.io/tarpolyglot/reference/toolchain_check.html</loc></url>
 </urlset>
 

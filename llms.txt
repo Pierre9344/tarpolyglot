@@ -1,31 +1,26 @@
 # `{tarpolyglot}`
 
-[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) adds target
-constructors that run **Python**, **Julia**, **Rust**, and **C++** as
-first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/)
-pipeline, via [reticulate](https://rstudio.github.io/reticulate/)
-(Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall)
-(Julia), [rextendr](https://extendr.rs/rextendr/) /
-[extendr](https://extendr.rs/) (Rust), and
-[Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) (C++).
-Results come back as converted R objects or as files tracked on disk,
-and everything a normal [targets](https://docs.ropensci.org/targets/)
-step supports works unchanged: dynamic branching, storage formats,
-resources, cues, `crew` parallelism.
+`tarpolyglot` adds target constructors that run **Python**, **Julia**,
+and **Rust** as first-class steps of a
+[`{targets}`](https://docs.ropensci.org/targets/) pipeline, via
+[reticulate](https://rstudio.github.io/reticulate/) (Python),
+[JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and
+[rextendr](https://extendr.rs/rextendr/) /
+[extendr](https://extendr.rs/) (Rust). Results come back as converted R
+objects or as files tracked on disk, and everything a normal
+[targets](https://docs.ropensci.org/targets/) step supports works
+unchanged: dynamic branching, storage formats, resources, cues, `crew`
+parallelism.
 
 ## Installation
 
 You can install [tarpolyglot](https://github.com/Pierre9344/tarpolyglot)
-from CRAN or GitHub for the development version:
+from GitHub:
 
 ``` r
 
-# CRAN
-install.package("tarpolyglot")
-
-# GitHub (development version)
 # install.packages("remotes")
-remotes::install_github("Pierre9344/tarpolyglot@dev", build_vignettes = TRUE, dependencies = TRUE)
+remotes::install_github("Pierre9344/tarpolyglot", build_vignettes = TRUE, dependencies = TRUE)
 ```
 
 You also need a working toolchain for whichever language(s) you plan to
@@ -39,32 +34,22 @@ See
 for the full setup instructions (Python via reticulate/uv, Julia via
 [juliaup](https://github.com/JuliaLang/juliaup), Rust via
 [rustup](https://rust-lang.org/tools/install/): use the **GNU**
-toolchain on Windows so it matches R’s ABI). C++ needs no separate
-toolchain since
-[`Rcpp::sourceCpp()`](https://rdrr.io/pkg/Rcpp/man/sourceCpp.html)
-compiles with R’s own compiler, which on Windows means
-[Rtools](https://cran.r-project.org/bin/windows/Rtools/)).
+toolchain on Windows so it matches R’s ABI).
 
 ## The three constructors
 
 - [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
   /
   [`tar_target_py_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py_raw.md):
-  Python, via [reticulate](https://rstudio.github.io/reticulate/).
+  Python, via reticulate.
 - [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
   /
   [`tar_target_jl_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.md):
-  Julia, via [JuliaCall](https://github.com/JuliaInterop/JuliaCall).
+  Julia, via JuliaCall.
 - [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
   /
   [`tar_target_rs_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.md):
-  Rust, via
-  [rextendr](https://extendr.rs/rextendr/)/[extendr](https://extendr.rs/).
-- [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
-  /
-  [`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md):
-  C++, via
-  [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html).
+  Rust, via rextendr/extendr.
 
 Each mirrors
 [`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
@@ -73,8 +58,7 @@ Each mirrors
 and forwards every argument (`pattern`, `format`, `deployment`,
 `resources`, `cue`, …), so dynamic branching, storage formats,
 `crew`-based parallelism, and other
-[targets](https://docs.ropensci.org/targets/) features all work as
-usual.
+[targets](https://docs.ropensci.org/targets/)features all work as usual.
 
 ### Example using `tar_target_py`
 
@@ -135,8 +119,8 @@ Here the `retrieve` argument is used to extract a value from the python
 environment using `reticulate` type conversion. It is also possible to
 use a post-python R script to extract one or more values from the python
 session (e.g. save multiple object as a list, or format the output in
-R). In the post script, the python session is represented by the `py`
-object. It is also possible tu use the `py_get()` helper function to
+R). In the post script, the python session is represented by the
+`py`object. It is also possible tu use the `py_get` helper function to
 extract some variable. Both are created by the steps constructor.
 
 ### Inline code with `tar_code()`
@@ -217,7 +201,7 @@ mainly adds toolchain and `crew`-worker build setup plus API symmetry
     as usual making
     [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) fully
     compatible with [targets](https://docs.ropensci.org/targets/) and
-    [tarchetypes](https://docs.ropensci.org/tarchetypes/).
+    `tarchetypes`.
   - the constructor `input` argument ensure that
     [targets](https://docs.ropensci.org/targets/) detect the
     dependencies of your polyglot steps.
@@ -226,10 +210,9 @@ mainly adds toolchain and `crew`-worker build setup plus API symmetry
   (a `crew` controller with `tasks_max = 1`) gives each step a fresh
   interpreter in its own process. This is the only way around reticulate
   and JuliaCall binding a single interpreter per session.
-- You do not need to adopt a separate build tool like the
-  [rixpress](https://docs.ropensci.org/rixpress) R package does with Nix
-  which is convenient for Windows computer or public computing cluster
-  on which you can’t install Nix as a user.
+- You do not need to adopt a separate build tool like the `rixpress` R
+  package does with Nix which is convenient for Windows computer or
+  public computing cluster on which you can’t install Nix as a user.
 
 The gains above are largest for **Python and Julia**, where a live
 interpreter has to be bound and data marshalled across the R boundary on
@@ -250,9 +233,7 @@ argument set in one call, and keeps the same API as the Python and Julia
 constructors (see
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)).
 
-## Comparison with other similar tools
-
-### Comparison to `{rixpress}`
+## Comparison to `{rixpress}`
 
 I am also aware of [rixpress](https://docs.ropensci.org/rixpress), which
 supports reproducible polyglot pipelines using Nix.
@@ -264,67 +245,21 @@ related needs with different architectures and trade-offs.
 execution, dependency management, and environment management to Nix,
 providing strong isolation and reproducibility guarantees.
 
-[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) takes a
-narrower and less prescriptive approach. It remains an extension of
-[targets](https://docs.ropensci.org/targets/) and leaves environment
-management to existing language-specific tools such as virtual
-environments, Conda, uv, Poetry, Juliaup, Julia projects, and rustup.
+{tarpolyglot} takes a narrower and less prescriptive approach. It
+remains an extension of {targets} and leaves environment management to
+existing language-specific tools such as virtual environments, Conda,
+uv, Poetry, Juliaup, Julia projects, and rustup.
 
 The intention is not to reproduce the reproducibility guarantees
 provided by Nix. Instead,
 [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) is intended for
 users who want to add multilingual steps incrementally to an existing
-[targets](https://docs.ropensci.org/targets/) pipeline, including
-environments where Nix is unavailable or cannot be installed.
+{targets} pipeline, including environments where Nix is unavailable or
+cannot be installed.
 
 This distinction is relevant for my own work because I use a public
 computing cluster with restricted user permissions, and the
 administrators are not currently considering a Nix installation.
-
-### Comparison with T (`tlang`)
-
-I am also aware of [T](https://tstats-project.org/), a domain-specific
-language for orchestrating polyglot analyses, currently in active
-development.
-
-T and [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) differ
-more fundamentally than [rixpress](https://docs.ropensci.org/rixpress)
-and [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) do, because
-T is a language rather than an R package. T owns the orchestration layer
-itself: pipelines are written in T, which coordinates R, Python, and
-Julia as computation backends, serialises artifacts across language
-boundaries automatically, and runs each node in its own sandboxed
-environment. Its design is strictly functional and immutable, with
-computation graphs as first-class values.
-
-[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) does not own
-the orchestration layer and does not try to. The pipeline stays an
-ordinary [targets](https://docs.ropensci.org/targets/) pipeline written
-in R, and a multilingual step is one more constructor call in
-`_targets.R`. Everything a user already knows about
-[targets](https://docs.ropensci.org/targets/) (change detection, dynamic
-branching, storage formats, `crew` parallelism) continues to apply
-unchanged, and nothing outside the individual step needs to move.
-
-The trade-off is the same shape as with
-[rixpress](https://docs.ropensci.org/rixpress), and in the same
-direction. T offers stronger guarantees: mandatory Nix environments,
-per-node sandboxing, and automatic cross-language serialisation remove
-classes of error that
-[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) leaves to the
-user’s own environment management. In exchange, T asks the user to adopt
-a new language and to have Nix available, whereas
-[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) asks for one
-function call inside a pipeline they already have.
-
-The two therefore suit different starting points. T is attractive when a
-polyglot workflow is being designed from scratch and reproducibility
-guarantees are the priority.
-[tarpolyglot](https://github.com/Pierre9344/tarpolyglot) is aimed at an
-existing R-centric [targets](https://docs.ropensci.org/targets/)
-pipeline that needs one or two steps in another language, and like for
-[rixpress](https://docs.ropensci.org/rixpress) to the people for which
-installing Nix is not an option.
 
 ## Where to go next
 
@@ -350,41 +285,14 @@ installing Nix is not an option.
 
 ## AI Disclosure
 
-Claude Code (Anthropic’s Claude Opus 4.8, and then Opus 5) was used as
-an assistant throughout development, with the maintainer reviewing,
-testing, and directing all changes made by the AI. Concretely, AI
-assistance was used for:
-
-- **Code reviewing** Revision and improvement of the `tarpolyglot`
-  functions.
-- **Documentation.** Drafting and revising the roxygen documentation,
-  including the shared “Script options” / “Script arguments” sections in
-  [`R/shared-params.R`](https://github.com/Pierre9344/tarpolyglot/blob/main/R/shared-params.R),
-  and drafting the vignettes, in particular
-  [`vignettes/scripts.Rmd`](https://github.com/Pierre9344/tarpolyglot/blob/main/vignettes/scripts.Rmd)
-  and `vignettes/cpp.Rmd`.
-- **Tests.** Drafting a substantial part of the test suite, including
-  the unit tests for the internal helpers and the end-to-end pipeline
-  tests in
-  [`tests/testthat/test-integration-pipeline.R`](https://github.com/Pierre9344/tarpolyglot/blob/main/tests/testthat/test-integration-pipeline.R).
-  Every assertion was checked against the package’s actual behaviour
-  rather than accepted on trust; several drafts were rejected or
-  rewritten because they encoded a platform quirk or tested a mock
-  rather than the package.
-- **Continuous integration.** Drafting and debugging the GitHub Actions
-  workflows in
-  [`.github/workflows/`](https://github.com/Pierre9344/tarpolyglot/tree/main/.github/workflows),
-  including the toolchain setup for the integration and coverage jobs.
-- **Package logo.** The hex sticker in `man/figures/` (and the derived
-  favicons in `pkgdown/favicon/`) is a SVG generated by Claude Code
-  based on the maintainer prompte. It contains no third-party logo
-  artwork: every element is either an original shape or type set in a
-  font.
+This package was developed with assistance from Claude Code (Opus 4.8)
+to improve the functions and the first version of their documentation.
+All code and documentations were checked by the maintainer before
+release.
 
 ## Citation
 
-To cite [tarpolyglot](https://github.com/Pierre9344/tarpolyglot), run
-`citation("tarpolyglot")` in R, or see the
+To cite `tarpolyglot`, run `citation("tarpolyglot")` in R, or see the
 [`CITATION.cff`](https://pierre9344.github.io/tarpolyglot/CITATION.cff)
 file (also surfaced by GitHub’s “Cite this repository” button).
 
@@ -398,15 +306,11 @@ file (also surfaced by GitHub’s “Cite this repository” button).
 
 ## Target constructors
 
-Build a targets step that runs Python, Julia, Rust, or C++. The
-non-`_raw` forms use non-standard evaluation on `name`/`pattern` for
-direct use in `_targets.R`; the `_raw` forms take a string `name` for
-use inside targets factories.
+Build a targets step that runs Python, Julia, or Rust. The non-`_raw`
+forms use non-standard evaluation on `name`/`pattern` for direct use in
+`_targets.R`; the `_raw` forms take a string `name` for use inside
+targets factories.
 
-- [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
-  : Target that runs a C++ script
-- [`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md)
-  : Target that runs a C++ script (raw / factory form)
 - [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
   : Target that runs a Python script
 - [`tar_target_py_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py_raw.md)
@@ -423,8 +327,8 @@ use inside targets factories.
 ## Helpers
 
 Supply a step’s code inline, track a script file as a dependency, branch
-while compiling Rust or C++ once, and a crew controller preconfigured
-for per-step interpreter isolation.
+while compiling Rust once, and a crew controller preconfigured for
+per-step interpreter isolation.
 
 - [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
   : Inline code for a tarpolyglot step
@@ -437,23 +341,15 @@ for per-step interpreter isolation.
 - [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
   : A crew controller preconfigured for polyglot isolation
 
-- [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
-  : Configure per-step stdout/stderr logging
-
-- [`toolchain_check()`](https://pierre9344.github.io/tarpolyglot/reference/toolchain_check.md)
-  : Diagnose the Python, Julia, Rust, and C++ toolchains
-
 ## Branching patterns
 
 Dynamic-branching pattern helpers that mirror the `targets` patterns but
-compile once per pattern and reuse the result across branches: the Rust
-crate in a `<name>_rust_lib` target, the C++ library in a
-`<name>_cpp_lib` target. On the Python/Julia constructors they fall back
-to the plain `targets` pattern, since a live interpreter has nothing to
-compile.
+compile the Rust crate once per pattern (in a `<name>_rust_lib` target)
+and reuse it across branches. On the Python/Julia constructors they fall
+back to the plain `targets` pattern.
 
 - [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
-  : Dynamic-branching map that compiles Rust/C++ once
+  : Dynamic-branching map that compiles Rust once
 - [`tarpolyglot_cross()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_cross.md)
   : Dynamic-branching cross that compiles Rust once
 - [`tarpolyglot_slice()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_slice.md)
@@ -471,20 +367,12 @@ Worker functions the constructors call at pipeline run time. Documented
 because the constructor pages link to them; you do not normally call
 them directly.
 
-- [`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
-  : Execute a C++ step (worker behind tar_target_cpp)
 - [`run_py_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_py_step.md)
   : Execute a Python step (worker behind tar_target_py)
 - [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md)
   : Execute a Julia step (worker behind tar_target_jl)
 - [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md)
   : Execute a Rust step (worker behind tar_target_rs)
-- [`compile_cpp_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_cpp_lib.md)
-  : Compile a C++ step once for reuse across branches (worker behind
-  tarpolyglot_map)
-- [`run_cpp_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
-  : Run a C++ step from a pre-compiled library (worker behind
-  tarpolyglot_map)
 - [`compile_rs_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md)
   : Compile a Rust step once for reuse across branches (worker behind
   tarpolyglot_map)
@@ -498,13 +386,9 @@ them directly.
 
 - [Get started with
   tarpolyglot](https://pierre9344.github.io/tarpolyglot/articles/get_started.md):
-- [Supplying scripts to tarpolyglot
-  constructors](https://pierre9344.github.io/tarpolyglot/articles/scripts.md):
 - [Using Python inside
   targets](https://pierre9344.github.io/tarpolyglot/articles/python.md):
 - [Using Julia inside
   targets](https://pierre9344.github.io/tarpolyglot/articles/julia.md):
 - [Using Rust inside
   targets](https://pierre9344.github.io/tarpolyglot/articles/rust.md):
-- [Using C++ inside
-  targets](https://pierre9344.github.io/tarpolyglot/articles/cpp.md):

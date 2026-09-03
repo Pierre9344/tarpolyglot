@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,11 +19,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
-    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -37,7 +35,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Execute a Julia step (worker behind tar_target_jl)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/R/run-steps.R" class="external-link"><code>R/run-steps.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/v0.2.1/R/run-steps.R" class="external-link"><code>R/run-steps.R</code></a></small>
       <div class="d-none name"><code>run_jl_step.Rd</code></div>
     </div>
 
@@ -58,8 +56,7 @@
 <span>  julia_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  julia_home <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"tarpolyglot.julia_home"</span><span class="op">)</span>,</span>
 <span>  julia_project <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  julia_packages <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  name <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  julia_packages <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -68,15 +65,15 @@
 
 
 <dl><dt id="arg-script">script<a class="anchor" aria-label="anchor" href="#arg-script"></a></dt>
-<dd><p>Path to the Julia script to run (required). Accepts a file path or an inline <code><a href="tar_code.html">tar_code()</a></code> carrier; see the "Script arguments" section below.</p></dd>
+<dd><p>Path to the Julia script to run (required).</p></dd>
 
 
 <dt id="arg-pre-script">pre_script<a class="anchor" aria-label="anchor" href="#arg-pre-script"></a></dt>
-<dd><p>Optional path to an R script run before the Julia script. It is evaluated in the step environment, which already holds the named <code>inputs</code>. To hand objects to Julia, assign a named list <code>to_jl</code> in this script; each element is <code>julia_assign()</code>ed as a variable in Julia's <code>Main</code> module. Accepts a file path or an inline <code><a href="tar_code.html">tar_code()</a></code> carrier; see the "Script arguments" section below.</p></dd>
+<dd><p>Optional path to an R script run before the Julia script. It is evaluated in the step environment, which already holds the named <code>inputs</code>. To hand objects to Julia, assign a named list <code>to_jl</code> in this script; each element is <code>julia_assign()</code>ed as a variable in Julia's <code>Main</code> module.</p></dd>
 
 
 <dt id="arg-post-script">post_script<a class="anchor" aria-label="anchor" href="#arg-post-script"></a></dt>
-<dd><p>Optional path to an R script run after the Julia script. It is evaluated in the same environment, which now also holds <code>jl_get(name)</code> and <code>jl_call(fn, ...)</code>. In <code>output = "object"</code> mode the value of its last expression becomes the target value; in <code>output = "file"</code> mode it must return a character vector of file paths. Accepts a file path or an inline <code><a href="tar_code.html">tar_code()</a></code> carrier; see the "Script arguments" section below.</p></dd>
+<dd><p>Optional path to an R script run after the Julia script. It is evaluated in the same environment, which now also holds <code>jl_get(name)</code> and <code>jl_call(fn, ...)</code>. In <code>output = "object"</code> mode the value of its last expression becomes the target value; in <code>output = "file"</code> mode it must return a character vector of file paths.</p></dd>
 
 
 <dt id="arg-inputs">inputs<a class="anchor" aria-label="anchor" href="#arg-inputs"></a></dt>
@@ -102,22 +99,10 @@
 <dt id="arg-julia-home-julia-project-julia-packages">julia_home, julia_project, julia_packages<a class="anchor" aria-label="anchor" href="#arg-julia-home-julia-project-julia-packages"></a></dt>
 <dd><p>Julia environment selection. <code>julia_home</code> is the directory containing the julia executable (defaults to <code>getOption("tarpolyglot.julia_home")</code>; when unset and no <code>julia_version</code>, JuliaCall discovers Julia on <code>PATH</code>). <code>julia_project</code> is a Julia project environment (folder with <code>Project.toml</code> / <code>Manifest.toml</code>) to <code>Pkg.activate()</code>; when <code>NULL</code>, Julia's default global environment (<code>@v#.#</code>) is used. <code>julia_packages</code> is a character vector of packages to <code>using</code> before the script. The requested environment takes priority over an ambient <code>JULIA_PROJECT</code> environment variable (e.g. one set by an RStudio project config and inherited by <code>crew</code> workers): it is cleared for the duration of the Julia binding, so an explicit <code>julia_project</code> (or the global environment you get when none is given) wins over it, rather than <code>JULIA_PROJECT</code> silently selecting a different project. (<code>JULIA_HOME</code> is not cleared: it is a supported way to point at the default Julia.)</p></dd>
 
-
-<dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
-<dd><p>Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when <code><a href="polyglot_controller.html">polyglot_controller()</a></code> was given a <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code> (<code>NULL</code> – the default – disables logging for a direct call).</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The converted R object (object mode) or a character vector of normalised file paths (file mode).</p>
-    </div>
-    <div class="section level2">
-    <h2 id="script-arguments">Script arguments<a class="anchor" aria-label="anchor" href="#script-arguments"></a></h2>
-
-
-
-<p>A worker receives whatever the constructor already resolved, which is one of two things: a <strong>path to a file</strong> on disk, or an <strong>inline carrier</strong> built by <code><a href="tar_code.html">tar_code()</a></code> that holds the code in memory. Both are accepted, so a direct call may pass either.</p>
-<p><code><a href="tar_target_path.html">tar_target_path()</a></code> is deliberately <em>not</em> a third form at this level. It is a constructor-level convenience: <code><a href="tar_target_py.html">tar_target_py()</a></code> and the other constructors rewrite it while the pipeline's DAG is built, so that by the time a worker runs it has already become the ordinary file path held by the upstream target. Handing the result of <code><a href="tar_target_path.html">tar_target_path()</a></code> straight to a worker therefore does not resolve to a file. The three forms as written in <code>_targets.R</code>, and which of them tracks your edits, are covered in <code><a href="../articles/scripts.html">vignette("scripts")</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -126,22 +111,16 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># This worker starts a live Julia session, so it only runs when</span></span></span>
-<span class="r-in"><span><span class="co"># TARPOLYGLOT_EXAMPLES=true says a Julia toolchain is available.</span></span></span>
-<span class="r-in"><span><span class="co"># tar_dir() runs the code in a temporary directory.</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"TARPOLYGLOT_EXAMPLES"</span><span class="op">)</span>, <span class="st">"true"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_dir.html" class="external-link">tar_dir</a></span><span class="op">(</span><span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="co"># Normally invoked by tar_target_jl(); shown here as a direct call.</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="st">"to_jl &lt;- list(x = x)"</span>, <span class="st">"pre.R"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="st">"result = sum(x)"</span>, <span class="st">"sum.jl"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>    <span class="fu">run_jl_step</span><span class="op">(</span></span></span>
-<span class="r-in"><span>      script <span class="op">=</span> <span class="st">"sum.jl"</span>,</span></span>
-<span class="r-in"><span>      pre_script <span class="op">=</span> <span class="st">"pre.R"</span>,</span></span>
-<span class="r-in"><span>      inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>      retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
-<span class="r-in"><span>    <span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">}</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Normally invoked by tar_target_jl(); shown here as a direct call.</span></span></span>
+<span class="r-in"><span><span class="co"># scripts/sum.jl assigns `result`; pre.R builds `to_jl &lt;- list(x = x)`.</span></span></span>
+<span class="r-in"><span><span class="fu">run_jl_step</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  script <span class="op">=</span> <span class="st">"scripts/sum.jl"</span>,</span></span>
+<span class="r-in"><span>  pre_script <span class="op">=</span> <span class="st">"scripts/pre.R"</span>,</span></span>
+<span class="r-in"><span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  retrieve <span class="op">=</span> <span class="st">"result"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

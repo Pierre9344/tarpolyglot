@@ -23,8 +23,7 @@ run_py_step(
   python_version = NULL,
   env = NULL,
   env_manager = "system",
-  python = NULL,
-  name = NULL
+  python = NULL
 )
 ```
 
@@ -32,10 +31,7 @@ run_py_step(
 
 - script:
 
-  Path to the Python script to run (required). Accepts a file path or an
-  inline
-  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-  carrier; see the "Script arguments" section below.
+  Path to the Python script to run (required).
 
 - pre_script:
 
@@ -43,9 +39,7 @@ run_py_step(
   evaluated in the step environment, which already holds the named
   `inputs`. To hand objects to Python, assign a named list `to_py` in
   this script; each element is pushed as a top-level variable in the
-  Python `__main__` module. Accepts a file path or an inline
-  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-  carrier; see the "Script arguments" section below.
+  Python `__main__` module.
 
 - post_script:
 
@@ -54,9 +48,7 @@ run_py_step(
   reticulate `__main__` module proxy) and `py_get(name)`. In
   `output = "object"` mode the value of its last expression becomes the
   target value; in `output = "file"` mode it must return a character
-  vector of file paths. Accepts a file path or an inline
-  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-  carrier; see the "Script arguments" section below.
+  vector of file paths.
 
 - inputs:
 
@@ -121,41 +113,10 @@ run_py_step(
   RStudio project Python config and inherited by `crew` workers), which
   reticulate would otherwise let silently override the request.
 
-- name:
-
-  Character string, the step's target name. Supplied automatically by
-  the constructor; used only to name this step's log files when
-  [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
-  was given a
-  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
-  (`NULL` – the default – disables logging for a direct call).
-
 ## Value
 
 The converted R object (object mode) or a character vector of normalised
 file paths (file mode).
-
-## Script arguments
-
-A worker receives whatever the constructor already resolved, which is
-one of two things: a **path to a file** on disk, or an **inline
-carrier** built by
-[`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-that holds the code in memory. Both are accepted, so a direct call may
-pass either.
-
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-is deliberately *not* a third form at this level. It is a
-constructor-level convenience:
-[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
-and the other constructors rewrite it while the pipeline's DAG is built,
-so that by the time a worker runs it has already become the ordinary
-file path held by the upstream target. Handing the result of
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-straight to a worker therefore does not resolve to a file. The three
-forms as written in `_targets.R`, and which of them tracks your edits,
-are covered in
-[`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md).
 
 ## See also
 
@@ -165,21 +126,14 @@ are covered in
 ## Examples
 
 ``` r
-# This worker binds a live Python interpreter, so it only runs when
-# TARPOLYGLOT_EXAMPLES=true says a Python toolchain is available.
-# tar_dir() runs the code in a temporary directory, so nothing is written
-# to the working directory.
-if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
-  targets::tar_dir({
-    # Normally invoked by tar_target_py(); shown here as a direct call.
-    writeLines("to_py <- list(x = x)", "pre.R")
-    writeLines("result = float(sum(x))", "sum.py")
-    run_py_step(
-      script = "sum.py",
-      pre_script = "pre.R",
-      inputs = list(x = c(1, 2, 3)),
-      retrieve = "result"
-    )
-  })
-}
+if (FALSE) { # \dontrun{
+# Normally invoked by tar_target_py(); shown here as a direct call.
+# scripts/sum.py assigns `result`; pre.R builds `to_py <- list(x = x)`.
+run_py_step(
+  script = "scripts/sum.py",
+  pre_script = "scripts/pre.R",
+  inputs = list(x = c(1, 2, 3)),
+  retrieve = "result"
+)
+} # }
 ```

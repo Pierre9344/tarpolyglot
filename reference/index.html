@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,11 +19,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
-    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -58,7 +56,7 @@
       </dl></div><div class="section level2">
       <h2 id="target-constructors">Target constructors<a class="anchor" aria-label="anchor" href="#target-constructors"></a></h2>
 
-      <div class="section-desc"><p>Build a targets step that runs Python, Julia, Rust, or C++. The non-<code>_raw</code> forms use non-standard evaluation on <code>name</code>/<code>pattern</code> for direct use in <code>_targets.R</code>; the <code>_raw</code> forms take a string <code>name</code> for use inside targets factories.</p></div>
+      <div class="section-desc"><p>Build a targets step that runs Python, Julia, or Rust. The non-<code>_raw</code> forms use non-standard evaluation on <code>name</code>/<code>pattern</code> for direct use in <code>_targets.R</code>; the <code>_raw</code> forms take a string <code>name</code> for use inside targets factories.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -66,20 +64,6 @@
 
 
       <dl><dt>
-
-          <code><a href="tar_target_cpp.html">tar_target_cpp()</a></code>
-
-        </dt>
-        <dd>Target that runs a C++ script</dd>
-
-        <dt>
-
-          <code><a href="tar_target_cpp_raw.html">tar_target_cpp_raw()</a></code>
-
-        </dt>
-        <dd>Target that runs a C++ script (raw / factory form)</dd>
-
-        <dt>
 
           <code><a href="tar_target_py.html">tar_target_py()</a></code>
 
@@ -123,7 +107,7 @@
       </dl></div><div class="section level2">
       <h2 id="helpers">Helpers<a class="anchor" aria-label="anchor" href="#helpers"></a></h2>
 
-      <div class="section-desc"><p>Supply a step’s code inline, track a script file as a dependency, branch while compiling Rust or C++ once, and a crew controller preconfigured for per-step interpreter isolation.</p></div>
+      <div class="section-desc"><p>Supply a step’s code inline, track a script file as a dependency, branch while compiling Rust once, and a crew controller preconfigured for per-step interpreter isolation.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -150,24 +134,10 @@
 
         </dt>
         <dd>A crew controller preconfigured for polyglot isolation</dd>
-
-        <dt>
-
-          <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code>
-
-        </dt>
-        <dd>Configure per-step stdout/stderr logging</dd>
-
-        <dt>
-
-          <code><a href="toolchain_check.html">toolchain_check()</a></code>
-
-        </dt>
-        <dd>Diagnose the Python, Julia, Rust, and C++ toolchains</dd>
       </dl></div><div class="section level2">
       <h2 id="branching-patterns">Branching patterns<a class="anchor" aria-label="anchor" href="#branching-patterns"></a></h2>
 
-      <div class="section-desc"><p>Dynamic-branching pattern helpers that mirror the <code>targets</code> patterns but compile once per pattern and reuse the result across branches: the Rust crate in a <code>&lt;name&gt;_rust_lib</code> target, the C++ library in a <code>&lt;name&gt;_cpp_lib</code> target. On the Python/Julia constructors they fall back to the plain <code>targets</code> pattern, since a live interpreter has nothing to compile.</p></div>
+      <div class="section-desc"><p>Dynamic-branching pattern helpers that mirror the <code>targets</code> patterns but compile the Rust crate once per pattern (in a <code>&lt;name&gt;_rust_lib</code> target) and reuse it across branches. On the Python/Julia constructors they fall back to the plain <code>targets</code> pattern.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -179,7 +149,7 @@
           <code><a href="tarpolyglot_map.html">tarpolyglot_map()</a></code>
 
         </dt>
-        <dd>Dynamic-branching map that compiles Rust/C++ once</dd>
+        <dd>Dynamic-branching map that compiles Rust once</dd>
 
         <dt>
 
@@ -227,13 +197,6 @@
 
       <dl><dt>
 
-          <code><a href="run_cpp_step.html">run_cpp_step()</a></code>
-
-        </dt>
-        <dd>Execute a C++ step (worker behind tar_target_cpp)</dd>
-
-        <dt>
-
           <code><a href="run_py_step.html">run_py_step()</a></code>
 
         </dt>
@@ -252,20 +215,6 @@
 
         </dt>
         <dd>Execute a Rust step (worker behind tar_target_rs)</dd>
-
-        <dt>
-
-          <code><a href="compile_cpp_lib.html">compile_cpp_lib()</a></code>
-
-        </dt>
-        <dd>Compile a C++ step once for reuse across branches (worker behind tarpolyglot_map)</dd>
-
-        <dt>
-
-          <code><a href="run_cpp_step_prebuilt.html">run_cpp_step_prebuilt()</a></code>
-
-        </dt>
-        <dd>Run a C++ step from a pre-compiled library (worker behind tarpolyglot_map)</dd>
 
         <dt>
 

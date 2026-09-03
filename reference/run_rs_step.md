@@ -31,19 +31,13 @@ run_rs_step(
 - script:
 
   Path to the Rust script containing `#[extendr]` functions (required).
-  Accepts a file path or an inline
-  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-  carrier; see the "Script arguments" section below.
 
 - post_script:
 
   Path to an R script evaluated after compilation. The compiled Rust
   functions and the named `inputs` are in scope; its last expression is
   the target value (object mode), or it returns a character vector of
-  file paths (file mode). Required for object mode. Accepts a file path
-  or an inline
-  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-  carrier; see the "Script arguments" section below.
+  file paths (file mode). Required for object mode.
 
 - inputs:
 
@@ -92,28 +86,6 @@ Rust toolchain and `cargo` must be reachable (this function puts R,
 cargo, and on Windows Rtools on `PATH` for the build itself); on Windows
 use the GNU toolchain.
 
-## Script arguments
-
-A worker receives whatever the constructor already resolved, which is
-one of two things: a **path to a file** on disk, or an **inline
-carrier** built by
-[`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-that holds the code in memory. Both are accepted, so a direct call may
-pass either.
-
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-is deliberately *not* a third form at this level. It is a
-constructor-level convenience:
-[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
-and the other constructors rewrite it while the pipeline's DAG is built,
-so that by the time a worker runs it has already become the ordinary
-file path held by the upstream target. Handing the result of
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-straight to a worker therefore does not resolve to a file. The three
-forms as written in `_targets.R`, and which of them tracks your edits,
-are covered in
-[`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md).
-
 ## See also
 
 [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md),
@@ -123,19 +95,13 @@ are covered in
 ## Examples
 
 ``` r
-# This worker compiles Rust with cargo, so it only runs when
-# TARPOLYGLOT_EXAMPLES=true says a Rust toolchain is available.
-# tar_dir() runs the code in a temporary directory.
-if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
-  targets::tar_dir({
-    # Normally invoked by tar_target_rs(); shown here as a direct call.
-    writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
-    writeLines("square(x)", "post.R")
-    run_rs_step(
-      script = "square.rs",
-      inputs = list(x = 21),
-      post_script = "post.R"
-    )
-  })
-}
+if (FALSE) { # \dontrun{
+# Normally invoked by tar_target_rs(); shown here as a direct call.
+# scripts/square.rs defines a #[extendr] fn square(x); post.R ends on square(x).
+run_rs_step(
+  script = "scripts/square.rs",
+  inputs = list(x = 21),
+  post_script = "scripts/post.R"
+)
+} # }
 ```

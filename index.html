@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Run Python, Julia, Rust, and C++ Inside targets Pipeline Steps • tarpolyglot</title>
+<title>Run Python, Julia, and Rust Inside targets Pipeline Steps • tarpolyglot</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -15,9 +15,9 @@
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Run Python, Julia, Rust, and C++ Inside targets Pipeline Steps">
-<meta name="description" content='Adds target constructors that make it easy to use Python, Julia, Rust, and C++ inside a targets pipeline using reticulate, JuliaCall, rextendr, and Rcpp. Provides tar_target_py(), tar_target_jl(), tar_target_rs(), and tar_target_cpp() (with matching _raw() variants), each mirroring targets tar_target() and tar_target_raw() functions. Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust and C++ steps compile functions and call them from an R post-script. Results are then returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
-<meta property="og:description" content='Adds target constructors that make it easy to use Python, Julia, Rust, and C++ inside a targets pipeline using reticulate, JuliaCall, rextendr, and Rcpp. Provides tar_target_py(), tar_target_jl(), tar_target_rs(), and tar_target_cpp() (with matching _raw() variants), each mirroring targets tar_target() and tar_target_raw() functions. Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust and C++ steps compile functions and call them from an R post-script. Results are then returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Run Python, Julia, and Rust Inside targets Pipeline Steps">
+<meta name="description" content='Adds target constructors that make it easy to use Python, Julia, and Rust inside a targets pipeline using reticulate, JuliaCall, and rextendr. Provides tar_target_py(), tar_target_jl(), and tar_target_rs() (with matching _raw() variants), each mirroring targets::tar_target() and targets::tar_target_raw(). Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust steps compile #[extendr] functions and call them from an R post-script. Results are returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
+<meta property="og:description" content='Adds target constructors that make it easy to use Python, Julia, and Rust inside a targets pipeline using reticulate, JuliaCall, and rextendr. Provides tar_target_py(), tar_target_jl(), and tar_target_rs() (with matching _raw() variants), each mirroring targets::tar_target() and targets::tar_target_raw(). Python and Julia steps run a script via a live interpreter with optional R pre- and post-scripts; Rust steps compile #[extendr] functions and call them from an R post-script. Results are returned either as converted R objects or as files written to disk (format = "file"). Dynamic branching, environment/version selection, a crew controller for isolation, and the full set of tar_target_raw() arguments are supported.'>
 <meta property="og:image" content="https://pierre9344.github.io/tarpolyglot/logo.svg">
 </head>
 <body>
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,11 +42,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="articles/rust.html">Using Rust inside targets</a></li>
-    <li><a class="dropdown-item" href="articles/cpp.html">Using C++ inside targets</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -70,34 +68,28 @@
 <code>{tarpolyglot}</code> <a class="anchor" aria-label="anchor" href="#tarpolyglot-"></a>
 </h1>
 </div>
-<p><a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> adds target constructors that run <strong>Python</strong>, <strong>Julia</strong>, <strong>Rust</strong>, and <strong>C++</strong> as first-class steps of a <a href="https://docs.ropensci.org/targets/" class="external-link"><code>{targets}</code></a> pipeline, via <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a> (Python), <a href="https://github.com/JuliaInterop/JuliaCall" class="external-link">JuliaCall</a> (Julia), <a href="https://extendr.rs/rextendr/" class="external-link">rextendr</a> / <a href="https://extendr.rs/" class="external-link">extendr</a> (Rust), and <a href="https://cran.r-project.org/web/packages/Rcpp/index.html" class="external-link">Rcpp</a> (C++). Results come back as converted R objects or as files tracked on disk, and everything a normal <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> step supports works unchanged: dynamic branching, storage formats, resources, cues, <code>crew</code> parallelism.</p>
+<p><code>tarpolyglot</code> adds target constructors that run <strong>Python</strong>, <strong>Julia</strong>, and <strong>Rust</strong> as first-class steps of a <a href="https://docs.ropensci.org/targets/" class="external-link"><code>{targets}</code></a> pipeline, via <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a> (Python), <a href="https://github.com/JuliaInterop/JuliaCall" class="external-link">JuliaCall</a> (Julia), and <a href="https://extendr.rs/rextendr/" class="external-link">rextendr</a> / <a href="https://extendr.rs/" class="external-link">extendr</a> (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> step supports works unchanged: dynamic branching, storage formats, resources, cues, <code>crew</code> parallelism.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> from CRAN or GitHub for the development version:</p>
+<p>You can install <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> from GitHub:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># CRAN</span></span>
-<span><span class="fu">install.package</span><span class="op">(</span><span class="st">"tarpolyglot"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># GitHub (development version)</span></span>
-<span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Pierre9344/tarpolyglot@dev"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>You also need a working toolchain for whichever language(s) you plan to use: Python, Julia, and/or Rust. Each is independent and only needed if you use the matching constructor (<code><a href="reference/tar_target_py.html">tar_target_py()</a></code>, <code><a href="reference/tar_target_jl.html">tar_target_jl()</a></code>, <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code>). See <code><a href="articles/get_started.html">vignette("get_started")</a></code> for the full setup instructions (Python via reticulate/uv, Julia via <a href="https://github.com/JuliaLang/juliaup" class="external-link">juliaup</a>, Rust via <a href="https://rust-lang.org/tools/install/" class="external-link">rustup</a>: use the <strong>GNU</strong> toolchain on Windows so it matches R’s ABI). C++ needs no separate toolchain since <code><a href="https://rdrr.io/pkg/Rcpp/man/sourceCpp.html" class="external-link">Rcpp::sourceCpp()</a></code> compiles with R’s own compiler, which on Windows means <a href="https://cran.r-project.org/bin/windows/Rtools/" class="external-link">Rtools</a>).</p>
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Pierre9344/tarpolyglot"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>You also need a working toolchain for whichever language(s) you plan to use: Python, Julia, and/or Rust. Each is independent and only needed if you use the matching constructor (<code><a href="reference/tar_target_py.html">tar_target_py()</a></code>, <code><a href="reference/tar_target_jl.html">tar_target_jl()</a></code>, <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code>). See <code><a href="articles/get_started.html">vignette("get_started")</a></code> for the full setup instructions (Python via reticulate/uv, Julia via <a href="https://github.com/JuliaLang/juliaup" class="external-link">juliaup</a>, Rust via <a href="https://rust-lang.org/tools/install/" class="external-link">rustup</a>: use the <strong>GNU</strong> toolchain on Windows so it matches R’s ABI).</p>
 </div>
 <div class="section level2">
 <h2 id="the-three-constructors">The three constructors<a class="anchor" aria-label="anchor" href="#the-three-constructors"></a>
 </h2>
 <ul>
 <li>
-<code><a href="reference/tar_target_py.html">tar_target_py()</a></code> / <code><a href="reference/tar_target_py_raw.html">tar_target_py_raw()</a></code>: Python, via <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a>.</li>
+<code><a href="reference/tar_target_py.html">tar_target_py()</a></code> / <code><a href="reference/tar_target_py_raw.html">tar_target_py_raw()</a></code>: Python, via reticulate.</li>
 <li>
-<code><a href="reference/tar_target_jl.html">tar_target_jl()</a></code> / <code><a href="reference/tar_target_jl_raw.html">tar_target_jl_raw()</a></code>: Julia, via <a href="https://github.com/JuliaInterop/JuliaCall" class="external-link">JuliaCall</a>.</li>
+<code><a href="reference/tar_target_jl.html">tar_target_jl()</a></code> / <code><a href="reference/tar_target_jl_raw.html">tar_target_jl_raw()</a></code>: Julia, via JuliaCall.</li>
 <li>
-<code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code> / <code><a href="reference/tar_target_rs_raw.html">tar_target_rs_raw()</a></code>: Rust, via <a href="https://extendr.rs/rextendr/" class="external-link">rextendr</a>/<a href="https://extendr.rs/" class="external-link">extendr</a>.</li>
-<li>
-<code><a href="reference/tar_target_cpp.html">tar_target_cpp()</a></code> / <code><a href="reference/tar_target_cpp_raw.html">tar_target_cpp_raw()</a></code>: C++, via <a href="https://cran.r-project.org/web/packages/Rcpp/index.html" class="external-link">Rcpp</a>.</li>
+<code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code> / <code><a href="reference/tar_target_rs_raw.html">tar_target_rs_raw()</a></code>: Rust, via rextendr/extendr.</li>
 </ul>
-<p>Each mirrors <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target()</a></code> / <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> and forwards every argument (<code>pattern</code>, <code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, …), so dynamic branching, storage formats, <code>crew</code>-based parallelism, and other <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> features all work as usual.</p>
+<p>Each mirrors <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target()</a></code> / <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> and forwards every argument (<code>pattern</code>, <code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, …), so dynamic branching, storage formats, <code>crew</code>-based parallelism, and other <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a>features all work as usual.</p>
 <div class="section level3">
 <h3 id="example-using-tar_target_py">Example using <code>tar_target_py</code>
 <a class="anchor" aria-label="anchor" href="#example-using-tar_target_py"></a>
@@ -136,7 +128,7 @@
 <code class="sourceCode R"><span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_make.html" class="external-link">tar_make</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_read.html" class="external-link">tar_read</a></span><span class="op">(</span><span class="va">py_mean</span><span class="op">)</span>   <span class="co"># $mean 5  $n 4</span></span>
 <span><span class="fu">targets</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_read.html" class="external-link">tar_read</a></span><span class="op">(</span><span class="va">report</span><span class="op">)</span>    <span class="co"># "mean = 5.0 over n = 4"</span></span></code></pre></div>
-<p>Here the <code>retrieve</code> argument is used to extract a value from the python environment using <code>reticulate</code> type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the <code>py</code> object. It is also possible tu use the <code>py_get()</code> helper function to extract some variable. Both are created by the steps constructor.</p>
+<p>Here the <code>retrieve</code> argument is used to extract a value from the python environment using <code>reticulate</code> type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the <code>py</code>object. It is also possible tu use the <code>py_get</code> helper function to extract some variable. Both are created by the steps constructor.</p>
 </div>
 <div class="section level3">
 <h3 id="inline-code-with-tar_code">Inline code with <code>tar_code()</code>
@@ -168,37 +160,24 @@
 <li>Easy selection of environment and language version selection as arguments: choose a Python interpreter or environment (<code>python</code>, <code>env</code> + <code>env_manager</code> for system / virtualenv / venv / uv / poetry / conda, or <code>python_version</code>), or a Julia install and project (<code>julia_version</code>, <code>julia_home</code>, <code>julia_project</code>, <code>julia_packages</code>). Your selection wins over ambient settings: an explicit environment overrides an inherited <code>RETICULATE_PYTHON</code> or <code>JULIA_PROJECT</code> (for example one set by RStudio and inherited by <code>crew</code> workers).</li>
 <li>Every <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> feature keeps working:
 <ul>
-<li>the constructors forward the full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument set (<code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, <code>memory</code>, and so on), so storage formats, cues, and <code>crew</code> parallelism behave as usual making <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> fully compatible with <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> and <a href="https://docs.ropensci.org/tarchetypes/" class="external-link">tarchetypes</a>.</li>
+<li>the constructors forward the full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument set (<code>format</code>, <code>deployment</code>, <code>resources</code>, <code>cue</code>, <code>memory</code>, and so on), so storage formats, cues, and <code>crew</code> parallelism behave as usual making <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> fully compatible with <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> and <code>tarchetypes</code>.</li>
 <li>the constructor <code>input</code> argument ensure that <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> detect the dependencies of your polyglot steps.</li>
 </ul>
 </li>
 <li>Per-step isolation is one line: <code><a href="reference/polyglot_controller.html">polyglot_controller()</a></code> (a <code>crew</code> controller with <code>tasks_max = 1</code>) gives each step a fresh interpreter in its own process. This is the only way around reticulate and JuliaCall binding a single interpreter per session.</li>
-<li>You do not need to adopt a separate build tool like the <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> R package does with Nix which is convenient for Windows computer or public computing cluster on which you can’t install Nix as a user.</li>
+<li>You do not need to adopt a separate build tool like the <code>rixpress</code> R package does with Nix which is convenient for Windows computer or public computing cluster on which you can’t install Nix as a user.</li>
 </ul>
 <p>The gains above are largest for <strong>Python and Julia</strong>, where a live interpreter has to be bound and data marshalled across the R boundary on every step. <strong>Rust is different</strong>: <code><a href="https://extendr.github.io/rextendr/reference/rust_source.html" class="external-link">rextendr::rust_source()</a></code> compiles your <code>#[extendr]</code> functions and hands them back as ordinary R functions, so there is no interpreter to bind and no conversion layer to abstract, and for simple cases a plain <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target()</a></code> calling <code>rust_source()</code> already works. <code><a href="reference/tar_target_rs.html">tar_target_rs()</a></code> is still worth using because it puts R, <code>cargo</code>, and (on Windows) Rtools on <code>PATH</code> and sets <code>R_HOME</code> so the build succeeds in a bare or <code>crew</code> worker, lets you pick a toolchain per step with <code>toolchain</code>, bundles file output, script tracking, and the full <code><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">targets::tar_target_raw()</a></code> argument set in one call, and keeps the same API as the Python and Julia constructors (see <code><a href="articles/rust.html">vignette("rust")</a></code>).</p>
 </div>
 <div class="section level2">
-<h2 id="comparison-with-other-similar-tools">Comparison with other similar tools<a class="anchor" aria-label="anchor" href="#comparison-with-other-similar-tools"></a>
-</h2>
-<div class="section level3">
-<h3 id="comparison-to-rixpress">Comparison to <code>{rixpress}</code>
+<h2 id="comparison-to-rixpress">Comparison to <code>{rixpress}</code>
 <a class="anchor" aria-label="anchor" href="#comparison-to-rixpress"></a>
-</h3>
+</h2>
 <p>I am also aware of <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a>, which supports reproducible polyglot pipelines using Nix.</p>
 <p>I see <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> and <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> as addressing related needs with different architectures and trade-offs. <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> delegates pipeline execution, dependency management, and environment management to Nix, providing strong isolation and reproducibility guarantees.</p>
-<p><a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> takes a narrower and less prescriptive approach. It remains an extension of <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> and leaves environment management to existing language-specific tools such as virtual environments, Conda, uv, Poetry, Juliaup, Julia projects, and rustup.</p>
-<p>The intention is not to reproduce the reproducibility guarantees provided by Nix. Instead, <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> is intended for users who want to add multilingual steps incrementally to an existing <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> pipeline, including environments where Nix is unavailable or cannot be installed.</p>
+<p>{tarpolyglot} takes a narrower and less prescriptive approach. It remains an extension of {targets} and leaves environment management to existing language-specific tools such as virtual environments, Conda, uv, Poetry, Juliaup, Julia projects, and rustup.</p>
+<p>The intention is not to reproduce the reproducibility guarantees provided by Nix. Instead, <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> is intended for users who want to add multilingual steps incrementally to an existing {targets} pipeline, including environments where Nix is unavailable or cannot be installed.</p>
 <p>This distinction is relevant for my own work because I use a public computing cluster with restricted user permissions, and the administrators are not currently considering a Nix installation.</p>
-</div>
-<div class="section level3">
-<h3 id="comparison-with-t-tlang">Comparison with T (<code>tlang</code>)<a class="anchor" aria-label="anchor" href="#comparison-with-t-tlang"></a>
-</h3>
-<p>I am also aware of <a href="https://tstats-project.org/" class="external-link">T</a>, a domain-specific language for orchestrating polyglot analyses, currently in active development.</p>
-<p>T and <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> differ more fundamentally than <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> and <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> do, because T is a language rather than an R package. T owns the orchestration layer itself: pipelines are written in T, which coordinates R, Python, and Julia as computation backends, serialises artifacts across language boundaries automatically, and runs each node in its own sandboxed environment. Its design is strictly functional and immutable, with computation graphs as first-class values.</p>
-<p><a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> does not own the orchestration layer and does not try to. The pipeline stays an ordinary <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> pipeline written in R, and a multilingual step is one more constructor call in <code>_targets.R</code>. Everything a user already knows about <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> (change detection, dynamic branching, storage formats, <code>crew</code> parallelism) continues to apply unchanged, and nothing outside the individual step needs to move.</p>
-<p>The trade-off is the same shape as with <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a>, and in the same direction. T offers stronger guarantees: mandatory Nix environments, per-node sandboxing, and automatic cross-language serialisation remove classes of error that <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> leaves to the user’s own environment management. In exchange, T asks the user to adopt a new language and to have Nix available, whereas <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> asks for one function call inside a pipeline they already have.</p>
-<p>The two therefore suit different starting points. T is attractive when a polyglot workflow is being designed from scratch and reproducibility guarantees are the priority. <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a> is aimed at an existing R-centric <a href="https://docs.ropensci.org/targets/" class="external-link">targets</a> pipeline that needs one or two steps in another language, and like for <a href="https://docs.ropensci.org/rixpress" class="external-link">rixpress</a> to the people for which installing Nix is not an option.</p>
-</div>
 </div>
 <div class="section level2">
 <h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
@@ -219,24 +198,12 @@
 <div class="section level2">
 <h2 id="ai-disclosure">AI Disclosure<a class="anchor" aria-label="anchor" href="#ai-disclosure"></a>
 </h2>
-<p>Claude Code (Anthropic’s Claude Opus 4.8, and then Opus 5) was used as an assistant throughout development, with the maintainer reviewing, testing, and directing all changes made by the AI. Concretely, AI assistance was used for:</p>
-<ul>
-<li>
-<strong>Code reviewing</strong> Revision and improvement of the <code>tarpolyglot</code> functions.</li>
-<li>
-<strong>Documentation.</strong> Drafting and revising the roxygen documentation, including the shared “Script options” / “Script arguments” sections in <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/R/shared-params.R" class="external-link"><code>R/shared-params.R</code></a>, and drafting the vignettes, in particular <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/vignettes/scripts.Rmd" class="external-link"><code>vignettes/scripts.Rmd</code></a> and <code>vignettes/cpp.Rmd</code>.</li>
-<li>
-<strong>Tests.</strong> Drafting a substantial part of the test suite, including the unit tests for the internal helpers and the end-to-end pipeline tests in <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/tests/testthat/test-integration-pipeline.R" class="external-link"><code>tests/testthat/test-integration-pipeline.R</code></a>. Every assertion was checked against the package’s actual behaviour rather than accepted on trust; several drafts were rejected or rewritten because they encoded a platform quirk or tested a mock rather than the package.</li>
-<li>
-<strong>Continuous integration.</strong> Drafting and debugging the GitHub Actions workflows in <a href="https://github.com/Pierre9344/tarpolyglot/tree/main/.github/workflows" class="external-link"><code>.github/workflows/</code></a>, including the toolchain setup for the integration and coverage jobs.</li>
-<li>
-<strong>Package logo.</strong> The hex sticker in <code>man/figures/</code> (and the derived favicons in <code>pkgdown/favicon/</code>) is a SVG generated by Claude Code based on the maintainer prompte. It contains no third-party logo artwork: every element is either an original shape or type set in a font.</li>
-</ul>
+<p>This package was developed with assistance from Claude Code (Opus 4.8) to improve the functions and the first version of their documentation. All code and documentations were checked by the maintainer before release.</p>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
-<p>To cite <a href="https://github.com/Pierre9344/tarpolyglot" class="external-link">tarpolyglot</a>, run <code>citation("tarpolyglot")</code> in R, or see the <a href="CITATION.cff"><code>CITATION.cff</code></a> file (also surfaced by GitHub’s “Cite this repository” button).</p>
+<p>To cite <code>tarpolyglot</code>, run <code>citation("tarpolyglot")</code> in R, or see the <a href="CITATION.cff"><code>CITATION.cff</code></a> file (also surfaced by GitHub’s “Cite this repository” button).</p>
 </div>
 </div>
 
@@ -260,7 +227,6 @@
 <div class="community">
 <h2 data-toc-skip>Community</h2>
 <ul class="list-unstyled">
-<li><a href="CONTRIBUTING.html">Contributing guide</a></li>
 <li><a href="CODE_OF_CONDUCT.html">Code of conduct</a></li>
 </ul>
 </div>
@@ -284,10 +250,6 @@
 <ul class="list-unstyled">
 <li><a href="https://www.repostatus.org/#active" class="external-link"><img src="https://www.repostatus.org/badges/latest/active.svg" alt="status"></a></li>
 <li><a href="https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://CRAN.R-project.org/package=tarpolyglot" class="external-link"><img src="https://www.r-pkg.org/badges/version/tarpolyglot" alt="CRAN status"></a></li>
-<li><a href="https://cran.r-project.org/web/checks/check_results_tarpolyglot.html" class="external-link"><img src="https://badges.cranchecks.info/worst/tarpolyglot.svg" alt="CRAN checks"></a></li>
-<li><a href="https://cran.r-project.org/package=tarpolyglot" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/tarpolyglot" alt="downloads"></a></li>
-<li><a href="https://app.codecov.io/gh/Pierre9344/tarpolyglot" class="external-link"><img src="https://codecov.io/gh/Pierre9344/tarpolyglot/graph/badge.svg" alt="Codecov test coverage"></a></li>
 </ul>
 </div>
 

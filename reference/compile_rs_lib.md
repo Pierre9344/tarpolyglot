@@ -28,9 +28,6 @@ compile_rs_lib(
 - script:
 
   Path to the Rust script containing `#[extendr]` functions (required).
-  Accepts a file path or an inline
-  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-  carrier; see the "Script arguments" section below.
 
 - dependencies, features, profile:
 
@@ -62,28 +59,6 @@ for the motivation and
 [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md)
 for the per-branch (recompiling) alternative.
 
-## Script arguments
-
-A worker receives whatever the constructor already resolved, which is
-one of two things: a **path to a file** on disk, or an **inline
-carrier** built by
-[`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
-that holds the code in memory. Both are accepted, so a direct call may
-pass either.
-
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-is deliberately *not* a third form at this level. It is a
-constructor-level convenience:
-[`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
-and the other constructors rewrite it while the pipeline's DAG is built,
-so that by the time a worker runs it has already become the ordinary
-file path held by the upstream target. Handing the result of
-[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-straight to a worker therefore does not resolve to a file. The three
-forms as written in `_targets.R`, and which of them tracks your edits,
-are covered in
-[`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md).
-
 ## See also
 
 [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
@@ -93,14 +68,8 @@ are covered in
 ## Examples
 
 ``` r
-# Compiling needs a Rust toolchain, so this is gated on
-# TARPOLYGLOT_EXAMPLES=true and runs in a temporary directory.
-if (identical(Sys.getenv("TARPOLYGLOT_EXAMPLES"), "true")) {
-  targets::tar_dir({
-    # Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
-    writeLines("#[extendr] fn square(x: f64) -> f64 { x * x }", "square.rs")
-    lib <- compile_rs_lib(script = "square.rs")
-    class(lib)
-  })
-}
+if (FALSE) { # \dontrun{
+# Normally invoked by tar_target_rs(pattern = tarpolyglot_map(...)).
+lib <- compile_rs_lib(script = "scripts/square.rs")
+} # }
 ```

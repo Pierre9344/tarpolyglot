@@ -24,18 +24,6 @@ functions. For the simple case you can call it directly inside a plain
 keeping every native `targets` convenience (automatic dependency
 detection, inline R, a single file):
 
-`rs/scale.rs`: one `#[extendr]` function:
-
-``` rust
-#[extendr]
-fn zscore(x: Vec<f64>) -> Vec<f64> {
-    let n = x.len() as f64;
-    let mean = x.iter().sum::<f64>() / n;
-    let sd = (x.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n).sqrt();
-    x.iter().map(|v| (v - mean) / sd).collect()
-}
-```
-
 ``` r
 
 library(targets)
@@ -91,17 +79,9 @@ for when they do.
 - [`tar_target_rs_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.md):
   string `name`, for use inside targets factories.
 
-Both forward every
+Both return a single `targets` target and forward every
 [`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
-argument and return a single `targets` target, except with a
-`tarpolyglot_*()` pattern helper (see “Compile the Rust code only once
-across branches”), where they return a compile target plus the branched
-target.
-
-These constructors depend on the
-[rextendr](https://extendr.rs/rextendr/) R package. As a result, any
-limitation of rextendr is inherited by the constructors. Reading
-rextendr’s own documentation is recommended.
+argument.
 
 ## How a Rust step differs
 
@@ -112,9 +92,6 @@ rextendr’s own documentation is recommended.
   Rust functions are in scope in the post-script’s environment
   (alongside `inputs`). Its last expression is the target value (object
   mode); it returns file paths (file mode).
-- **As many `#[extendr]` functions as you like.** A single script may
-  define multiple functions; all of them become R functions in scope in
-  the post-script.
 - **Real type conversion** (via extendr), not JSON, but return values
   still have to be R-representable, or use `output = "file"`.
 
@@ -162,6 +139,18 @@ toolchain must be installed.
 
 ## Object output (iris example)
 
+`rs/scale.rs`: one `#[extendr]` function:
+
+``` rust
+#[extendr]
+fn zscore(x: Vec<f64>) -> Vec<f64> {
+    let n = x.len() as f64;
+    let mean = x.iter().sum::<f64>() / n;
+    let sd = (x.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n).sqrt();
+    x.iter().map(|v| (v - mean) / sd).collect()
+}
+```
+
 `R/scale_post.R`: the compiled `zscore()` and the input `petal` are in
 scope:
 
@@ -193,36 +182,11 @@ list(
 
 ## File output
 
-`rs/write.rs`: writes a value to disk, the path itself is built in the
-post-script:
-
-``` rust
-use std::fs::File;
-use std::io::Write;
-
-#[extendr]
-fn write_value(x: f64, path: String) {
-    let mut f = File::create(path).unwrap();
-    write!(f, "{}", x).unwrap();
-}
-```
-
-`R/rs_files_post.R`: builds the path, calls the compiled function, then
-returns the path (file mode needs the post-script’s last expression to
-be the path(s), not the function’s own return value):
-
-``` r
-
-path <- tempfile(fileext = ".txt")
-write_value(x, path)
-path
-```
-
 ``` r
 
 tar_target_rs(
   name = rs_file,
-  script = "rs/write.rs",
+  script = "rs/write.rs",            # a fn that writes a file and returns its path
   inputs = c(x = "value"),
   post_script = "R/rs_files_post.R", # returns the path(s)
   output = "file"
@@ -232,31 +196,14 @@ tar_target_rs(
 ## Crate dependencies, features, profile
 
 Pass extra crates through `dependencies` (a named list), and build
-options through `features` / `profile`. `rs/parse.rs`:
-
-``` rust
-#[extendr]
-fn parse_sum(txt: String) -> f64 {
-    let v: serde_json::Value = serde_json::from_str(&txt).unwrap();
-    v["numbers"].as_array().unwrap().iter()
-        .map(|n| n.as_f64().unwrap())
-        .sum()
-}
-```
-
-`R/parse_post.R`:
-
-``` r
-
-parse_sum(txt)
-```
+options through `features` / `profile`:
 
 ``` r
 
 tar_target_rs(
   name = parsed,
-  script = "rs/parse.rs",
-  inputs = c(txt = "raw_json"),      # e.g. '{"numbers": [1, 2, 3]}'
+  script = "rs/parse.rs",            # uses serde_json
+  inputs = c(txt = "raw_json"),
   post_script = "R/parse_post.R",
   dependencies = list(`serde_json` = "1"),
   profile = "release"
@@ -368,34 +315,7 @@ Julia reuse a live interpreter, so there is nothing to compile and
 nothing to reuse.
 [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
 on a Python step is therefore exactly `map()`. This lets one pipeline
-branch every language with the same helper. The four files involved:
-
-`py/sq.py`:
-
-``` python
-result = x ** 2
-```
-
-`R/push.R` (pre-script for the Python step, `to_py` hands `x` over):
-
-``` r
-
-to_py <- list(x = x)
-```
-
-`rs/square.rs`:
-
-``` rust
-#[extendr]
-fn square(x: f64) -> f64 { x * x }
-```
-
-`R/post.R` (post-script for the Rust step):
-
-``` r
-
-square(x)
-```
+branch every language with the same helper:
 
 ``` r
 
@@ -417,177 +337,10 @@ list(
 ```
 
 The `tarpolyglot_*` helpers are recognised only inside the tarpolyglot
-constructors, which rewrite them before handing the pattern to
-`targets`. Used directly in a plain
+constructors. A plain
 [`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)
-or
-[`targets::tar_target_raw()`](https://docs.ropensci.org/targets/reference/tar_target.html)
-they **raise an error**
-(`invalid dynamic branching pattern ... Illegal symbols found: tarpolyglot_map`),
-because `targets` validates a pattern against its own fixed set of
-pattern functions and does not know these helpers. This cannot be
-corrected from tarpolyglot: `targets` looks its pattern functions up in
-a locked internal environment, so teaching it a new one would require
-modifying the `targets` package itself. In a plain `targets` target
-(which has no foreign code to compile, so nothing to gain) use the
-native `map()` / `cross()` / … directly.
-
-## Several Rust steps in one pipeline
-
-A pipeline can contain as many
-[`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
-steps as you like, mixing branching
-([`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
-and friends) and non-branching steps freely. Each step compiles its own
-library independently (or once, with a pattern helper), and the
-libraries do not interfere with one another, even when several run in
-the same `crew` worker. `z` reuses `rs/scale.rs` (content shown in
-“Object output” above); `noise` is a second, unrelated step in the same
-pipeline, `rs/rng.rs` (a small linear congruential generator, no extra
-crate needed):
-
-``` rust
-#[extendr]
-fn rng_normal(n: i32, seed: i32) -> Vec<f64> {
-    let mut state = seed as u64;
-    (0..n).map(|_| {
-        state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
-        ((state >> 33) as f64) / (u32::MAX as f64)
-    }).collect()
-}
-```
-
-`R/rng_post.R`:
-
-``` r
-
-rng_normal(5L, seed)
-```
-
-``` r
-
-list(
-  tar_target(vals, c(10, 20, 30)),
-  tar_target(seed, 42),
-  # Branching, compile-once.
-  tar_target_rs(z, script = "rs/scale.rs", inputs = c(petal = "vals"),
-                post_script = "R/scale_post.R", pattern = tarpolyglot_map(vals)),
-  # A second, non-branching Rust step in the same pipeline.
-  tar_target_rs(noise, script = "rs/rng.rs", inputs = c(seed = "seed"),
-                post_script = "R/rng_post.R")
-)
-```
-
-## Compile once, reuse in other steps
-
-The library a Rust step compiles is an ordinary R object, so you can
-compile once in one target and reuse the functions in other, unrelated
-steps, with no recompilation. Two exported helpers make this explicit:
-
-- [`compile_rs_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md)
-  compiles a script’s `#[extendr]` functions and returns a
-  self-contained library object (the compiled code plus its R wrappers).
-  It is what the `tarpolyglot_*()` pattern helpers use under the hood.
-- [`run_rs_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)
-  reloads such a library (in milliseconds, no toolchain needed) and
-  evaluates a post-script against it, exactly like
-  [`run_rs_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md)
-  does after compiling.
-
-`rs/math.rs`:
-
-``` rust
-#[extendr]
-fn add_one(x: f64) -> f64 { x + 1.0 }
-```
-
-`R/use_math.R`: the compiled `add_one()` and the input `x` are in scope:
-
-``` r
-
-add_one(x)
-```
-
-``` r
-
-list(
-  tar_target(x, 5),
-  # Compile once; the result is stored like any target value (rds by default, or qs).
-  tar_target(mathlib, tarpolyglot::compile_rs_lib("rs/math.rs")),
-  # Reuse it in a different step, with no recompilation.
-  tar_target(y, tarpolyglot::run_rs_step_prebuilt(
-    mathlib, post_script = "R/use_math.R", inputs = list(x = x)))
-)
-```
-
-Because a script can define several `#[extendr]` functions, one compiled
-library can serve many steps. This is the recommended way to share Rust
-code across a pipeline: compile the functions once, then call them
-wherever you need them.
-
-### Using more than one library in a step
-
-A single step can also use several compiled libraries. Call
-[`run_rs_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)
-once per library and combine the results. `libA` reuses `rs/math.rs`
-above; `rs/lib_b.rs` is a second, independent script:
-
-``` rust
-#[extendr]
-fn times_ten(x: f64) -> f64 { x * 10.0 }
-```
-
-`R/a.R`:
-
-``` r
-
-add_one(x)
-```
-
-`R/b.R`:
-
-``` r
-
-times_ten(x)
-```
-
-``` r
-
-list(
-  tar_target(x, 5),
-  tar_target(libA, tarpolyglot::compile_rs_lib("rs/math.rs")),
-  tar_target(libB, tarpolyglot::compile_rs_lib("rs/lib_b.rs")),
-
-  tar_target(combined, {
-    a <- tarpolyglot::run_rs_step_prebuilt(libA, post_script = "R/a.R", inputs = list(x = x))
-    b <- tarpolyglot::run_rs_step_prebuilt(libB, post_script = "R/b.R", inputs = list(x = x))
-    a + b
-  })
-)
-```
-
-The libraries are loaded one at a time (see “Current limitations”), so
-call them in sequence like this rather than trying to use functions from
-two libraries in the same expression.
-
-## Current limitations
-
-- **One compiled library resident at a time (per module name).**
-  rextendr names every compiled crate `rextendr<N>` from a per-process
-  counter, so two libraries built in separate workers often share the
-  name `rextendr1`. `tarpolyglot` handles this by loading the library
-  you are calling and swapping it out when you switch to another, so
-  results are always correct. It does mean you cannot hold two such
-  libraries live at once to interleave their functions in a single
-  expression. When you need several functions available together, put
-  them in one script (a script may define any number of `#[extendr]`
-  functions) rather than in separate libraries.
-- **A pattern helper adds a companion target.**
-  [`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
-  (and the other helpers) create a `<name>_rust_lib` compile target
-  alongside the branched target. This is intentional, it is what makes
-  compile-once work, and it shows up in
-  [`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html).
+does not know them, so there you use the native `map()` / `cross()` / …
+directly (a plain step has no foreign code to compile anyway).
 
 ## Windows toolchain note
 
@@ -615,23 +368,12 @@ Because a Rust step compiles rather than using a live interpreter:
   different crates/toolchains in the same session.
 - **Compilation cost instead of interpreter start-up.** The first build
   compiles the extendr crate and your code (tens of seconds); cargo
-  caches artefacts, so re-runs are faster. To avoid recompiling in every
-  branch, use a `tarpolyglot_*()` pattern helper (compile-once across
-  branches); to avoid recompiling across steps, compile once with
-  [`compile_rs_lib()`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md)
-  and reuse it with
-  [`run_rs_step_prebuilt()`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)
-  (see the sections above).
+  caches artefacts, so re-runs are faster.
 
 See
 [`?tar_target_rs`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
 and
 [`?run_rs_step`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step.md)
-for the full argument reference,
-[`?tarpolyglot_map`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md),
-[`?compile_rs_lib`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md),
-and
-[`?run_rs_step_prebuilt`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)
-for compile-once and library reuse, and
+for the full argument reference, and
 [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
 for how Rust steps fit alongside Python/Julia and `crew`.

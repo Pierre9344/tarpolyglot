@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,11 +39,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts to tarpolyglot constructors</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
-    <li><a class="dropdown-item" href="../articles/cpp.html">Using C++ inside targets</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -68,7 +66,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Using Python inside targets</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/main/vignettes/python.Rmd" class="external-link"><code>vignettes/python.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Pierre9344/tarpolyglot/blob/v0.2.1/vignettes/python.Rmd" class="external-link"><code>vignettes/python.Rmd</code></a></small>
       <div class="d-none name"><code>python.Rmd</code></div>
     </div>
 
@@ -100,9 +98,6 @@ so anything an ordinary target supports (<code>pattern</code>,
 <code>resources</code>, <code>cue</code>, <code>memory</code>,
 <code>error</code>, <code>priority</code>, <code>description</code>, …)
 works exactly as usual.</p>
-<p>These constructors depend on the <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a> R package.
-As a result, any limitation of reticulate is inherited by the
-constructors. Reading reticulate’s own documentation is recommended.</p>
 </div>
 <div class="section level2">
 <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a>
@@ -290,21 +285,10 @@ Read a variable with <code>py$result</code> or
 return the path(s) from the post-script (or via <code>files</code> when
 there is no post-script). The target <code>format</code> becomes
 <code>"file"</code> automatically.</p>
-<p><code>py/write_csv.py</code>: writes <code>x</code> to a CSV, keeps
-the path in <code>out_path</code> for the post-script to read back:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="im">import</span> csv</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="im">import</span> tempfile</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>out_path <span class="op">=</span> tempfile.mktemp(suffix<span class="op">=</span><span class="st">".csv"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(out_path, <span class="st">"w"</span>, newline<span class="op">=</span><span class="st">""</span>) <span class="im">as</span> f:</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>    csv.writer(f).writerow(x)</span></code></pre></div>
-<p><code>R/post_files.R</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">py_get</span><span class="op">(</span><span class="st">"out_path"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">py_file</span>,</span>
-<span>  script <span class="op">=</span> <span class="st">"py/write_csv.py"</span>,</span>
+<span>  script <span class="op">=</span> <span class="st">"py/write_csv.py"</span>,       <span class="co"># writes a CSV, stores its path in `out_path`</span></span>
 <span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"prepared_x"</span><span class="op">)</span>,</span>
 <span>  pre_script <span class="op">=</span> <span class="st">"R/pre_push.R"</span>,</span>
 <span>  post_script <span class="op">=</span> <span class="st">"R/post_files.R"</span>,   <span class="co"># returns py_get("out_path")</span></span>
@@ -316,7 +300,7 @@ the path in <code>out_path</code> for the post-script to read back:</p>
 </h2>
 <p><code>inputs</code> are real dependencies, so <code>pattern</code>
 branches them:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">chunks</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
@@ -330,59 +314,7 @@ branches them:</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Run the branches in parallel by setting a <code>crew</code>
 controller (see <code><a href="../articles/get_started.html">vignette("get_started")</a></code>, the “Parallelism
-and isolation with crew” section, which also covers
-<code>polyglot_controller(log = tar_polyglot_log(...))</code> for
-per-step stdout/stderr log files, including a caveat specific to
-branching there, since every branch of a pattern shares one log
-file).</p>
-</div>
-<div class="section level2">
-<h2 id="parallel-computing-multiprocessing">Parallel computing (multiprocessing)<a class="anchor" aria-label="anchor" href="#parallel-computing-multiprocessing"></a>
-</h2>
-<p>Python’s own <code>multiprocessing</code> /
-<code>concurrent.futures.ProcessPoolExecutor</code> work correctly
-through <code><a href="../reference/run_py_step.html">run_py_step()</a></code>, confirmed both in the main session
-and inside a real <code>crew</code> worker, with one hard constraint:
-the pool has to be created and used at the <strong>top level of the
-script itself</strong>, guarded by the usual
-<code>if __name__ == "__main__":</code>, not inside a function that the
-script only defines and that a later <code>post_script</code> calls.
-That second shape breaks on Windows:
-<code><a href="https://rstudio.github.io/reticulate/reference/py_run.html" class="external-link">reticulate::py_run_file()</a></code> runs your script directly into
-<code>__main__</code>, and when the pool is created later from a
-separate reticulate call, the worker processes
-<code>multiprocessing</code> spawns cannot find the function it needs to
-unpickle, and the pool fails with a pickling error. Doing the parallel
-work at the top level of <code>script</code>, with <code>retrieve</code>
-(or a top-level result variable a <code>post_script</code> reads with
-<code>py_get()</code>) to bring the value back, avoids this entirely,
-and is also the standard, portable way to write this in plain
-Python:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># py/parallel_sqrt.py</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="im">from</span> concurrent.futures <span class="im">import</span> ProcessPoolExecutor</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="kw">def</span> _sqrt_one(v):</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>    <span class="cf">return</span> v <span class="op">**</span> <span class="fl">0.5</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>    <span class="cf">with</span> ProcessPoolExecutor(max_workers<span class="op">=</span>n_workers) <span class="im">as</span> ex:</span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>        result <span class="op">=</span> <span class="bu">list</span>(ex.<span class="bu">map</span>(_sqrt_one, x))</span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
-<span>  name <span class="op">=</span> <span class="va">py_parallel</span>,</span>
-<span>  script <span class="op">=</span> <span class="st">"py/parallel_sqrt.py"</span>,</span>
-<span>  inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"big_x"</span>, n_workers <span class="op">=</span> <span class="st">"n_workers"</span><span class="op">)</span>,</span>
-<span>  pre_script <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span> <span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span>, n_workers <span class="op">=</span> <span class="va">n_workers</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span>,</span>
-<span>  retrieve <span class="op">=</span> <span class="st">"result"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The same oversubscription concern from
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code> applies here too: a
-<code>crew</code> worker is a full process with access to every core,
-not a slice of one, so several workers each spawning their own
-multiprocessing pool at once can oversubscribe the machine. Put the
-parallel-heavy step on <code>deployment = "main"</code> if you have more
-than one, or cap <code>n_workers</code> per step, for the same reason
-described there.</p>
+and isolation with crew” section).</p>
 </div>
 <div class="section level2">
 <h2 id="choosing-the-python-environment">Choosing the Python environment<a class="anchor" aria-label="anchor" href="#choosing-the-python-environment"></a>
@@ -479,20 +411,14 @@ is expanded to an absolute path, so <code>env = ".venv"</code> works; a
 bare name that is not a directory is passed through unchanged, so a
 genuine named environment still resolves. Setting <code>env</code> while
 <code>env_manager = "system"</code> is an error.</p>
-<p>The use cases below are about the environment-selection arguments,
-not what each script computes, so the script bodies are deliberately
-trivial, one line assigning the variable named in
-<code>retrieve</code>.</p>
 <div class="section level3">
 <h3 id="use-case-1-global-system-default">Use case 1: global / system default<a class="anchor" aria-label="anchor" href="#use-case-1-global-system-default"></a>
 </h3>
 <p>Set nothing; reticulate uses the computer’s default Python (on recent
 versions, an ephemeral uv-managed one provisioned on first use).
-Convenient for exploration; pin a real environment for reproducibility.
-<code>py/probe.py</code> (reused in use case 5 below):</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="im">import</span> sys</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>result <span class="op">=</span> sys.executable</span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+Convenient for exploration; pin a real environment for
+reproducibility.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">probe</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"py/probe.py"</span>,</span>
@@ -505,11 +431,9 @@ Convenient for exploration; pin a real environment for reproducibility.
 </h3>
 <p>Create it once, then point to it. Reproducible: the exact package set
 is reused every run.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="ex">uv</span> venv .venv</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="ex">uv</span> pip install <span class="at">--python</span> .venv/Scripts/python.exe numpy pandas scikit-learn</span></code></pre></div>
-<p><code>py/fit.py</code>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>model <span class="op">=</span> {<span class="st">"coef"</span>: <span class="fl">1.5</span>, <span class="st">"intercept"</span>: <span class="fl">0.2</span>}</span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="ex">uv</span> venv .venv</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="ex">uv</span> pip install <span class="at">--python</span> .venv/Scripts/python.exe numpy pandas scikit-learn</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"py/fit.py"</span>,</span>
@@ -523,9 +447,8 @@ is reused every run.</p>
 </h3>
 <p>Give the <strong>project directory</strong> (the folder with
 <code>pyproject.toml</code>); its virtualenv is resolved for you with
-<code>poetry env info -p</code>. <code>py/embed.py</code>:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>vectors <span class="op">=</span> [[<span class="fl">0.1</span>, <span class="fl">0.2</span>], [<span class="fl">0.3</span>, <span class="fl">0.4</span>]]</span></code></pre></div>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code>poetry env info -p</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">embed</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"py/embed.py"</span>,</span>
@@ -540,11 +463,7 @@ want, select a specific executable with
 <div class="section level3">
 <h3 id="use-case-4-a-plain-venv-or-a-conda-env">Use case 4: a plain venv or a conda env<a class="anchor" aria-label="anchor" href="#use-case-4-a-plain-venv-or-a-conda-env"></a>
 </h3>
-<p><code>py/score.py</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>result <span class="op">=</span> <span class="fl">0.87</span></span></code></pre></div>
-<p><code>py/classify.py</code>:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>labels <span class="op">=</span> [<span class="st">"setosa"</span>, <span class="st">"versicolor"</span>, <span class="st">"virginica"</span>]</span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># python -m venv .venv</span></span>
 <span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">score</span>,</span>
@@ -569,7 +488,7 @@ want, select a specific executable with
 <p>To fix the interpreter <em>version</em> without naming an
 environment, use <code>python_version</code> (leaves the environment at
 the default, uv-managed one):</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tar_target_py.html">tar_target_py</a></span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="va">probe_ver</span>,</span>
 <span>  script <span class="op">=</span> <span class="st">"py/probe.py"</span>,</span>
@@ -592,11 +511,8 @@ pipeline, run those targets on separate <code>crew</code> workers (see
 <code>post_script</code> are untracked literal paths. To have the step
 re-run when a script changes, track it with a
 <code>format = "file"</code> target and reference it with
-<code><a href="../reference/tar_target_path.html">tar_target_path()</a></code>. <code>py/fit.py</code> is the same
-script shown in “Use case 2” above; <code>R/pre_fit.R</code>:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span><span class="op">)</span>   <span class="co"># `x` came from inputs = c(x = "data")</span></span></code></pre></div>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code><a href="../reference/tar_target_path.html">tar_target_path()</a></code>:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">fit_py</span>, <span class="st">"py/fit.py"</span>, format <span class="op">=</span> <span class="st">"file"</span><span class="op">)</span>,</span>
 <span></span>
