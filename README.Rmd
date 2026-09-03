@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 # `{tarpolyglot}` <img src="man/figures/logo.png" align="right" height="120"/>
 
-`{tarpolyglot}` adds target constructors that run **Python**, **Julia**, and **Rust** as first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust). Results come back as converted R objects or as files tracked on disk, and everything a normal `{targets}` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
+`{tarpolyglot}` adds target constructors that run **Python**, **Julia**, **Rust**, and **C++** as first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust), and [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) (C++). Results come back as converted R objects or as files tracked on disk, and everything a normal `{targets}` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
 
 ## Installation
 
@@ -40,13 +40,14 @@ install.package("tarpolyglot")
 remotes::install_github("Pierre9344/tarpolyglot@dev", build_vignettes = TRUE, dependencies = TRUE)
 ```
 
-You also need a working toolchain for whichever language(s) you plan to use: Python, Julia, and/or Rust. Each is independent and only needed if you use the matching constructor (`tar_target_py()`, `tar_target_jl()`, `tar_target_rs()`). See `vignette("get_started")` for the full setup instructions (Python via reticulate/uv, Julia via [juliaup](https://github.com/JuliaLang/juliaup), Rust via [rustup](https://rust-lang.org/tools/install/): use the **GNU** toolchain on Windows so it matches R's ABI).
+You also need a working toolchain for whichever language(s) you plan to use: Python, Julia, and/or Rust. Each is independent and only needed if you use the matching constructor (`tar_target_py()`, `tar_target_jl()`, `tar_target_rs()`). See `vignette("get_started")` for the full setup instructions (Python via reticulate/uv, Julia via [juliaup](https://github.com/JuliaLang/juliaup), Rust via [rustup](https://rust-lang.org/tools/install/): use the **GNU** toolchain on Windows so it matches R's ABI). C++ needs no separate toolchain since `Rcpp::sourceCpp()` compiles with R's own compiler, which on Windows means [Rtools](https://cran.r-project.org/bin/windows/Rtools/)).
 
 ## The three constructors
 
-- `tar_target_py()` / `tar_target_py_raw()`: Python, via reticulate.
-- `tar_target_jl()` / `tar_target_jl_raw()`: Julia, via JuliaCall.
-- `tar_target_rs()` / `tar_target_rs_raw()`: Rust, via rextendr/extendr.
+- `tar_target_py()` / `tar_target_py_raw()`: Python, via [reticulate](https://rstudio.github.io/reticulate/).
+- `tar_target_jl()` / `tar_target_jl_raw()`: Julia, via [JuliaCall](https://github.com/JuliaInterop/JuliaCall).
+- `tar_target_rs()` / `tar_target_rs_raw()`: Rust, via [rextendr](https://extendr.rs/rextendr/)/[extendr](https://extendr.rs/).
+- `tar_target_cpp()` / `tar_target_cpp_raw()`: C++, via [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html).
 
 Each mirrors `targets::tar_target()` / `targets::tar_target_raw()` and forwards every argument (`pattern`, `format`, `deployment`, `resources`, `cue`, ...), so dynamic branching, storage formats, `crew`-based parallelism, and other `{targets}` features all work as usual.
 
