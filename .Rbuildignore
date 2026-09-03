@@ -41,3 +41,4 @@
 ^docs$
 ^codecov\.yml$
 ^CONTRIBUTING\.md$
+^PATCH-.*\.md$

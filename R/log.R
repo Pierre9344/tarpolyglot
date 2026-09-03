@@ -31,9 +31,12 @@
 #' str(log)
 #'
 #' # It is passed to polyglot_controller(), which every Python/Julia/C++ step
-#' # then inherits from.
-#' controller <- polyglot_controller(log = log)
-#' inherits(controller, "crew_class_controller")
+#' # then inherits from. try() guards the platforms where crew cannot build a
+#' # controller at all; see polyglot_controller().
+#' controller <- try(polyglot_controller(log = log), silent = TRUE)
+#' if (!inherits(controller, "try-error")) {
+#'   inherits(controller, "crew_class_controller")
+#' }
 tar_polyglot_log <- function(stdout = "./logs/out",
                              stderr = "./logs/err",
                              append = FALSE,
