@@ -26,6 +26,8 @@ This is the recommended default for polyglot pipelines. Put it near the top of \
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{targets::tar_option_set(controller = tarpolyglot::polyglot_controller())
 }\if{html}{\out{</div>}}
+
+On a system where \code{crew} cannot build a controller at all, this function fails with an explanation instead of passing the underlying error through. The case seen in practice is a nanonext installed without TLS support: \code{crew} self-tests nanonext's TLS layer whenever a controller is constructed, even though this controller requests no TLS, and that self-test reports \code{"Not supported"}. The remedy is to reinstall nanonext on a system where TLS support is available, or to run the pipeline with no controller at all, which costs only the per-step interpreter isolation described above.
 }
 \examples{
 \dontrun{

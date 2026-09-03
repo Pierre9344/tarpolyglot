@@ -36,6 +36,7 @@
 ^paper\.bib$
 ^NOTICE$
 ^CLAUDE\.md$
+^PATCH-.*\.md$
 ^CITATION\.cff$
 ^CODE_OF_CONDUCT\.md$
 ^docs$

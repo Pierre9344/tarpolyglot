@@ -8,6 +8,8 @@
 #' targets::tar_option_set(controller = tarpolyglot::polyglot_controller())
 #' ```
 #'
+#' On a system where `crew` cannot build a controller at all, this function fails with an explanation instead of passing the underlying error through. The case seen in practice is a nanonext installed without TLS support: `crew` self-tests nanonext's TLS layer whenever a controller is constructed, even though this controller requests no TLS, and that self-test reports `"Not supported"`. The remedy is to reinstall nanonext on a system where TLS support is available, or to run the pipeline with no controller at all, which costs only the per-step interpreter isolation described above.
+#'
 #' @param workers Integer number of parallel worker processes. Default `2`.
 #' @param tasks_max Integer max tasks a worker runs before it is retired (and its embedded interpreter torn down). Default `1` for maximum isolation: a fresh Python/Julia per target. Raise it (or set `Inf`) to reuse interpreters for throughput, accepting that same-language steps on a worker then share the foreign global namespace and one environment.
 #' @param seconds_idle Numeric seconds an idle worker waits before shutting down. Default `30`.
@@ -30,10 +32,34 @@ polyglot_controller <- function(workers = 2L,
                                 tasks_max = 1L,
                                 seconds_idle = 30,
                                 ...) {
-  crew::crew_controller_local(
-    workers = as.integer(workers),
-    tasks_max = as.integer(tasks_max),
-    seconds_idle = seconds_idle,
-    ...
+  tryCatch(
+    crew::crew_controller_local(
+      workers = as.integer(workers),
+      tasks_max = as.integer(tasks_max),
+      seconds_idle = seconds_idle,
+      ...
+    ),
+    error = function(e) {
+      if (.tp_crew_tls_available()) {
+        stop(e)
+      }
+      stop("polyglot_controller() could not create a `crew` controller: ", conditionMessage(e), call. = FALSE)
+    }
   )
+}
+
+# Is `crew`'s TLS layer usable here?
+#
+# `crew` routes every controller through nanonext's TLS layer: crew_tls()
+# defaults to `validate = TRUE`, and that validation calls
+# nanonext::tls_config() as a self-test regardless of `mode`, so it runs even
+# for the no-TLS default this package uses. A nanonext built without TLS
+# support fails that call with "Not supported", and no controller can be
+# created on such a platform. Nothing in tarpolyglot can work around it, so we
+# probe for it.
+.tp_crew_tls_available <- function() {
+  isTRUE(tryCatch({
+    crew::crew_tls()
+    TRUE
+  }, error = function(e) FALSE))
 }

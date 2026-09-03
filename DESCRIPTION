@@ -1,7 +1,7 @@
 Package: tarpolyglot
 Type: Package
 Title: Run Python, Julia, and Rust Inside 'targets' Pipeline Steps
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: c(
     person(
       given = "Pierre",
@@ -28,7 +28,6 @@ URL: https://github.com/Pierre9344/tarpolyglot,
 BugReports: https://github.com/Pierre9344/tarpolyglot/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.0.0
 Imports:
     targets,
     reticulate,
@@ -50,3 +49,4 @@ SystemRequirements: The external language toolchains are optional and each is
     match R's ABI). A pipeline that uses a single language needs only that
     language's toolchain, and a pipeline that uses none of these constructors
     needs no external toolchain at all.
+Config/roxygen2/version: 8.1.0
