@@ -46,6 +46,7 @@
 ### Bug fixes
 
 * `polyglot_controller()` now fails gracefully when `crew` cannot build a controller on the host system, reporting what is wrong and what to do about it instead of passing the underlying error through. `crew` routes every controller through nanonext's TLS layer: `crew::crew_tls()` validates by default, and that validation calls `nanonext::tls_config()` as a self-test whatever the TLS mode, so it runs even though this controller requests no TLS. Where nanonext links a system NNG built without TLS support, rather than compiling its bundled copy, the self-test reports `"Not supported"` and no controller can be constructed, which is a property of the host installation rather than of the arguments given.
+* The `crew` tests skip on such a platform instead of failing, so `R CMD check` no longer errors there (seen on CRAN's `r-devel-linux-x86_64-fedora-clang`). Two tests were added covering the new behaviour: that an unusable TLS layer produces the explanatory error, and that any other `crew` error is still passed through unchanged.
 
 # tarpolyglot 0.2.0
 
