@@ -1,16 +1,17 @@
 # `{tarpolyglot}`
 
 [tarpolyglot](https://github.com/Pierre9344/tarpolyglot) adds target
-constructors that run **Python**, **Julia**, and **Rust** as first-class
-steps of a [`{targets}`](https://docs.ropensci.org/targets/) pipeline,
-via [reticulate](https://rstudio.github.io/reticulate/) (Python),
-[JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), and
-[rextendr](https://extendr.rs/rextendr/) /
-[extendr](https://extendr.rs/) (Rust). Results come back as converted R
-objects or as files tracked on disk, and everything a normal
-[targets](https://docs.ropensci.org/targets/) step supports works
-unchanged: dynamic branching, storage formats, resources, cues, `crew`
-parallelism.
+constructors that run **Python**, **Julia**, **Rust**, and **C++** as
+first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/)
+pipeline, via [reticulate](https://rstudio.github.io/reticulate/)
+(Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall)
+(Julia), [rextendr](https://extendr.rs/rextendr/) /
+[extendr](https://extendr.rs/) (Rust), and
+[Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) (C++).
+Results come back as converted R objects or as files tracked on disk,
+and everything a normal [targets](https://docs.ropensci.org/targets/)
+step supports works unchanged: dynamic branching, storage formats,
+resources, cues, `crew` parallelism.
 
 ## Installation
 
@@ -38,22 +39,32 @@ See
 for the full setup instructions (Python via reticulate/uv, Julia via
 [juliaup](https://github.com/JuliaLang/juliaup), Rust via
 [rustup](https://rust-lang.org/tools/install/): use the **GNU**
-toolchain on Windows so it matches R’s ABI).
+toolchain on Windows so it matches R’s ABI). C++ needs no separate
+toolchain since
+[`Rcpp::sourceCpp()`](https://rdrr.io/pkg/Rcpp/man/sourceCpp.html)
+compiles with R’s own compiler, which on Windows means
+[Rtools](https://cran.r-project.org/bin/windows/Rtools/)).
 
 ## The three constructors
 
 - [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
   /
   [`tar_target_py_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py_raw.md):
-  Python, via reticulate.
+  Python, via [reticulate](https://rstudio.github.io/reticulate/).
 - [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
   /
   [`tar_target_jl_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl_raw.md):
-  Julia, via JuliaCall.
+  Julia, via [JuliaCall](https://github.com/JuliaInterop/JuliaCall).
 - [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)
   /
   [`tar_target_rs_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.md):
-  Rust, via rextendr/extendr.
+  Rust, via
+  [rextendr](https://extendr.rs/rextendr/)/[extendr](https://extendr.rs/).
+- [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
+  /
+  [`tar_target_cpp_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp_raw.md):
+  C++, via
+  [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html).
 
 Each mirrors
 [`targets::tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html)

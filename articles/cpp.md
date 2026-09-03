@@ -108,7 +108,7 @@ These constructors depend on the [Rcpp](https://www.rcpp.org/) R
 package. As a result, any limitation of Rcpp is inherited by the
 constructors. Reading Rcpp’s own documentation is recommended.
 
-## How a C++ step differs
+## How a C++ step differs from the Python/Julia steps
 
 - **No pre-script.** There is no foreign session to push variables into.
   The `inputs` are bound directly in the **post-script**, where you call
@@ -143,9 +143,9 @@ constructors. Reading Rcpp’s own documentation is recommended.
 As with the other languages, `script` and `post_script` may be a literal
 path or a `tar_target_path("name")` reference to track the file.
 
-## Installing Rcpp
+## Installing Rcpp and checking
 
-1.  Install Rcpp and check it works:
+1.  Install Rcpp (if not already doneà and check it works:
 
     ``` r
 
@@ -405,14 +405,62 @@ double apply_r_function(Rcpp::NumericVector x, Rcpp::Function f) {
 apply_r_function(values, mean)   # R's own mean(), called back from compiled code
 ```
 
-No pre-script or other tarpolyglot specific plumbing is needed for this:
-once `sourceCpp()` compiles the script, `apply_r_function()` is an
-ordinary R function, so the post-script hands it `f` exactly like it
-hands `x`, both are just arguments. Any R closure works the same way,
-not only base functions. This is unrelated to Rcpp sugar, the vectorized
-C++ syntax Rcpp itself provides (`x + y`, `sum(x)`, and so on): sugar is
-a compile time convenience with no runtime R involvement at all, while
-`Rcpp::Function` is a genuine runtime call back into R’s own evaluator.
+### The function is not part of the compiled library
+
+`Rcpp::Function` is an ordinary argument, resolved at call time. It is
+*not* captured into the compiled library, which matters as soon as you
+compile once and reuse the result across steps or branches (see “Compile
+once, reuse in other steps” below). Every step that calls the function
+needs its own `f` in scope: a step that has none with fails with
+`object '<name of indicated function>' not found`, and a step that
+supplies a different one gets that one instead, with no recompilation.
+
+``` r
+
+lib <- compile_cpp_lib(script = "cpp/apply.cpp")
+
+# Same library, different callbacks, no recompile.
+run_cpp_step_prebuilt(lib, inputs = list(x = c(1, 2, 3)),
+  post_script = tar_code({
+    tripler <- function(v) v * 3
+    apply_r_function(x, tripler)
+  }))
+run_cpp_step_prebuilt(lib, inputs = list(x = c(1, 2, 3)),
+  post_script = tar_code({
+    tripler <- function(v) v * 10
+    apply_r_function(x, tripler)
+  }))
+```
+
+One caveat if you take option 2: a helper reached through the global
+environment is not a tracked dependency, so editing it does not
+invalidate the step and the pipeline will reuse a stale result. If the
+definition of `f` should trigger a re-run, make it a `format = "file"`
+target and wire it in with `inputs`, as described in
+[`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md).
+
+### Where the R function can be defined
+
+`f` is resolved when the function defined using Rcpp runs, in the step’s
+own environment, whose parent is the global environment. Three places
+can therefore define `f`:
+
+``` r
+
+# 1. Directly in the R scripts that use the function, before the call.
+post_script = tar_code({
+  tripler <- function(v) v * 3
+  apply_r_function(x, tripler)
+})
+
+# 2. In a file sourced by _targets.R, the usual targets way of sharing helpers.
+#    _targets.R:  tar_source()          # or source("R/functions.R")
+#    R/functions.R:  tripler <- function(v) v * 3
+post_script = tar_code({ apply_r_function(x, tripler) })
+
+# 3. Anything already available: a base function, or one from an attached package.
+post_script = tar_code({ apply_r_function(x, mean) })
+```
 
 ## Dynamic branching
 

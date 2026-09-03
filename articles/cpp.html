@@ -171,7 +171,7 @@ limitation of Rcpp is inherited by the constructors. Reading Rcpp’s own
 documentation is recommended.</p>
 </div>
 <div class="section level2">
-<h2 id="how-a-c-step-differs">How a C++ step differs<a class="anchor" aria-label="anchor" href="#how-a-c-step-differs"></a>
+<h2 id="how-a-c-step-differs-from-the-pythonjulia-steps">How a C++ step differs from the Python/Julia steps<a class="anchor" aria-label="anchor" href="#how-a-c-step-differs-from-the-pythonjulia-steps"></a>
 </h2>
 <ul>
 <li>
@@ -250,11 +250,11 @@ through as <code>// [[Rcpp::depends(...)]]</code> would be.</td>
 <code>tar_target_path("name")</code> reference to track the file.</p>
 </div>
 <div class="section level2">
-<h2 id="installing-rcpp">Installing Rcpp<a class="anchor" aria-label="anchor" href="#installing-rcpp"></a>
+<h2 id="installing-rcpp-and-checking">Installing Rcpp and checking<a class="anchor" aria-label="anchor" href="#installing-rcpp-and-checking"></a>
 </h2>
 <ol style="list-style-type: decimal">
 <li>
-<p>Install Rcpp and check it works:</p>
+<p>Install Rcpp (if not already doneà and check it works:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"Rcpp"</span><span class="op">)</span></span>
 <span><span class="fu">Rcpp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/Rcpp/man/sourceCpp.html" class="external-link">sourceCpp</a></span><span class="op">(</span>code <span class="op">=</span> <span class="st">"</span></span>
@@ -467,16 +467,61 @@ compiled code:</p>
 <span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">apply_r_function</span><span class="op">(</span><span class="va">values</span>, <span class="va">mean</span><span class="op">)</span>   <span class="co"># R's own mean(), called back from compiled code</span></span></code></pre></div>
-<p>No pre-script or other tarpolyglot specific plumbing is needed for
-this: once <code>sourceCpp()</code> compiles the script,
-<code>apply_r_function()</code> is an ordinary R function, so the
-post-script hands it <code>f</code> exactly like it hands
-<code>x</code>, both are just arguments. Any R closure works the same
-way, not only base functions. This is unrelated to Rcpp sugar, the
-vectorized C++ syntax Rcpp itself provides (<code>x + y</code>,
-<code>sum(x)</code>, and so on): sugar is a compile time convenience
-with no runtime R involvement at all, while <code>Rcpp::Function</code>
-is a genuine runtime call back into R’s own evaluator.</p>
+<div class="section level3">
+<h3 id="the-function-is-not-part-of-the-compiled-library">The function is not part of the compiled library<a class="anchor" aria-label="anchor" href="#the-function-is-not-part-of-the-compiled-library"></a>
+</h3>
+<p><code>Rcpp::Function</code> is an ordinary argument, resolved at call
+time. It is <em>not</em> captured into the compiled library, which
+matters as soon as you compile once and reuse the result across steps or
+branches (see “Compile once, reuse in other steps” below). Every step
+that calls the function needs its own <code>f</code> in scope: a step
+that has none with fails with
+<code>object '&lt;name of indicated function&gt;' not found</code>, and
+a step that supplies a different one gets that one instead, with no
+recompilation.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lib</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compile_cpp_lib.html">compile_cpp_lib</a></span><span class="op">(</span>script <span class="op">=</span> <span class="st">"cpp/apply.cpp"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Same library, different callbacks, no recompile.</span></span>
+<span><span class="fu"><a href="../reference/run_cpp_step_prebuilt.html">run_cpp_step_prebuilt</a></span><span class="op">(</span><span class="va">lib</span>, inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  post_script <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">tripler</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="va">v</span> <span class="op">*</span> <span class="fl">3</span></span>
+<span>    <span class="fu">apply_r_function</span><span class="op">(</span><span class="va">x</span>, <span class="va">tripler</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/run_cpp_step_prebuilt.html">run_cpp_step_prebuilt</a></span><span class="op">(</span><span class="va">lib</span>, inputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  post_script <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">tripler</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="va">v</span> <span class="op">*</span> <span class="fl">10</span></span>
+<span>    <span class="fu">apply_r_function</span><span class="op">(</span><span class="va">x</span>, <span class="va">tripler</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>One caveat if you take option 2: a helper reached through the global
+environment is not a tracked dependency, so editing it does not
+invalidate the step and the pipeline will reuse a stale result. If the
+definition of <code>f</code> should trigger a re-run, make it a
+<code>format = "file"</code> target and wire it in with
+<code>inputs</code>, as described in
+<code><a href="../articles/scripts.html">vignette("scripts")</a></code>.</p>
+</div>
+<div class="section level3">
+<h3 id="where-the-r-function-can-be-defined">Where the R function can be defined<a class="anchor" aria-label="anchor" href="#where-the-r-function-can-be-defined"></a>
+</h3>
+<p><code>f</code> is resolved when the function defined using Rcpp runs,
+in the step’s own environment, whose parent is the global environment.
+Three places can therefore define <code>f</code>:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Directly in the R scripts that use the function, before the call.</span></span>
+<span><span class="va">post_script</span> <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">tripler</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">v</span><span class="op">)</span> <span class="va">v</span> <span class="op">*</span> <span class="fl">3</span></span>
+<span>  <span class="fu">apply_r_function</span><span class="op">(</span><span class="va">x</span>, <span class="va">tripler</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. In a file sourced by _targets.R, the usual targets way of sharing helpers.</span></span>
+<span><span class="co">#    _targets.R:  tar_source()          # or source("R/functions.R")</span></span>
+<span><span class="co">#    R/functions.R:  tripler &lt;- function(v) v * 3</span></span>
+<span><span class="va">post_script</span> <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span> <span class="fu">apply_r_function</span><span class="op">(</span><span class="va">x</span>, <span class="va">tripler</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. Anything already available: a base function, or one from an attached package.</span></span>
+<span><span class="va">post_script</span> <span class="op">=</span> <span class="fu"><a href="../reference/tar_code.html">tar_code</a></span><span class="op">(</span><span class="op">{</span> <span class="fu">apply_r_function</span><span class="op">(</span><span class="va">x</span>, <span class="va">mean</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="dynamic-branching">Dynamic branching<a class="anchor" aria-label="anchor" href="#dynamic-branching"></a>
@@ -484,7 +529,7 @@ is a genuine runtime call back into R’s own evaluator.</p>
 <p>Like the other constructors, <code>inputs</code> are real
 dependencies, so <code>pattern</code> branches them (and
 <code>crew</code> spreads the branches):</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">groups</span>, <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">iris</span><span class="op">$</span><span class="va">Petal.Length</span>, <span class="va">iris</span><span class="op">$</span><span class="va">Species</span><span class="op">)</span>, iteration <span class="op">=</span> <span class="st">"list"</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/tar_target_cpp.html">tar_target_cpp</a></span><span class="op">(</span></span>
@@ -542,7 +587,7 @@ Each is named after its <code>targets</code> equivalent:</p>
 </tbody>
 </table>
 <p>Use one exactly where you would use the plain pattern:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">groups</span>, <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">iris</span><span class="op">$</span><span class="va">Petal.Length</span>, <span class="va">iris</span><span class="op">$</span><span class="va">Species</span><span class="op">)</span>, iteration <span class="op">=</span> <span class="st">"list"</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/tar_target_cpp.html">tar_target_cpp</a></span><span class="op">(</span></span>
@@ -596,20 +641,20 @@ different toolchain (see <code><a href="../articles/rust.html">vignette("rust")<
 pipeline branch every language with the same helper. The four files
 involved:</p>
 <p><code>py/sq.py</code>:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>result <span class="op">=</span> x <span class="op">**</span> <span class="dv">2</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>result <span class="op">=</span> x <span class="op">**</span> <span class="dv">2</span></span></code></pre></div>
 <p><code>R/push.R</code> (pre-script for the Python step,
 <code>to_py</code> hands <code>x</code> over):</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">to_py</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span><span class="op">)</span></span></code></pre></div>
 <p><code>cpp/square.cpp</code>:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
-<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
-<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a><span class="dt">double</span> square<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">*</span> x<span class="op">;</span> <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a><span class="dt">double</span> square<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">*</span> x<span class="op">;</span> <span class="op">}</span></span></code></pre></div>
 <p><code>R/post.R</code> (post-script for the C++ step):</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">square</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">vals</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  <span class="co"># Python: behaves exactly as map(vals).</span></span>
@@ -656,21 +701,21 @@ not interfere with one another, even when several run in the same
 (content shown in “Object output” above); <code>noise</code> is a
 second, unrelated step in the same pipeline,
 <code>cpp/rng.cpp</code>:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
-<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
-<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a></span>
-<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
-<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>Rcpp<span class="op">::</span>NumericVector rng_normal<span class="op">(</span><span class="dt">int</span> n<span class="op">,</span> <span class="dt">int</span> seed<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>  <span class="bu">std::</span>mt19937 gen<span class="op">(</span>seed<span class="op">);</span></span>
-<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>  <span class="bu">std::</span>normal_distribution<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> dist<span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
-<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a>  Rcpp<span class="op">::</span>NumericVector out<span class="op">(</span>n<span class="op">);</span></span>
-<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++)</span> out<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> dist<span class="op">(</span>gen<span class="op">);</span></span>
-<span id="cb25-10"><a href="#cb25-10" tabindex="-1"></a>  <span class="cf">return</span> out<span class="op">;</span></span>
-<span id="cb25-11"><a href="#cb25-11" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;random&gt;</span></span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>Rcpp<span class="op">::</span>NumericVector rng_normal<span class="op">(</span><span class="dt">int</span> n<span class="op">,</span> <span class="dt">int</span> seed<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>  <span class="bu">std::</span>mt19937 gen<span class="op">(</span>seed<span class="op">);</span></span>
+<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>  <span class="bu">std::</span>normal_distribution<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> dist<span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
+<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a>  Rcpp<span class="op">::</span>NumericVector out<span class="op">(</span>n<span class="op">);</span></span>
+<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++)</span> out<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> dist<span class="op">(</span>gen<span class="op">);</span></span>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a>  <span class="cf">return</span> out<span class="op">;</span></span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p><code>R/rng_post.R</code>:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">rng_normal</span><span class="op">(</span><span class="fl">5</span>, <span class="va">seed</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">vals</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">seed</span>, <span class="fl">42</span><span class="op">)</span>,</span>
@@ -708,15 +753,15 @@ milliseconds, no compiler needed) and evaluates a post-script against
 it, exactly like <code><a href="../reference/run_cpp_step.html">run_cpp_step()</a></code> does after compiling.</li>
 </ul>
 <p><code>cpp/math.cpp</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a></span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a><span class="dt">double</span> add_one<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">+</span> <span class="fl">1.0</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a><span class="dt">double</span> add_one<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">+</span> <span class="fl">1.0</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
 <p><code>R/use_math.R</code>: the compiled <code>add_one()</code> and
 the input <code>x</code> are in scope:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">add_one</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">5</span><span class="op">)</span>,</span>
 <span>  <span class="co"># Compile once; the result is stored like any target value (rds by default, or qs).</span></span>
@@ -746,7 +791,7 @@ elsewhere<a class="anchor" aria-label="anchor" href="#reusing-a-tar_target_cpp-c
 C++ code only once across branches”) is an ordinary target too, holding
 an ordinary <code>tp_cpp_lib</code> value, so a completely unrelated
 step can reuse it the exact same way, confirmed directly:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">5</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">groups</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -784,14 +829,14 @@ whether they come from plain <code><a href="../reference/compile_cpp_lib.html">c
 <code><a href="../reference/tar_target_cpp.html">tar_target_cpp()</a></code> companions, or a mix of both. Call
 <code><a href="../reference/run_cpp_step_prebuilt.html">run_cpp_step_prebuilt()</a></code> once per library and combine the
 results. <code>cpp/lib_b.cpp</code> (a second, independent script):</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a></span>
-<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
-<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="dt">double</span> times_ten<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">*</span> <span class="fl">10.0</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
+<span id="cb34-4"><a href="#cb34-4" tabindex="-1"></a><span class="dt">double</span> times_ten<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> x <span class="op">*</span> <span class="fl">10.0</span><span class="op">;</span> <span class="op">}</span></span></code></pre></div>
 <p><code>R/b.R</code>:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">times_ten</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">5</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_target.html" class="external-link">tar_target</a></span><span class="op">(</span><span class="va">groups</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -865,17 +910,17 @@ write straight to the OS file descriptor and bypass that system
 entirely, so they are <strong>not</strong> captured, use
 <code>Rcpp::Rcout</code> / <code>Rcpp::Rcerr</code> in compiled code
 instead of raw C++ streams if you want step output in these logs:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_option_set.html" class="external-link">tar_option_set</a></span><span class="op">(</span></span>
 <span>  controller <span class="op">=</span> <span class="fu"><a href="../reference/polyglot_controller.html">polyglot_controller</a></span><span class="op">(</span></span>
 <span>    log <span class="op">=</span> <span class="fu"><a href="../reference/tar_polyglot_log.html">tar_polyglot_log</a></span><span class="op">(</span>stdout <span class="op">=</span> <span class="st">"./logs/out"</span>, stderr <span class="op">=</span> <span class="st">"./logs/err"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
-<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a><span class="dt">double</span> loud_square<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a>  Rcpp<span class="op">::</span>Rcout <span class="op">&lt;&lt;</span> <span class="st">"computing square of "</span> <span class="op">&lt;&lt;</span> x <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span>   <span class="co">// captured</span></span>
-<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a>  <span class="cf">return</span> x <span class="op">*</span> x<span class="op">;</span></span>
-<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="dt">double</span> loud_square<span class="op">(</span><span class="dt">double</span> x<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>  Rcpp<span class="op">::</span>Rcout <span class="op">&lt;&lt;</span> <span class="st">"computing square of "</span> <span class="op">&lt;&lt;</span> x <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span>   <span class="co">// captured</span></span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>  <span class="cf">return</span> x <span class="op">*</span> x<span class="op">;</span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="rtools-note-windows">Rtools note (Windows)<a class="anchor" aria-label="anchor" href="#rtools-note-windows"></a>

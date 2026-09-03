@@ -79,9 +79,10 @@ Please also follow these additional guidelines.
   and
   [`withr::local_tempdir()`](https://withr.r-lib.org/reference/with_tempfile.html)
   for the scripts and libraries these tests create.
-- Check code coverage with `covr::package_coverage()`. Automated tests
-  should cover all the new or changed functionality in your pull
-  request.
+- Check code coverage with
+  [`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md).
+  Automated tests should cover all the new or changed functionality in
+  your pull request.
 - Run overall package checks with `devtools::check()`.
 - Describe your contribution in the project’s
   [`NEWS.md`](https://pierre9344.github.io/tarpolyglot/NEWS.md) file. Be
