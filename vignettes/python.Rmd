@@ -118,7 +118,11 @@ list(
 
 ## File output
 
-Set `output = "file"` when the script writes to disk; return the path(s) from the post-script (or via `files` when there is no post-script). The target `format` becomes `"file"` automatically.
+Set `output = "file"` when the script writes to disk. The target `format` becomes `"file"` automatically, and the step has to report the path(s) it wrote. There are two ways to do that, covered in turn below.
+
+### Returning the path from the post-script
+
+Use this when the script chooses the path, for example a temporary file whose name is not known in advance.
 
 `py/write_csv.py`: writes `x` to a CSV, keeps the path in `out_path` for the post-script to read back:
 
@@ -147,6 +151,41 @@ tar_target_py(
   output = "file"
 )
 ```
+
+### Declaring the path up front with `files`
+
+Use this when the path is already known as you write `_targets.R`. The script writes to that fixed location, `files` declares it, and no post-script is needed at all.
+
+`py/write_fixed.py`:
+
+``` python
+import csv
+import os
+
+os.makedirs("out", exist_ok=True)
+with open("out/values.csv", "w", newline="") as f:
+    csv.writer(f).writerow(x)
+```
+
+``` r
+tar_target_py(
+  name = py_fixed,
+  script = "py/write_fixed.py",
+  inputs = c(x = "prepared_x"),
+  pre_script = "R/pre_push.R",
+  output = "file",
+  files = "out/values.csv"        # no post-script needed
+)
+```
+
+`files` and `post_script` are alternatives, not complements. When both are given the post-script wins and `files` is silently ignored:
+
+| Supplied | Result |
+|----|----|
+| `files` only | the paths in `files` are returned |
+| `post_script` only | the value of the post-script's last expression is returned |
+| both | the post-script wins, `files` is ignored |
+| neither | error: `output = "file"` needs a `post_script` returning paths, or `files` |
 
 ## Dynamic branching
 

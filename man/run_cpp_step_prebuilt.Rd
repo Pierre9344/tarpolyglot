@@ -9,7 +9,6 @@ run_cpp_step_prebuilt(
   post_script = NULL,
   inputs = list(),
   output = "object",
-  files = NULL,
   name = NULL
 )
 }
@@ -21,8 +20,6 @@ run_cpp_step_prebuilt(
 \item{inputs}{Named character vector (or list) mapping the name seen inside the step (in the R environment and, after the hand-off, in the foreign session) to the name of an upstream target, e.g. \code{c(x = "prepared_x")}. Each upstream target becomes a dependency of this target and is bound by that name in the step environment; under dynamic branching the per-branch slice is bound instead.}
 
 \item{output}{Output mode: \code{"object"} (default) returns a converted R object, \code{"file"} returns a character vector of file paths (and defaults \code{format} to \code{"file"}).}
-
-\item{files}{Optional character vector of file paths to return when no \code{post_script} is supplied in file mode.}
 
 \item{name}{Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=tar_polyglot_log]{tar_polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call). Note this is the branch name, not \verb{<name>_cpp_lib} -- reloading a pre-compiled library never itself produces output to log.}
 }

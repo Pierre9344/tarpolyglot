@@ -17,7 +17,7 @@ test_that("object mode returns the value of the post-script's last expression", 
     e <- new.env(parent = globalenv())
     assign("x", 21, envir = e)
     post <- write_post("x * 2")
-    expect_identical(finishers[[nm]](e, post, "object", NULL), 42, label = nm)
+    expect_identical(finishers[[nm]](e, post, "object"), 42, label = nm)
   }
 })
 
@@ -25,7 +25,7 @@ test_that("object mode requires a post-script", {
   for (nm in names(finishers)) {
     e <- new.env(parent = globalenv())
     expect_error(
-      finishers[[nm]](e, NULL, "object", NULL),
+      finishers[[nm]](e, NULL, "object"),
       "needs a `post_script`",
       label = nm
     )
@@ -45,7 +45,7 @@ test_that("file mode normalises the paths the post-script returns", {
     writeLines("b", "out_two.txt")
 
     post <- write_post("c('out_one.txt', 'out_two.txt')")
-    res <- finishers[[nm]](e, post, "file", NULL)
+    res <- finishers[[nm]](e, post, "file")
 
     expect_length(res, 2L)
     expect_true(all(file.exists(res)), label = nm)
@@ -55,21 +55,21 @@ test_that("file mode normalises the paths the post-script returns", {
   }
 })
 
-test_that("file mode falls back to `files` when there is no post-script", {
+test_that("file mode errors when no post-script supplies paths", {
   for (nm in names(finishers)) {
     e <- new.env(parent = globalenv())
-    res <- finishers[[nm]](e, NULL, "file", c("from_files.txt"))
-    expect_length(res, 1L)
-    expect_match(res[[1L]], "from_files.txt", fixed = TRUE)
-  }
-})
-
-test_that("file mode errors when neither a post-script nor `files` supplies paths", {
-  for (nm in names(finishers)) {
-    e <- new.env(parent = globalenv())
+    # Rust and C++ have no `files` argument: their scripts only compile
+    # functions, so without a post-script nothing calls them and nothing is
+    # written. A post-script is the only way to report a path.
     expect_error(
-      finishers[[nm]](e, NULL, "file", NULL),
-      "needs a `post_script` returning paths, or `files`",
+      finishers[[nm]](e, NULL, "file"),
+      "needs a `post_script` returning paths",
+      label = nm
+    )
+    # A post-script that runs but returns nothing is the same failure.
+    expect_error(
+      finishers[[nm]](e, write_post("NULL"), "file"),
+      "needs a `post_script` returning paths",
       label = nm
     )
   }

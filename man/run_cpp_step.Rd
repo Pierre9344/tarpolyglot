@@ -9,7 +9,6 @@ run_cpp_step(
   post_script = NULL,
   inputs = list(),
   output = "object",
-  files = NULL,
   depends = NULL,
   name = NULL
 )
@@ -22,8 +21,6 @@ run_cpp_step(
 \item{inputs}{Named character vector (or list) mapping the name seen inside the step (in the R environment and, after the hand-off, in the foreign session) to the name of an upstream target, e.g. \code{c(x = "prepared_x")}. Each upstream target becomes a dependency of this target and is bound by that name in the step environment; under dynamic branching the per-branch slice is bound instead.}
 
 \item{output}{Output mode: \code{"object"} (default) returns a converted R object, \code{"file"} returns a character vector of file paths (and defaults \code{format} to \code{"file"}).}
-
-\item{files}{Optional character vector of file paths to return when no \code{post_script} is supplied in file mode.}
 
 \item{depends}{Optional character vector of extension packages (e.g. \code{c("RcppArmadillo", "RcppEigen")}), passed straight through as \verb{// [[Rcpp::depends(...)]]} would be. Usually unnecessary: declaring \verb{// [[Rcpp::depends(pkgname)]]} directly in the C++ source (the normal Rcpp convention) already works, so this argument is only useful if you would rather not repeat that in the source itself.}
 

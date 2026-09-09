@@ -38,16 +38,16 @@
 # mode). Identical in shape to run-step-rs.R's .tp_rs_finish() (kept as a
 # separate copy rather than a cross-file refactor, to avoid touching the
 # already-shipped Rust implementation while this is developed in isolation).
-.tp_cpp_finish <- function(e, post_script, output, files) {
+.tp_cpp_finish <- function(e, post_script, output) {
   if (identical(output, "file")) {
-    paths <- if (!is.null(post_script)) {
-      .tp_assert_script(post_script, "post_script", must_exist = TRUE)
-      .tp_eval_script(post_script, e)
-    } else {
-      files
+    if (is.null(post_script)) {
+      stop("output = \"file\" needs a `post_script` returning paths.",
+        call. = FALSE)
     }
+    .tp_assert_script(post_script, "post_script", must_exist = TRUE)
+    paths <- .tp_eval_script(post_script, e)
     if (is.null(paths)) {
-      stop("output = \"file\" needs a `post_script` returning paths, or `files`.",
+      stop("output = \"file\" needs a `post_script` returning paths.",
         call. = FALSE)
     }
     return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
@@ -102,7 +102,6 @@ run_cpp_step <- function(script,
                          post_script = NULL,
                          inputs = list(),
                          output = "object",
-                         files = NULL,
                          depends = NULL,
                          name = NULL) {
   output <- .tp_match_output(output)
@@ -130,7 +129,7 @@ run_cpp_step <- function(script,
   }
 
   .tp_cpp_with_redirect(log_paths$stdout, log_paths$stderr, function() {
-    .tp_cpp_finish(e, post_script, output, files)
+    .tp_cpp_finish(e, post_script, output)
   })
 }
 
@@ -253,7 +252,6 @@ run_cpp_step_prebuilt <- function(lib,
                                   post_script = NULL,
                                   inputs = list(),
                                   output = "object",
-                                  files = NULL,
                                   name = NULL) {
   output <- .tp_match_output(output)
   if (!inherits(lib, "tp_cpp_lib")) {
@@ -321,6 +319,6 @@ run_cpp_step_prebuilt <- function(lib,
   }
 
   .tp_cpp_with_redirect(log_paths$stdout, log_paths$stderr, function() {
-    .tp_cpp_finish(e, post_script, output, files)
+    .tp_cpp_finish(e, post_script, output)
   })
 }

@@ -1,5 +1,5 @@
 ---
-title: "Supplying scripts to tarpolyglot constructors"
+title: "Supplying scripts: paths, tracking, and inline code"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Supplying scripts: paths, tracking, and inline code}

@@ -36,7 +36,7 @@ test_that("depends is carried into the command", {
 test_that("format defaults mirror the other languages", {
   expect_identical(tar_target_cpp_raw("a", cpp_file())$settings$format, "rds")
   expect_identical(
-    tar_target_cpp_raw("b", cpp_file(), output = "file", files = "x")$settings$format,
+    tar_target_cpp_raw("b", cpp_file(), output = "file")$settings$format,
     "file")
 })
 

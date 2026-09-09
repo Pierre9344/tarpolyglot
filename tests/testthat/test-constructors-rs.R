@@ -34,7 +34,7 @@ test_that("toolchain and dependencies are carried into the command", {
 test_that("format defaults mirror the other languages", {
   expect_identical(tar_target_rs_raw("a", rs_file())$settings$format, "rds")
   expect_identical(
-    tar_target_rs_raw("b", rs_file(), output = "file", files = "x")$settings$format,
+    tar_target_rs_raw("b", rs_file(), output = "file")$settings$format,
     "file")
 })
 

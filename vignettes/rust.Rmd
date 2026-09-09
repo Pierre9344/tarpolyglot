@@ -77,7 +77,6 @@ These constructors depend on the [rextendr](https://extendr.rs/rextendr/) R pack
 | `post_script` | R script run after compilation; the compiled functions and `inputs` are in scope. Required for object mode. |
 | `inputs` | Named vector mapping in-step names to upstream targets, e.g. `c(x = "value")`. |
 | `output` | `"object"` (default) or `"file"`. |
-| `files` | Paths to return when there is no post-script (file mode). |
 | `dependencies` | Crate dependencies as a named list, passed to `rextendr::rust_source()`. |
 | `features` | Cargo features, passed to `rextendr::rust_source()`. |
 | `profile` | Build profile (e.g. `"dev"` or `"release"`). |

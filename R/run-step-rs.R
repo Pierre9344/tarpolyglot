@@ -75,7 +75,6 @@ run_rs_step <- function(script,
                         post_script = NULL,
                         inputs = list(),
                         output = "object",
-                        files = NULL,
                         dependencies = NULL,
                         features = NULL,
                         profile = NULL,
@@ -110,22 +109,22 @@ run_rs_step <- function(script,
   do.call(rextendr::rust_source, args)
 
   # 2. Post-R script uses the compiled functions (and inputs) to build the value.
-  .tp_rs_finish(e, post_script, output, files)
+  .tp_rs_finish(e, post_script, output)
 }
 
 # Shared tail of the Rust workers: with the compiled functions and `inputs`
 # already bound in `e`, evaluate the R post-script and produce the target value
 # (object mode) or a character vector of normalised file paths (file mode).
-.tp_rs_finish <- function(e, post_script, output, files) {
+.tp_rs_finish <- function(e, post_script, output) {
   if (identical(output, "file")) {
-    paths <- if (!is.null(post_script)) {
-      .tp_assert_script(post_script, "post_script", must_exist = TRUE)
-      .tp_eval_script(post_script, e)
-    } else {
-      files
+    if (is.null(post_script)) {
+      stop("output = \"file\" needs a `post_script` returning paths.",
+        call. = FALSE)
     }
+    .tp_assert_script(post_script, "post_script", must_exist = TRUE)
+    paths <- .tp_eval_script(post_script, e)
     if (is.null(paths)) {
-      stop("output = \"file\" needs a `post_script` returning paths, or `files`.",
+      stop("output = \"file\" needs a `post_script` returning paths.",
         call. = FALSE)
     }
     return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
@@ -251,8 +250,7 @@ compile_rs_lib <- function(script,
 run_rs_step_prebuilt <- function(lib,
                                  post_script = NULL,
                                  inputs = list(),
-                                 output = "object",
-                                 files = NULL) {
+                                 output = "object") {
   output <- .tp_match_output(output)
   if (!inherits(lib, "tp_rust_lib")) {
     stop("`lib` must be a compiled library object from compile_rs_lib().",
@@ -295,5 +293,5 @@ run_rs_step_prebuilt <- function(lib,
   for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
   for (nm in names(lib$objs)) assign(nm, lib$objs[[nm]], envir = e)
 
-  .tp_rs_finish(e, post_script, output, files)
+  .tp_rs_finish(e, post_script, output)
 }

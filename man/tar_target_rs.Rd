@@ -10,7 +10,6 @@ tar_target_rs(
   post_script = NULL,
   inputs = NULL,
   output = "object",
-  files = NULL,
   dependencies = NULL,
   features = NULL,
   profile = NULL,
@@ -45,8 +44,6 @@ tar_target_rs(
 \item{inputs}{Named character vector (or list) mapping the name seen inside the step (in the R environment and, after the hand-off, in the foreign session) to the name of an upstream target, e.g. \code{c(x = "prepared_x")}. Each upstream target becomes a dependency of this target and is bound by that name in the step environment; under dynamic branching the per-branch slice is bound instead.}
 
 \item{output}{Output mode: \code{"object"} (default) returns a converted R object, \code{"file"} returns a character vector of file paths (and defaults \code{format} to \code{"file"}).}
-
-\item{files}{Optional character vector of file paths to return when no \code{post_script} is supplied in file mode.}
 
 \item{dependencies, features, profile}{Passed to \code{\link[rextendr:rust_source]{rextendr::rust_source()}}: crate \code{dependencies} (named list), Cargo \code{features}, and build \code{profile}.}
 
