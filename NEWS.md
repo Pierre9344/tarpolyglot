@@ -16,6 +16,7 @@
 
 ### Bug fixes
 
+* `tar_target_jl()` and `tar_target_jl_raw()` no longer bake a machine-specific Julia path into the target they build. Their `julia_home` argument defaulted to `getOption("tarpolyglot.julia_home")`, which was evaluated when the *target was constructed* and spliced into the generated `run_jl_step()` call, so a project that set that option (the natural place being `.Rprofile`) put this computer's Julia directory into the command that `targets` hashes. Two machines with different Julia installations, or one with the option unset, then disagreed about every Julia step's command hash, and a store copied between them reported all of those steps as outdated even though nothing had changed. `julia_home` now defaults to `NULL` in both constructors and in `run_jl_step()`, and the option is read once at run time inside the resolver, where its value cannot reach the command. Behaviour is otherwise unchanged: an explicit `julia_home`, then the option, then `julia_version`, then JuliaCall's own discovery on `PATH`. A new `tests/testthat/test-command-portability.R` pins this down, asserting that a step's command hash survives both relocating the project directory and changing `tarpolyglot.julia_home`, that an existing relative `env` is not absolutised into a Python step's command, and that the resolver still honours the option at run time.
 * Compiled Rust libraries no longer collide when several are used in one pipeline. rextendr names every compiled crate `rextendr<N>` from a per-process counter, so two libraries built in separate `crew` workers can both be `rextendr1`; a worker that later reused both would have resolved calls to whichever library loaded first. `run_rs_step_prebuilt()` now tracks the loaded library by content and hot-swaps when a different one needs the same module name. As a result, pipelines with multiple `tar_target_rs()` steps (branching or not), reusing a compiled library across steps, and using more than one Rust library in a single step all behave correctly. See `vignette("rust")`.
 * The name argument of tar_target_py_raw() was documented as the worker's logging argument ("Supplied automatically by the constructor; used only to name this step's log files"), inherited by mistake from run_py_step(). It is now documented as the target name.
 
@@ -45,6 +46,7 @@
 ### Notes
 
 * Changes in this release respond to rOpenSci pre-submission feedback (ropensci/software-review#804).
+* **Upgrading from 0.2.x will cause targets to identify as 'outdated' all steps that are using tarpolyglot constructors.** This release modification of the `run_*_step()` function introduce modification in the command hash prompting targets to rebuild the steps.
 
 # tarpolyglot 0.2.1
 

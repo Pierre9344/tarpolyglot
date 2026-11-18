@@ -14,7 +14,7 @@ tar_target_jl(
   retrieve = NULL,
   files = NULL,
   julia_version = NULL,
-  julia_home = getOption("tarpolyglot.julia_home"),
+  julia_home = NULL,
   julia_project = NULL,
   julia_packages = NULL,
   pattern = NULL,
@@ -56,7 +56,7 @@ tar_target_jl(
 
 \item{julia_version}{Optional Julia version to select (e.g. \code{"1.11"}), used when \code{julia_home} is not given; resolved to a juliaup-managed install. Forwarded to \code{\link[=run_jl_step]{run_jl_step()}}. Default \code{NULL} uses the computer/global Julia.}
 
-\item{julia_home, julia_project, julia_packages}{Julia environment selection, forwarded to \code{\link[=run_jl_step]{run_jl_step()}}. \code{julia_home} is the directory containing the julia executable (defaults to \code{getOption("tarpolyglot.julia_home")}; when unset and no \code{julia_version}, JuliaCall discovers Julia on \code{PATH}). \code{julia_project} is a Julia project environment to \code{Pkg.activate()}. \code{julia_packages} is a character vector of packages to \code{using} before the script.}
+\item{julia_home, julia_project, julia_packages}{Julia environment selection, forwarded to \code{\link[=run_jl_step]{run_jl_step()}}. \code{julia_home} is the directory containing the julia executable. Default \code{NULL} falls back to \code{getOption("tarpolyglot.julia_home")} \strong{when the step runs}, not when the target is built, so the option's machine-specific value never enters the target's command (see \code{\link[=run_jl_step]{run_jl_step()}}); when the option is unset too and no \code{julia_version} is given, JuliaCall discovers Julia on \code{PATH}. \code{julia_project} is a Julia project environment to \code{Pkg.activate()}. \code{julia_packages} is a character vector of packages to \code{using} before the script.}
 
 \item{pattern}{Optional dynamic-branching pattern, unquoted (e.g. \code{map(x)}).}
 
