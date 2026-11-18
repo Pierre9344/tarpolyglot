@@ -63,7 +63,7 @@ a literal path string, which is untracked).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Building a target does not run it, so these examples need no Python.
 # Inline R (pre/post) plus a one-line inline Python `script`:
 tarpolyglot::tar_target_py(
   name        = m,
@@ -72,6 +72,49 @@ tarpolyglot::tar_target_py(
   script      = tar_code("result = float(sum(x))"),   # inline Python
   post_script = tar_code({ py_get("result") })
 )
+#> <tar_stem> 
+#>   name: m 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = structure(list(code = "result = float(sum(x))"), 
+#>         class = c("tp_inline", "tp_source")), pre_script = structure(list(code = quote({
+#>         to_py <- list(x = x)
+#>     })), class = c("tp_inline", "tp_expr")), post_script = structure(list(code = quote({
+#>         py_get("result")
+#>     })), class = c("tp_inline", "tp_expr")), inputs = list(x = prepared_x), 
+#>         output = "object", retrieve = NULL, files = NULL, python_version = NULL, 
+#>         env = NULL, env_manager = "system", python = NULL, name = "m") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 
 # Multi-line inline Python. Indent the code to line up with `_targets.R`;
 # tar_code() dedents it, so Python's own block indentation stays correct.
@@ -85,5 +128,44 @@ tarpolyglot::tar_target_py(
             result += v
   )")
 )
-} # }
+#> <tar_stem> 
+#>   name: pos_sum 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = structure(list(code = "result = 0\nfor v in x:\n    if v > 0:\n        result += v"), 
+#>         class = c("tp_inline", "tp_source")), pre_script = NULL, 
+#>         post_script = NULL, inputs = list(x = prepared_x), output = "object", 
+#>         retrieve = NULL, files = NULL, python_version = NULL, env = NULL, 
+#>         env_manager = "system", python = NULL, name = "pos_sum") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 ```

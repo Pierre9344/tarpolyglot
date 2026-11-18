@@ -44,15 +44,96 @@ unaffected.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Building a target does not run it, so this example needs no Python.
+# python/fit_step.py:
+#   result = sum(x)
+# scripts/pre.R:
+#   to_py <- list(x = x)
 list(
-  tar_target(mofaflex_pyscript, "python/mofaflex_fit_step.py", format = "file"),
+  targets::tar_target(fit_pyscript, "python/fit_step.py", format = "file"),
   tar_target_py(
-    name = mofaflex,
-    script = tar_target_path("mofaflex_pyscript"),  # re-runs when the file changes
-    pre_script = "scripts/mofaflex_pre.R",           # untracked literal path
+    name = fit,
+    script = tar_target_path("fit_pyscript"),  # re-runs when the file changes
+    pre_script = "scripts/pre.R",              # untracked literal path
+    inputs = c(x = "prepared_x"),
     retrieve = "result"
   )
 )
-} # }
+#> [[1]]
+#> <tar_stem> 
+#>   name: fit_pyscript 
+#>   description:  
+#>   command:
+#>     "python/fit_step.py" 
+#>   format: file 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_stem> 
+#>   name: fit 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_py_step(script = fit_pyscript, pre_script = "scripts/pre.R", 
+#>         post_script = NULL, inputs = list(x = prepared_x), output = "object", 
+#>         retrieve = "result", files = NULL, python_version = NULL, 
+#>         env = NULL, env_manager = "system", python = NULL, name = "fit") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 ```

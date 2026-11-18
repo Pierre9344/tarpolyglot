@@ -137,7 +137,6 @@ constructors. Reading Rcpp’s own documentation is recommended.
 | `post_script` | R script run after compilation; the compiled functions and `inputs` are in scope. Required for object mode. |
 | `inputs` | Named vector mapping in step names to upstream targets, e.g. `c(x = "value")`. |
 | `output` | `"object"` (default) or `"file"`. |
-| `files` | Paths to return when there is no post-script (file mode). |
 | `depends` | Extension packages (e.g. `c("RcppArmadillo", "RcppEigen")`), passed straight through as `// [[Rcpp::depends(...)]]` would be. |
 
 As with the other languages, `script` and `post_script` may be a literal

@@ -21,7 +21,6 @@ tar_target_cpp_raw(
   post_script = NULL,
   inputs = NULL,
   output = "object",
-  files = NULL,
   depends = NULL,
   pattern = NULL,
   packages = targets::tar_option_get("packages"),
@@ -84,11 +83,6 @@ tar_target_cpp_raw(
   Output mode: `"object"` (default) returns a converted R object,
   `"file"` returns a character vector of file paths (and defaults
   `format` to `"file"`).
-
-- files:
-
-  Optional character vector of file paths to return when no
-  `post_script` is supplied in file mode.
 
 - depends:
 
@@ -243,7 +237,7 @@ tarpolyglot::tar_target_cpp_raw(
 #>   command:
 #>     tarpolyglot::run_cpp_step(script = "scripts/square.cpp", 
 #>         post_script = "scripts/post.R", inputs = list(x = value), 
-#>         output = "object", files = NULL, depends = NULL, name = "cpp_square") 
+#>         output = "object", depends = NULL, name = "cpp_square") 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 
@@ -287,7 +281,7 @@ tarpolyglot::tar_target_cpp_raw(
 #>   command:
 #>     tarpolyglot::run_cpp_step(script = "cpp/step.cpp", 
 #>         post_script = "R/post.R", inputs = list(), output = "object", 
-#>         files = NULL, depends = NULL, name = "demo_literal") 
+#>         depends = NULL, name = "demo_literal") 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 
@@ -372,8 +366,7 @@ list(
 #>   description:  
 #>   command:
 #>     tarpolyglot::run_cpp_step(script = step_cpp, post_script = "R/post.R", 
-#>         inputs = list(), output = "object", files = NULL, depends = NULL, 
-#>         name = "demo_tracked") 
+#>         inputs = list(), output = "object", depends = NULL, name = "demo_tracked") 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 
@@ -423,7 +416,7 @@ tarpolyglot::tar_target_cpp_raw(
 #>         class = c("tp_inline", "tp_source")), post_script = structure(list(code = quote({
 #>         one()
 #>     })), class = c("tp_inline", "tp_expr")), inputs = list(), output = "object", 
-#>         files = NULL, depends = NULL, name = "demo_inline") 
+#>         depends = NULL, name = "demo_inline") 
 #>   format: rds 
 #>   repository: local 
 #>   iteration method: vector 

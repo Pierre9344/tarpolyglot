@@ -1,4 +1,4 @@
-# Supplying scripts to tarpolyglot constructors
+# Supplying scripts: paths, tracking, and inline code
 
 Every tarpolyglot constructor takes its code through script arguments:
 the foreign `script`, and, where the language has them, an R

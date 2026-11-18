@@ -27,6 +27,11 @@ Both return a single `targets` target and forward **every**
 argument (`pattern`, `format`, `iteration`, `deployment`, `resources`,
 `cue`, …).
 
+These constructors depend on the
+[JuliaCall](https://github.com/JuliaInterop/JuliaCall) R package. As a
+result, any limitation of JuliaCall is inherited by the constructors.
+Reading JuliaCall’s own documentation is recommended.
+
 ## Arguments
 
 ### Scripts, data, and output
@@ -129,11 +134,37 @@ list(
 
 ## File output
 
+Set `output = "file"` when the script writes to disk. The target
+`format` becomes `"file"` automatically, and the step has to report the
+path(s) it wrote. There are two ways to do that, covered in turn below.
+
+### Returning the path from the post-script
+
+Use this when the script chooses the path, for example a temporary file
+whose name is not known in advance.
+
+`jl/write.jl`: writes `x` to a file, keeps the path in `out_path` for
+the post-script to read back:
+
+``` julia
+out_path = tempname() * ".csv"
+open(out_path, "w") do io
+    println(io, join(x, ","))
+end
+```
+
+`R/post_files.R`:
+
+``` r
+
+jl_get("out_path")
+```
+
 ``` r
 
 tar_target_jl(
   name = jl_file,
-  script = "jl/write.jl",            # writes a file, stores its path in `out_path`
+  script = "jl/write.jl",
   inputs = c(x = "prepared_x"),
   pre_script = "R/pre_push.R",
   post_script = "R/post_files.R",    # returns jl_get("out_path")
@@ -141,7 +172,58 @@ tar_target_jl(
 )
 ```
 
+### Declaring the path up front with `files`
+
+Use this when the path is already known as you write `_targets.R`. The
+script writes to that fixed location, `files` declares it, and no
+post-script is needed at all.
+
+`jl/write_fixed.jl`:
+
+``` julia
+mkpath("out")
+open("out/values.csv", "w") do io
+    println(io, join(x, ","))
+end
+```
+
+``` r
+
+tar_target_jl(
+  name = jl_fixed,
+  script = "jl/write_fixed.jl",
+  inputs = c(x = "prepared_x"),
+  pre_script = "R/pre_push.R",
+  output = "file",
+  files = "out/values.csv"           # no post-script needed
+)
+```
+
+`files` and `post_script` are alternatives, not complements. When both
+are given the post-script wins and `files` is silently ignored:
+
+| Supplied | Result |
+|----|----|
+| `files` only | the paths in `files` are returned |
+| `post_script` only | the value of the post-script’s last expression is returned |
+| both | the post-script wins, `files` is ignored |
+| neither | error: `output = "file"` needs a `post_script` returning paths, or `files` |
+
 ## Dynamic branching (iris example)
+
+`jl/fit.jl`: `df` (a per-species subset of `iris`, auto-converted to a
+Julia `DataFrame`) was pushed from R by the pre-script:
+
+``` julia
+result = sum(df[!, "Petal.Length"]) / nrow(df)
+```
+
+`R/pre_push_jl.R`:
+
+``` r
+
+to_jl <- list(df = df)   # `df` came from inputs = c(df = "iris_groups")
+```
 
 ``` r
 
@@ -151,7 +233,7 @@ list(
     name = fit_by_group,
     script = "jl/fit.jl",
     inputs = c(df = "iris_groups"),
-    pre_script = "R/pre_push_jl.R",  # to_jl <- list(df = df)
+    pre_script = "R/pre_push_jl.R",
     retrieve = "result",
     pattern = map(iris_groups),      # one branch per species
     iteration = "list"
@@ -159,12 +241,70 @@ list(
 )
 ```
 
+Run the branches in parallel by setting a `crew` controller (see
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md),
+the “Parallelism and isolation with crew” section, which also covers
+`polyglot_controller(log = tar_polyglot_log(...))` for per-step
+stdout/stderr log files, including a caveat specific to branching there,
+since every branch of a pattern shares one log file).
+
+## Parallel computing (Distributed, not Threads)
+
+Julia’s native `Threads.@threads` multi-threading does **not** work
+through JuliaCall: `Threads.nthreads()` reports `1` from a
+[`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md)
+session regardless of the `JULIA_NUM_THREADS` environment variable,
+confirmed set both to a fixed number and to `"auto"` before
+[`JuliaCall::julia_setup()`](https://rdrr.io/pkg/JuliaCall/man/julia_setup.html)
+runs. This is a limitation of how JuliaCall embeds Julia, not something
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
+or `deployment` can work around.
+
+`Distributed`, Julia’s process-based parallelism, works correctly
+instead, confirmed both in the main session and inside a real `crew`
+worker:
+
+``` julia
+# jl/parallel_sqrt.jl
+using Distributed
+addprocs(n_workers)
+@everywhere sqrt_one(v) = sqrt(v)
+result = pmap(sqrt_one, x)
+```
+
+``` r
+
+tar_target_jl(
+  name = jl_parallel,
+  script = "jl/parallel_sqrt.jl",
+  inputs = c(x = "big_x", n_workers = "n_workers"),
+  pre_script = tar_code({ to_jl <- list(x = x, n_workers = n_workers) }),
+  retrieve = "result"
+)
+```
+
+`addprocs()` spawns genuine separate `julia` processes, so the same
+oversubscription concern from
+[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
+applies: a `crew` worker has access to every core on the machine, not a
+restricted slice of it, so several workers each calling `addprocs()` at
+once can oversubscribe the machine. Put the parallel-heavy step on
+`deployment = "main"` if you have more than one, or cap `n_workers` per
+step, for the same reason described there.
+
 ## Choosing the Julia install and project
+
+The use cases below are about the installation-selection arguments, not
+what each script computes.
 
 ### Use case 1: Julia on PATH (default)
 
 Set nothing; JuliaCall discovers the `julia` on `PATH` and uses the
-global environment.
+global environment. `jl/probe.jl`:
+
+``` julia
+result = Sys.BINDIR
+```
 
 ``` r
 
@@ -176,6 +316,10 @@ tar_target_jl(
 ```
 
 ### Use case 2: a specific juliaup version
+
+Reuses `jl/fit.jl` from “Dynamic branching” above as a stand-in script
+(without `inputs` here, so `df` is undefined, the point of this example
+is `julia_version`, not the computation):
 
 ``` r
 
@@ -198,7 +342,7 @@ globally:
 options(tarpolyglot.julia_home = "C:/Users/me/.julia/juliaup/.../bin")
 ```
 
-or per step:
+or per step, again reusing `jl/fit.jl` as a stand-in:
 
 ``` r
 
@@ -213,7 +357,13 @@ tar_target_jl(
 ### Use case 4: a pinned project (recommended)
 
 For reproducibility, activate a Julia **project** with a committed
-`Manifest.toml`, and `using` the packages the script needs:
+`Manifest.toml`, and `using` the packages the script needs.
+`jl/solve.jl`:
+
+``` julia
+A = [2.0 0.0; 0.0 2.0]
+result = tr(A)
+```
 
 ``` r
 
@@ -239,6 +389,12 @@ wins.
 > [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)).
 
 ## Tracking scripts as dependencies
+
+Reuses `jl/fit.jl` from “Dynamic branching” above as a stand-in script
+(again without `inputs = c(df = ...)`, so `df` is undefined here, the
+point of this example is
+[`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md),
+not the computation):
 
 ``` r
 

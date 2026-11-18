@@ -16,7 +16,13 @@ interpreter that is torn down when the task finishes.
 ## Usage
 
 ``` r
-polyglot_controller(workers = 2L, tasks_max = 1L, seconds_idle = 30, ...)
+polyglot_controller(
+  workers = 2L,
+  tasks_max = 1L,
+  seconds_idle = 30,
+  log = NULL,
+  ...
+)
 ```
 
 ## Arguments
@@ -38,6 +44,14 @@ polyglot_controller(workers = 2L, tasks_max = 1L, seconds_idle = 30, ...)
   Numeric seconds an idle worker waits before shutting down. Default
   `30`.
 
+- log:
+
+  Optional
+  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+  object turning on per-step stdout/stderr log files for Python and
+  Julia steps (see that function; Rust is not covered). Default `NULL`
+  (no logging, the previous behavior).
+
 - ...:
 
   Further arguments passed to
@@ -58,29 +72,40 @@ top of `_targets.R`:
 
 On a system where `crew` cannot build a controller at all, this function
 fails with an explanation instead of passing the underlying error
-through. The case seen in practice is a nanonext installed without TLS
-support: `crew` self-tests nanonext's TLS layer whenever a controller is
-constructed, even though this controller requests no TLS, and that
-self-test reports `"Not supported"`. The remedy is to reinstall nanonext
-on a system where TLS support is available, or to run the pipeline with
-no controller at all, which costs only the per-step interpreter
-isolation described above.
+through. The case seen in practice is a nanonext whose TLS layer is
+unavailable: `crew` self-tests it whenever a controller is constructed,
+even though this controller requests no TLS, and that self-test reports
+`"Not supported"`. It arises where nanonext links a system NNG built
+without TLS support instead of compiling its bundled copy. The remedy is
+to reinstall nanonext on a system where TLS support is available, or to
+run the pipeline with no controller at all, which costs only the
+per-step interpreter isolation described above.
 
 ## See also
 
 [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
-[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md)
+[`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
+[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# _targets.R
-library(targets)
-library(tarpolyglot)
-tar_option_set(controller = polyglot_controller(workers = 4))
-list(
-  tar_target_py(x, "scripts/step.py", retrieve = "result")
-)
-} # }
+# Constructing a controller starts no worker process: targets launches them
+# when the pipeline runs, so this example needs no Python. It goes through
+# try() because a platform whose nanonext has no usable TLS layer cannot
+# build a crew controller at all; see the note above.
+controller <- try(polyglot_controller(workers = 4L), silent = TRUE)
+
+if (!inherits(controller, "try-error")) {
+  inherits(controller, "crew_class_controller")
+
+  # In _targets.R you hand it to targets::tar_option_set(), alongside the
+  # steps that will use it. The option is reset here so the example leaves
+  # no global state behind.
+  targets::tar_option_set(controller = controller)
+  list(
+    tar_target_py(x, "scripts/step.py", retrieve = "result")
+  )
+  targets::tar_option_reset()
+}
 ```

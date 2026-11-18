@@ -102,14 +102,20 @@ runtimes it wraps. The important ones:
     workers** (see below). *(Rust is exempt: each Rust step compiles its
     own library, so different steps can use different crates freely.)*
 
-2.  **Foreign global state is shared within a session.** The Python
-    script runs in `__main__` and the Julia script in `Main`. As such, a
-    step running on `main` will re-initialises the interpreter of
-    previous tarpolyglot steps that were running on main. This results
-    in the variables left behing by previous steps to be visible by
-    later step in the same session. Never rely on it and always pass
-    data explicitly (`inputs` + `to_py`/`to_jl`) and read results back
-    with `retrieve` or a post-script.
+2.  **Foreign global state is shared within a session.** Your Python
+    script runs in Python’s top-level module, `__main__`, and your Julia
+    script in Julia’s, `Main`. Those namespaces belong to the
+    *interpreter*, not to the step, so steps sharing one R session share
+    them too: a later step does not start from a clean slate, it reuses
+    the interpreter an earlier step already bound, variables and all.
+    Beware of three similar-looking names here: Python’s `__main__` and
+    Julia’s `Main` are foreign-language modules, while
+    `deployment = "main"` refers to the main **R** process, and that is
+    where this bites most often, because `targets` runs every
+    `main`-deployed step in that one session. Giving each step its own
+    `crew` worker avoids it (point 3). Either way, never rely on those
+    leftovers: pass data in explicitly (`inputs` + `to_py`/`to_jl`) and
+    read results back with `retrieve` or a post-script.
 
 3.  **Start-up cost vs isolation.** A fresh process re-initialises the
     interpreter (and, on the default ephemeral env, may fetch packages).
@@ -122,7 +128,7 @@ runtimes it wraps. The important ones:
 4.  **Only serialisable R values cross target boundaries.** A step can
     return an R object produced by conversion, or **file paths**
     (`output = "file"`). A live Python/Julia object (an open handle, an
-    in-memory model) cannot be a target value. You can eventually write
+    in-memory model) cannot be a target value. Or you can instead write
     it to disk in one step and load it in the next.
 
 5.  **Reproducibility is on you.** The default ephemeral Python drifts
@@ -130,6 +136,26 @@ runtimes it wraps. The important ones:
     `python`) and, for Julia, a `julia_project` with a committed
     `Manifest.toml`. You should also make sure to use some targets steps
     to keep track of your script files.
+
+6.  **A `crew` worker is a full process, not a slice of one.** It is not
+    restricted to a single CPU core the way a lightweight thread might
+    be, it sees every core the machine has, exactly like the main
+    session. This matters when a step itself does internal multi-core
+    work (RcppParallel, Python’s `multiprocessing`, Julia’s
+    `Distributed`): running several such steps at once on separate
+    workers means each one may try to claim every core, so `N`
+    concurrent workers each spawning a full-width thread or process pool
+    can genuinely oversubscribe the machine, degrading performance or,
+    on a machine with few cores, exhausting it. `deployment = "main"` on
+    the specific step that does the internal parallel work is the fix:
+    `targets` only ever builds one `main`-deployed target at a time, so
+    those steps never compound with each other, while ordinary
+    worker-deployed steps keep running alongside them. See
+    [`vignette("cpp")`](https://pierre9344.github.io/tarpolyglot/articles/cpp.md),
+    [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md),
+    and
+    [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md)
+    for the working pattern in each language.
 
 ## A worked pipeline (Python + iris)
 
@@ -401,6 +427,69 @@ list(
 )
 ```
 
+**Per-step log files.**
+[`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
+accepts a `log` argument (built with
+[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md))
+that writes one stdout/stderr file per Python or Julia step, named after
+the target:
+
+``` r
+
+tar_option_set(
+  controller = polyglot_controller(
+    workers = 2L,
+    log = tar_polyglot_log(stdout = "logs/out", stderr = "logs/err")
+  )
+)
+```
+
+The `km` step above would then get `logs/out/km.out` /
+`logs/err/km.err`, starting with a header (the step name,
+[`date()`](https://rdrr.io/r/base/date.html), the resolved interpreter’s
+version and path, and whether an explicit environment was used) followed
+by whatever the script itself printed. By default (`append = FALSE`) a
+step’s log is truncated at the start of its run, so it only ever holds
+the latest attempt; set `append = TRUE` to accumulate history instead,
+with new content separated from old by two blank lines – this also means
+that if `crew` silently retries a step after a worker crash, both
+attempts show up in the same file, which can be useful for debugging.
+
+[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+covers Python and Julia only, not Rust: `rextendr`-compiled code writes
+straight to the OS file descriptor, bypassing the redirection
+reticulate/JuliaCall provide for their embedded interpreters – and Rust
+doesn’t pay a per-branch interpreter start-up cost the way Python/Julia
+do to begin with, so there is less need for a per-step Rust log (see
+[`tarpolyglot_map()`](https://pierre9344.github.io/tarpolyglot/reference/tarpolyglot_map.md)
+in
+[`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)
+for how a Rust step’s compiled library is instead built once and reused
+across branches). Use `crew`’s own `options_local(log_directory = ...)`
+for Rust step output; it also works for Python/Julia when `log` is left
+unset, since tarpolyglot never spawns a subprocess for them –
+reticulate/JuliaCall’s output shares the worker process’s own
+stdout/stderr, so `crew`’s process-level capture sees it too. Setting
+*both* is fine, and the two are complementary rather than redundant:
+`options_local(log_directory = ...)` also captures ordinary R-level
+output (pre/post-script messages, warnings) that
+[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+does not touch, while
+[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)’s
+file is named after the step rather than a `crew`-generated worker name.
+They do **split** the foreign output between the two files rather than
+duplicate it, though: while a step’s script body is running,
+[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+diverts the foreign print output specifically into its own file, so for
+that window it will not also appear in `crew`’s log.
+
+One caveat under **dynamic branching**: every branch of a pattern target
+shares the *same* target name, so with `append = FALSE` (the default)
+each branch’s log write truncates whatever the previous branch wrote –
+only the last-finishing branch’s log survives. Set `append = TRUE` if
+you need every branch’s output; they land in one file, interleaved by
+finish order, not split into one file per branch.
+
 See
 [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md),
 [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md),
@@ -408,7 +497,9 @@ and
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)
 for the full per-language reference, and
 [`?polyglot_controller`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
-for the controller options.
+/
+[`?tar_polyglot_log`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+for the controller and logging options.
 
 ## Pre- and post-scripts: moving variables in and out
 

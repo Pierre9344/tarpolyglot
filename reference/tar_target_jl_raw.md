@@ -26,7 +26,7 @@ tar_target_jl_raw(
   retrieve = NULL,
   files = NULL,
   julia_version = NULL,
-  julia_home = getOption("tarpolyglot.julia_home"),
+  julia_home = NULL,
   julia_project = NULL,
   julia_packages = NULL,
   pattern = NULL,
@@ -58,21 +58,22 @@ tar_target_jl_raw(
 
 - script:
 
-  Path to the Julia script to run (required). Either a literal string
-  (an untracked path: editing the file does not invalidate the target)
-  or a
+  Path to the Julia script to run (required). Accepts a literal path, a
   [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-  reference to an upstream target (typically `format = "file"`), which
-  makes this step re-run whenever that file changes.
+  reference, or inline code from
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md);
+  see the "Script options" section below.
 
 - pre_script:
 
   Optional path to an R script run before the Julia script. See
   [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md);
   assign a named list `to_jl` to hand objects to Julia. Accepts a
-  literal string or a
+  literal path, a
   [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-  reference, as for `script`.
+  reference, or inline code from
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md);
+  see the "Script options" section below.
 
 - post_script:
 
@@ -80,9 +81,11 @@ tar_target_jl_raw(
   [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md);
   helpers `jl_get()` and `jl_call()` are available, and its last
   expression (object mode) or returned paths (file mode) become the
-  value. Accepts a literal string or a
+  value. Accepts a literal path, a
   [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
-  reference, as for `script`.
+  reference, or inline code from
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md);
+  see the "Script options" section below.
 
 - inputs:
 
@@ -122,11 +125,15 @@ tar_target_jl_raw(
 
   Julia environment selection, forwarded to
   [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md).
-  `julia_home` is the directory containing the julia executable
-  (defaults to `getOption("tarpolyglot.julia_home")`; when unset and no
-  `julia_version`, JuliaCall discovers Julia on `PATH`). `julia_project`
-  is a Julia project environment to `Pkg.activate()`. `julia_packages`
-  is a character vector of packages to `using` before the script.
+  `julia_home` is the directory containing the julia executable. Default
+  `NULL` falls back to `getOption("tarpolyglot.julia_home")` **when the
+  step runs**, not when the target is built, so the option's
+  machine-specific value never enters the target's command (see
+  [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md));
+  when the option is unset too and no `julia_version` is given,
+  JuliaCall discovers Julia on `PATH`. `julia_project` is a Julia
+  project environment to `Pkg.activate()`. `julia_packages` is a
+  character vector of packages to `using` before the script.
 
 - pattern:
 
@@ -178,6 +185,47 @@ storage `format`, `deployment`, `resources`, `cue`, etc. all work as
 usual. Upstream targets are wired in through `inputs`, which become
 dependencies (and are sliced under dynamic branching).
 
+## Script options
+
+Every script argument (`script`, and `pre_script` / `post_script` where
+the constructor has them) accepts the same three forms. The choice is
+not cosmetic: it decides whether editing the code re-runs the target.
+
+- A literal path string:
+
+  e.g. `script = "py/step.py"`. The file is read when the step runs, but
+  it is **not** tracked, so editing it does **not** invalidate the
+  target: `targets` will happily reuse a stale result until some *other*
+  dependency changes. Simplest form, and a reasonable default once a
+  script has settled.
+
+- A
+  [`tar_target_path()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_path.md)
+  reference:
+
+  e.g. `script = tar_target_path("step_py")`, naming an upstream
+  `tar_target(step_py, "py/step.py", format = "file")`. The file becomes
+  a real `targets` dependency, so editing it **does** invalidate this
+  target and the step re-runs. This is what you want while a script is
+  still changing, and the recommended form for reproducible pipelines.
+
+- Inline code via
+  [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md):
+
+  e.g. `script = tar_code("result = sum(x)")`. The code lives in
+  `_targets.R` rather than in a file, and is embedded in the target's
+  command, so `targets` hashes it and editing it **does** invalidate the
+  target. A character string carries foreign source (Python, Julia,
+  Rust, C++) or R source; an R `{ ... }` block carries inline R and is
+  accepted only by `pre_script` / `post_script`, never by the foreign
+  `script`.
+
+Mixing forms in one call is fine: a tracked `script` with a literal
+`post_script`, inline code for one and a file for another, and so on.
+See
+[`vignette("scripts")`](https://pierre9344.github.io/tarpolyglot/articles/scripts.md)
+for worked examples of all three and guidance on choosing.
+
 ## See also
 
 [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
@@ -187,7 +235,11 @@ dependencies (and are sliced under dynamic branching).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# Building a target does not run it, so these examples need no Julia.
+# scripts/sum.jl (uses the `using Statistics` julia_packages requests):
+#   result = mean(x)
+# scripts/post.R:
+#   jl_get("result")
 tarpolyglot::tar_target_jl_raw(
   name = "jl_sum",
   script = "scripts/sum.jl",
@@ -195,5 +247,328 @@ tarpolyglot::tar_target_jl_raw(
   post_script = "scripts/post.R",
   julia_packages = "Statistics"
 )
-} # }
+#> <tar_stem> 
+#>   name: jl_sum 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_jl_step(script = "scripts/sum.jl", 
+#>         pre_script = NULL, post_script = "scripts/post.R", inputs = list(x = prepared_x), 
+#>         output = "object", retrieve = NULL, files = NULL, julia_version = NULL, 
+#>         julia_home = NULL, julia_project = NULL, julia_packages = "Statistics", 
+#>         name = "jl_sum") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+
+# The three ways to supply a script (see the "Script options" section):
+# 1. Literal path: untracked, editing the file does NOT re-run the step.
+tarpolyglot::tar_target_jl_raw(
+  name = "demo_literal", script = "jl/step.jl", retrieve = "result"
+)
+#> <tar_stem> 
+#>   name: demo_literal 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_jl_step(script = "jl/step.jl", pre_script = NULL, 
+#>         post_script = NULL, inputs = list(), output = "object", retrieve = "result", 
+#>         files = NULL, julia_version = NULL, julia_home = NULL, julia_project = NULL, 
+#>         julia_packages = NULL, name = "demo_literal") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+
+# 2. tar_target_path(): tracked, editing the file DOES re-run the step.
+list(
+  targets::tar_target(step_jl, "jl/step.jl", format = "file"),
+  tarpolyglot::tar_target_jl_raw(
+    name = "demo_tracked",
+    script = tarpolyglot::tar_target_path("step_jl"),
+    retrieve = "result"
+  )
+)
+#> [[1]]
+#> <tar_stem> 
+#>   name: step_jl 
+#>   description:  
+#>   command:
+#>     "jl/step.jl" 
+#>   format: file 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_stem> 
+#>   name: demo_tracked 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_jl_step(script = step_jl, pre_script = NULL, 
+#>         post_script = NULL, inputs = list(), output = "object", retrieve = "result", 
+#>         files = NULL, julia_version = NULL, julia_home = NULL, julia_project = NULL, 
+#>         julia_packages = NULL, name = "demo_tracked") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+
+# 3. tar_code(): inline, editing the code DOES re-run the step. A string
+#    carries foreign source; an R { } block carries inline R.
+tarpolyglot::tar_target_jl_raw(
+  name = "demo_inline",
+  script = tarpolyglot::tar_code("result = 1 + 1"),
+  post_script = tarpolyglot::tar_code({ jl_get("result") })
+)
+#> <tar_stem> 
+#>   name: demo_inline 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_jl_step(script = structure(list(code = "result = 1 + 1"), 
+#>         class = c("tp_inline", "tp_source")), pre_script = NULL, 
+#>         post_script = structure(list(code = quote({
+#>             jl_get("result")
+#>         })), class = c("tp_inline", "tp_expr")), inputs = list(), 
+#>         output = "object", retrieve = NULL, files = NULL, julia_version = NULL, 
+#>         julia_home = NULL, julia_project = NULL, julia_packages = NULL, 
+#>         name = "demo_inline") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+
+# Tracking a helper file the script includes. Point `inputs` at a
+# format = "file" target so editing the helper also re-runs the step;
+# `inputs` takes the *target* name, not the path. Julia resolves a
+# relative include() against the including file's own directory, so make
+# the path absolute. jl/step.jl is then:
+#   include(helper_path)
+#   result = sum(myscale(x))
+list(
+  targets::tar_target(helper_file, "jl/helper.jl", format = "file"),
+  tarpolyglot::tar_target_jl_raw(
+    name = "demo_helper",
+    script = "jl/step.jl",
+    inputs = c(x = "prepared_x", helper_path = "helper_file"),
+    pre_script = tarpolyglot::tar_code({
+      to_jl <- list(x = x, helper_path = normalizePath(helper_path, winslash = "/"))
+    }),
+    retrieve = "result"
+  )
+)
+#> [[1]]
+#> <tar_stem> 
+#>   name: helper_file 
+#>   description:  
+#>   command:
+#>     "jl/helper.jl" 
+#>   format: file 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
+#> [[2]]
+#> <tar_stem> 
+#>   name: demo_helper 
+#>   description:  
+#>   command:
+#>     tarpolyglot::run_jl_step(script = "jl/step.jl", pre_script = structure(list(code = quote({
+#>         to_jl <- list(x = x, helper_path = normalizePath(helper_path, 
+#>             winslash = "/"))
+#>     })), class = c("tp_inline", "tp_expr")), post_script = NULL, 
+#>         inputs = list(x = prepared_x, helper_path = helper_file), 
+#>         output = "object", retrieve = "result", files = NULL, julia_version = NULL, 
+#>         julia_home = NULL, julia_project = NULL, julia_packages = NULL, 
+#>         name = "demo_helper") 
+#>   format: rds 
+#>   repository: local 
+#>   iteration method: vector 
+#>   error mode: stop 
+#>   memory mode: auto 
+#>   storage mode: worker 
+#>   retrieval mode: auto 
+#>   deployment mode: worker 
+#>   priority: 0 
+#>   resources:
+#>     list() 
+#>   cue:
+#>     seed: TRUE
+#>     file: TRUE
+#>     iteration: TRUE
+#>     repository: TRUE
+#>     format: TRUE
+#>     depend: TRUE
+#>     command: TRUE
+#>     mode: thorough 
+#>   packages:
+#>     tarpolyglot
+#>     stats
+#>     graphics
+#>     grDevices
+#>     utils
+#>     datasets
+#>     methods
+#>     base 
+#>   library:
+#>     NULL
 ```

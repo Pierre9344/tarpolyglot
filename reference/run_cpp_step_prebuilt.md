@@ -24,7 +24,6 @@ run_cpp_step_prebuilt(
   post_script = NULL,
   inputs = list(),
   output = "object",
-  files = NULL,
   name = NULL
 )
 ```
@@ -61,11 +60,6 @@ run_cpp_step_prebuilt(
   Output mode: `"object"` (default) returns a converted R object,
   `"file"` returns a character vector of file paths (and defaults
   `format` to `"file"`).
-
-- files:
-
-  Optional character vector of file paths to return when no
-  `post_script` is supplied in file mode.
 
 - name:
 
