@@ -13,6 +13,7 @@
 ^\.future$
 ^\.git$
 ^\.github$
+^\.gitea$
 ^\.gitignore$
 ^\.httr-oauth$
 ^\.lintr$

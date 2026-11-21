@@ -21,20 +21,26 @@ skip_if_not_installed("targets")
 
 targets::tar_test("a one-step Python pipeline builds and returns its value", {
   skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_available(initialize = TRUE), "no Python available")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tar_target(prepared_x, c(1, 2, 3, 4)),',
-    '  tarpolyglot::tar_target_py(',
-    '    name = py_total,',
-    '    inputs = c(x = "prepared_x"),',
-    '    pre_script = tarpolyglot::tar_code({ to_py <- list(x = x) }),',
-    '    script = tarpolyglot::tar_code("result = float(sum(x))"),',
-    '    retrieve = "result"',
-    '  )',
-    ')'
-  ), "_targets.R")
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE),
+    "no Python available"
+  )
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tar_target(prepared_x, c(1, 2, 3, 4)),',
+      '  tarpolyglot::tar_target_py(',
+      '    name = py_total,',
+      '    inputs = c(x = "prepared_x"),',
+      '    pre_script = tarpolyglot::tar_code({ to_py <- list(x = x) }),',
+      '    script = tarpolyglot::tar_code("result = float(sum(x))"),',
+      '    retrieve = "result"',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
   expect_equal(targets::tar_read(py_total), 10)
 })
@@ -43,46 +49,55 @@ targets::tar_test("a one-step Julia pipeline builds and returns its value", {
   skip_if_not_installed("JuliaCall")
   # Same guard as test-integration-julia.R: julia may be reachable through
   # juliaup or JULIA_HOME without being on PATH, so ask JuliaCall directly.
-  julia_ok <- tryCatch({
-    JuliaCall::julia_setup(installJulia = FALSE, verbose = FALSE)
-    TRUE
-  }, error = function(e) FALSE)
+  julia_ok <- tryCatch(
+    {
+      JuliaCall::julia_setup(installJulia = FALSE, verbose = FALSE)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
   skip_if_not(julia_ok, "no Julia available")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tar_target(prepared_x, c(1, 2, 3, 4)),',
-    '  tarpolyglot::tar_target_jl(',
-    '    name = jl_total,',
-    '    inputs = c(x = "prepared_x"),',
-    '    pre_script = tarpolyglot::tar_code({ to_jl <- list(x = x) }),',
-    '    script = tarpolyglot::tar_code("result = sum(x)"),',
-    '    retrieve = "result"',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tar_target(prepared_x, c(1, 2, 3, 4)),',
+      '  tarpolyglot::tar_target_jl(',
+      '    name = jl_total,',
+      '    inputs = c(x = "prepared_x"),',
+      '    pre_script = tarpolyglot::tar_code({ to_jl <- list(x = x) }),',
+      '    script = tarpolyglot::tar_code("result = sum(x)"),',
+      '    retrieve = "result"',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
   expect_equal(targets::tar_read(jl_total), 10)
 })
 
 targets::tar_test("a one-step C++ pipeline builds and returns its value", {
   skip_if_not_installed("Rcpp")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tar_target(prepared_x, c(1, 2, 3, 4)),',
-    '  tarpolyglot::tar_target_cpp(',
-    '    name = cpp_total,',
-    '    inputs = c(x = "prepared_x"),',
-    '    script = tarpolyglot::tar_code(paste(',
-    '      "#include <Rcpp.h>",',
-    '      "// [[Rcpp::export]]",',
-    '      "double total(Rcpp::NumericVector v) { return Rcpp::sum(v); }",',
-    '      sep = "\\n")),',
-    '    post_script = tarpolyglot::tar_code({ total(x) })',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tar_target(prepared_x, c(1, 2, 3, 4)),',
+      '  tarpolyglot::tar_target_cpp(',
+      '    name = cpp_total,',
+      '    inputs = c(x = "prepared_x"),',
+      '    script = tarpolyglot::tar_code(paste(',
+      '      "#include <Rcpp.h>",',
+      '      "// [[Rcpp::export]]",',
+      '      "double total(Rcpp::NumericVector v) { return Rcpp::sum(v); }",',
+      '      sep = "\\n")),',
+      '    post_script = tarpolyglot::tar_code({ total(x) })',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
   expect_equal(targets::tar_read(cpp_total), 10)
 })
@@ -92,22 +107,29 @@ targets::tar_test("a one-step Rust pipeline builds and returns its value", {
   # Same guard as test-integration-rust.R: cargo is often installed under
   # ~/.cargo/bin without being on PATH; run_rs_step() puts it there itself.
   cargo_ok <- nzchar(Sys.which("cargo")) ||
-    file.exists(file.path(Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
-      ".cargo", "bin", "cargo.exe"))
+    file.exists(file.path(
+      Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
+      ".cargo",
+      "bin",
+      "cargo.exe"
+    ))
   skip_if_not(cargo_ok, "cargo not available")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tar_target(prepared_x, 21),',
-    '  tarpolyglot::tar_target_rs(',
-    '    name = rs_doubled,',
-    '    inputs = c(x = "prepared_x"),',
-    '    script = tarpolyglot::tar_code(',
-    '      "#[extendr] fn double_it(v: f64) -> f64 { 2.0 * v }"),',
-    '    post_script = tarpolyglot::tar_code({ double_it(x) })',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tar_target(prepared_x, 21),',
+      '  tarpolyglot::tar_target_rs(',
+      '    name = rs_doubled,',
+      '    inputs = c(x = "prepared_x"),',
+      '    script = tarpolyglot::tar_code(',
+      '      "#[extendr] fn double_it(v: f64) -> f64 { 2.0 * v }"),',
+      '    post_script = tarpolyglot::tar_code({ double_it(x) })',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
   expect_equal(targets::tar_read(rs_doubled), 42)
 })
@@ -120,24 +142,27 @@ targets::tar_test("a one-step Rust pipeline builds and returns its value", {
 
 targets::tar_test("a branching C++ pipeline compiles once and reuses the library", {
   skip_if_not_installed("Rcpp")
-  writeLines(c(
-    'library(targets)',
-    'library(tarpolyglot)',
-    'list(',
-    '  tar_target(vals, c(1, 2, 3)),',
-    '  tar_target_cpp(',
-    '    name = squared,',
-    '    inputs = c(x = "vals"),',
-    '    pattern = tarpolyglot_map(vals),',
-    '    script = tar_code(paste(',
-    '      "#include <Rcpp.h>",',
-    '      "// [[Rcpp::export]]",',
-    '      "double sq(double v) { return v * v; }",',
-    '      sep = "\\n")),',
-    '    post_script = tar_code({ sq(x) })',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      'library(targets)',
+      'library(tarpolyglot)',
+      'list(',
+      '  tar_target(vals, c(1, 2, 3)),',
+      '  tar_target_cpp(',
+      '    name = squared,',
+      '    inputs = c(x = "vals"),',
+      '    pattern = tarpolyglot_map(vals),',
+      '    script = tar_code(paste(',
+      '      "#include <Rcpp.h>",',
+      '      "// [[Rcpp::export]]",',
+      '      "double sq(double v) { return v * v; }",',
+      '      sep = "\\n")),',
+      '    post_script = tar_code({ sq(x) })',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
 
   expect_equal(as.numeric(targets::tar_read(squared)), c(1, 4, 9))
@@ -151,23 +176,30 @@ targets::tar_test("a branching C++ pipeline compiles once and reuses the library
 targets::tar_test("a branching Rust pipeline compiles once and reuses the library", {
   skip_if_not_installed("rextendr")
   cargo_ok <- nzchar(Sys.which("cargo")) ||
-    file.exists(file.path(Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
-      ".cargo", "bin", "cargo.exe"))
+    file.exists(file.path(
+      Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
+      ".cargo",
+      "bin",
+      "cargo.exe"
+    ))
   skip_if_not(cargo_ok, "cargo not available")
-  writeLines(c(
-    'library(targets)',
-    'library(tarpolyglot)',
-    'list(',
-    '  tar_target(vals, c(1, 2, 3)),',
-    '  tar_target_rs(',
-    '    name = squared,',
-    '    inputs = c(x = "vals"),',
-    '    pattern = tarpolyglot_map(vals),',
-    '    script = tar_code("#[extendr] fn sq(v: f64) -> f64 { v * v }"),',
-    '    post_script = tar_code({ sq(x) })',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      'library(targets)',
+      'library(tarpolyglot)',
+      'list(',
+      '  tar_target(vals, c(1, 2, 3)),',
+      '  tar_target_rs(',
+      '    name = squared,',
+      '    inputs = c(x = "vals"),',
+      '    pattern = tarpolyglot_map(vals),',
+      '    script = tar_code("#[extendr] fn sq(v: f64) -> f64 { v * v }"),',
+      '    post_script = tar_code({ sq(x) })',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
 
   expect_equal(as.numeric(targets::tar_read(squared)), c(1, 4, 9))
@@ -179,21 +211,27 @@ targets::tar_test("a branching Rust pipeline compiles once and reuses the librar
 
 targets::tar_test("a file-output step records the written file as the target value", {
   skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_available(initialize = TRUE), "no Python available")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tarpolyglot::tar_target_py(',
-    '    name = written,',
-    '    output = "file",',
-    '    script = tarpolyglot::tar_code(paste(',
-    '      "out_path = \'out.txt\'",',
-    '      "open(out_path, \'w\').write(\'hello\')",',
-    '      sep = "\\n")),',
-    '    post_script = tarpolyglot::tar_code({ py_get("out_path") })',
-    '  )',
-    ')'
-  ), "_targets.R")
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE),
+    "no Python available"
+  )
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tarpolyglot::tar_target_py(',
+      '    name = written,',
+      '    output = "file",',
+      '    script = tarpolyglot::tar_code(paste(',
+      '      "out_path = \'out.txt\'",',
+      '      "open(out_path, \'w\').write(\'hello\')",',
+      '      sep = "\\n")),',
+      '    post_script = tarpolyglot::tar_code({ py_get("out_path") })',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
   targets::tar_make(reporter = "silent")
 
   path <- targets::tar_read(written)
@@ -203,24 +241,30 @@ targets::tar_test("a file-output step records the written file as the target val
 
 targets::tar_test("editing a tar_target_path()-tracked script re-runs the step", {
   skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_available(initialize = TRUE), "no Python available")
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE),
+    "no Python available"
+  )
 
   dir.create("py")
   writeLines("result = float(2 * x)", "py/step.py")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tar_target(prepared_x, 5),',
-    '  tar_target(step_py, "py/step.py", format = "file"),',
-    '  tarpolyglot::tar_target_py(',
-    '    name = py_val,',
-    '    script = tarpolyglot::tar_target_path("step_py"),',
-    '    inputs = c(x = "prepared_x"),',
-    '    pre_script = tarpolyglot::tar_code({ to_py <- list(x = x) }),',
-    '    retrieve = "result"',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tar_target(prepared_x, 5),',
+      '  tar_target(step_py, "py/step.py", format = "file"),',
+      '  tarpolyglot::tar_target_py(',
+      '    name = py_val,',
+      '    script = tarpolyglot::tar_target_path("step_py"),',
+      '    inputs = c(x = "prepared_x"),',
+      '    pre_script = tarpolyglot::tar_code({ to_py <- list(x = x) }),',
+      '    retrieve = "result"',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
 
   targets::tar_make(reporter = "silent")
   expect_equal(targets::tar_read(py_val), 10)
@@ -236,32 +280,41 @@ targets::tar_test("editing a tar_target_path()-tracked script re-runs the step",
 
 targets::tar_test("a helper file wired in through inputs invalidates the step", {
   skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_available(initialize = TRUE), "no Python available")
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE),
+    "no Python available"
+  )
 
   dir.create("py")
   writeLines("def scale(v):\n    return 2 * v", "py/helper.py")
-  writeLines(c(
-    "import os, sys",
-    "sys.path.insert(0, os.path.dirname(helper_path))",
-    "import helper",
-    "result = float(helper.scale(x))"
-  ), "py/step.py")
-  writeLines(c(
-    'library(targets)',
-    'list(',
-    '  tar_target(prepared_x, 5),',
-    '  tar_target(helper_file, "py/helper.py", format = "file"),',
-    '  tarpolyglot::tar_target_py(',
-    '    name = py_val,',
-    '    script = "py/step.py",',
-    '    inputs = c(x = "prepared_x", helper_path = "helper_file"),',
-    '    pre_script = tarpolyglot::tar_code({',
-    '      to_py <- list(x = x, helper_path = helper_path)',
-    '    }),',
-    '    retrieve = "result"',
-    '  )',
-    ')'
-  ), "_targets.R")
+  writeLines(
+    c(
+      "import os, sys",
+      "sys.path.insert(0, os.path.dirname(helper_path))",
+      "import helper",
+      "result = float(helper.scale(x))"
+    ),
+    "py/step.py"
+  )
+  writeLines(
+    c(
+      'library(targets)',
+      'list(',
+      '  tar_target(prepared_x, 5),',
+      '  tar_target(helper_file, "py/helper.py", format = "file"),',
+      '  tarpolyglot::tar_target_py(',
+      '    name = py_val,',
+      '    script = "py/step.py",',
+      '    inputs = c(x = "prepared_x", helper_path = "helper_file"),',
+      '    pre_script = tarpolyglot::tar_code({',
+      '      to_py <- list(x = x, helper_path = helper_path)',
+      '    }),',
+      '    retrieve = "result"',
+      '  )',
+      ')'
+    ),
+    "_targets.R"
+  )
 
   targets::tar_make(reporter = "silent")
   expect_equal(targets::tar_read(py_val), 10)

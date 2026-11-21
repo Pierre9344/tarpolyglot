@@ -59,7 +59,10 @@ test_that("tar_target_path validates and marks a target-name string", {
 })
 
 test_that(".tp_script_expr turns a tar_target_path() into a bare symbol", {
-  expect_identical(.tp_script_expr(tar_target_path("up_script")), as.name("up_script"))
+  expect_identical(
+    .tp_script_expr(tar_target_path("up_script")),
+    as.name("up_script")
+  )
   # anything else (literal string, NULL) passes through unchanged
   expect_identical(.tp_script_expr("literal/path.py"), "literal/path.py")
   expect_null(.tp_script_expr(NULL))
@@ -67,7 +70,11 @@ test_that(".tp_script_expr turns a tar_target_path() into a bare symbol", {
 
 test_that(".tp_assert_script accepts a tar_target_path() reference with nothing to check yet", {
   expect_true(.tp_assert_script(tar_target_path("up_script"), "script"))
-  expect_true(.tp_assert_script(tar_target_path("up_script"), "script", must_exist = TRUE))
+  expect_true(.tp_assert_script(
+    tar_target_path("up_script"),
+    "script",
+    must_exist = TRUE
+  ))
 })
 
 # ---- inline code: tar_code() / .tp_dedent() / carriers -------------------------
@@ -99,7 +106,9 @@ test_that(".tp_dedent: mixed tabs/spaces shorten (do not expand) the common pref
 })
 
 test_that("tar_code() captures a { } block as an R expression carrier", {
-  m <- tar_code({ to_py <- list(x = x) })
+  m <- tar_code({
+    to_py <- list(x = x)
+  })
   expect_s3_class(m, "tp_inline")
   expect_s3_class(m, "tp_expr")
   # A captured { } block is a call, whose typeof() is "language".
@@ -117,11 +126,13 @@ test_that("tar_code() captures a string literal as a (dedented) source carrier",
   expect_s3_class(m, "tp_source")
   expect_identical(m$code, "result = float(sum(x))")
 
-  multi <- tar_code("
+  multi <- tar_code(
+    "
     total = 0
     for i in range(len(x)):
         total += x[i]
-  ")
+  "
+  )
   expect_s3_class(multi, "tp_source")
   expect_identical(
     multi$code,
@@ -143,25 +154,45 @@ test_that(".tp_script_expr splices inline carriers as self-contained structure()
   es <- .tp_script_expr(.tp_inline_source("result = 1"))
   expect_identical(
     es,
-    quote(structure(list(code = "result = 1"), class = c("tp_inline", "tp_source")))
+    quote(structure(
+      list(code = "result = 1"),
+      class = c("tp_inline", "tp_source")
+    ))
   )
   # rebuilding it yields the same classed carrier (what happens at run time)
   obj <- eval(es)
   expect_s3_class(obj, "tp_source")
   expect_identical(obj$code, "result = 1")
 
-  ee <- .tp_script_expr(.tp_inline_expr(quote({ a <- 1 })))
+  ee <- .tp_script_expr(.tp_inline_expr(quote({
+    a <- 1
+  })))
   expect_identical(
     ee,
-    quote(structure(list(code = quote({ a <- 1 })), class = c("tp_inline", "tp_expr")))
+    quote(structure(
+      list(
+        code = quote({
+          a <- 1
+        })
+      ),
+      class = c("tp_inline", "tp_expr")
+    ))
   )
   expect_s3_class(eval(ee), "tp_expr")
 })
 
 test_that(".tp_assert_script accepts inline markers with nothing on disk to check", {
   expect_true(.tp_assert_script(.tp_inline_source("x = 1"), "script"))
-  expect_true(.tp_assert_script(.tp_inline_source("x = 1"), "script", must_exist = TRUE))
-  expect_true(.tp_assert_script(.tp_inline_expr(quote(x <- 1)), "pre_script", must_exist = TRUE))
+  expect_true(.tp_assert_script(
+    .tp_inline_source("x = 1"),
+    "script",
+    must_exist = TRUE
+  ))
+  expect_true(.tp_assert_script(
+    .tp_inline_expr(quote(x <- 1)),
+    "pre_script",
+    must_exist = TRUE
+  ))
 })
 
 test_that(".tp_eval_script evaluates inline R (expr and source) in the environment", {

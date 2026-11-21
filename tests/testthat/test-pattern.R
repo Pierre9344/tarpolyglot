@@ -9,8 +9,14 @@ rs_file <- function() {
 }
 cpp_file <- function() {
   f <- withr::local_tempfile(fileext = ".cpp", .local_envir = parent.frame())
-  writeLines(c("#include <Rcpp.h>", "// [[Rcpp::export]]",
-    "double square(double x) { return x * x; }"), f)
+  writeLines(
+    c(
+      "#include <Rcpp.h>",
+      "// [[Rcpp::export]]",
+      "double square(double x) { return x * x; }"
+    ),
+    f
+  )
   f
 }
 cmd_txt <- function(target) paste(deparse(target$command$expr), collapse = " ")
@@ -44,9 +50,14 @@ test_that("tarpolyglot_map() errors if called directly", {
 })
 
 test_that("every helper rewrites to its targets equivalent and flags compile_once", {
-  mapping <- c(tarpolyglot_map = "map", tarpolyglot_cross = "cross",
-    tarpolyglot_slice = "slice", tarpolyglot_head = "head",
-    tarpolyglot_tail = "tail", tarpolyglot_sample = "sample")
+  mapping <- c(
+    tarpolyglot_map = "map",
+    tarpolyglot_cross = "cross",
+    tarpolyglot_slice = "slice",
+    tarpolyglot_head = "head",
+    tarpolyglot_tail = "tail",
+    tarpolyglot_sample = "sample"
+  )
   for (nm in names(mapping)) {
     call_in <- as.call(list(as.name(nm), quote(x)))
     call_out <- as.call(list(as.name(mapping[[nm]]), quote(x)))
@@ -57,12 +68,18 @@ test_that("every helper rewrites to its targets equivalent and flags compile_onc
 })
 
 test_that("helper arguments (n / index) pass through the rewrite unchanged", {
-  expect_identical(.tp_pattern(quote(tarpolyglot_head(x, n = 2)))$pattern,
-    quote(head(x, n = 2)))
-  expect_identical(.tp_pattern(quote(tarpolyglot_slice(x, index = c(1, 3))))$pattern,
-    quote(slice(x, index = c(1, 3))))
-  expect_identical(.tp_pattern(quote(tarpolyglot_cross(a, b)))$pattern,
-    quote(cross(a, b)))
+  expect_identical(
+    .tp_pattern(quote(tarpolyglot_head(x, n = 2)))$pattern,
+    quote(head(x, n = 2))
+  )
+  expect_identical(
+    .tp_pattern(quote(tarpolyglot_slice(x, index = c(1, 3))))$pattern,
+    quote(slice(x, index = c(1, 3)))
+  )
+  expect_identical(
+    .tp_pattern(quote(tarpolyglot_cross(a, b)))$pattern,
+    quote(cross(a, b))
+  )
 })
 
 test_that("each helper errors if called directly", {
@@ -92,14 +109,23 @@ test_that("on Python, every helper reverts to the identical plain targets patter
   py <- withr::local_tempfile(fileext = ".py")
   writeLines("result = float(x)", py)
   build <- function(pat) {
-    tar_target_py_raw("t", py, inputs = c(x = "a"), retrieve = "result",
-      pattern = pat)$settings$pattern
+    tar_target_py_raw(
+      "t",
+      py,
+      inputs = c(x = "a"),
+      retrieve = "result",
+      pattern = pat
+    )$settings$pattern
   }
   for (k in names(.plain_calls)) {
     plain <- .plain_calls[[k]]
     got <- build(.tp_call(plain))
-    expect_identical(got, build(plain), info = k)          # same target
-    expect_no_match(paste(deparse(got), collapse = " "), "tarpolyglot_", info = k)
+    expect_identical(got, build(plain), info = k) # same target
+    expect_no_match(
+      paste(deparse(got), collapse = " "),
+      "tarpolyglot_",
+      info = k
+    )
   }
 })
 
@@ -107,45 +133,72 @@ test_that("on Julia, every helper reverts to the identical plain targets pattern
   jl <- withr::local_tempfile(fileext = ".jl")
   writeLines("result = float(x)", jl)
   build <- function(pat) {
-    tar_target_jl_raw("t", jl, inputs = c(x = "a"), retrieve = "result",
-      pattern = pat)$settings$pattern
+    tar_target_jl_raw(
+      "t",
+      jl,
+      inputs = c(x = "a"),
+      retrieve = "result",
+      pattern = pat
+    )$settings$pattern
   }
   for (k in names(.plain_calls)) {
     plain <- .plain_calls[[k]]
     got <- build(.tp_call(plain))
     expect_identical(got, build(plain), info = k)
-    expect_no_match(paste(deparse(got), collapse = " "), "tarpolyglot_", info = k)
+    expect_no_match(
+      paste(deparse(got), collapse = " "),
+      "tarpolyglot_",
+      info = k
+    )
   }
 })
 
 test_that("on Rust, every helper expands to a compile target + a branch with the plain pattern", {
   for (k in names(.plain_calls)) {
     plain <- .plain_calls[[k]]
-    out <- tar_target_rs_raw("rs_h", rs_file(), inputs = c(x = "a"),
-      post_script = "post.R", pattern = .tp_call(plain))
+    out <- tar_target_rs_raw(
+      "rs_h",
+      rs_file(),
+      inputs = c(x = "a"),
+      post_script = "post.R",
+      pattern = .tp_call(plain)
+    )
     expect_type(out, "list")
     nms <- vapply(out, function(t) t$settings$name, character(1))
     expect_setequal(nms, c("rs_h_rust_lib", "rs_h"))
     br <- out[[which(nms == "rs_h")]]
     # targets stores the pattern wrapped as expression(<pattern>); unwrap to compare.
-    expect_identical(br$settings$pattern[[1L]], plain, info = k)  # branches on the plain pattern
+    expect_identical(br$settings$pattern[[1L]], plain, info = k) # branches on the plain pattern
     expect_true("rs_h_rust_lib" %in% br$deps, info = k)
   }
 })
 
 test_that("Rust compile-once expansion works for a non-map helper (cross)", {
-  out <- tar_target_rs_raw("rs_x", rs_file(), inputs = c(x = "a", y = "b"),
-    post_script = "post.R", pattern = quote(tarpolyglot_cross(a, b)))
+  out <- tar_target_rs_raw(
+    "rs_x",
+    rs_file(),
+    inputs = c(x = "a", y = "b"),
+    post_script = "post.R",
+    pattern = quote(tarpolyglot_cross(a, b))
+  )
   nms <- vapply(out, function(t) t$settings$name, character(1))
   expect_setequal(nms, c("rs_x_rust_lib", "rs_x"))
   br <- out[[which(nms == "rs_x")]]
-  expect_match(paste(deparse(br$settings$pattern), collapse = " "), "cross\\(a, b\\)")
+  expect_match(
+    paste(deparse(br$settings$pattern), collapse = " "),
+    "cross\\(a, b\\)"
+  )
   expect_true("rs_x_rust_lib" %in% br$deps)
 })
 
 test_that("Rust + tarpolyglot_map() expands to a compile target and a branch target", {
-  out <- tar_target_rs_raw("rs_b", rs_file(), inputs = c(x = "vals"),
-    post_script = "post.R", pattern = quote(tarpolyglot_map(vals)))
+  out <- tar_target_rs_raw(
+    "rs_b",
+    rs_file(),
+    inputs = c(x = "vals"),
+    post_script = "post.R",
+    pattern = quote(tarpolyglot_map(vals))
+  )
   expect_type(out, "list")
   expect_false(inherits(out, "tar_target"))
   nms <- vapply(out, function(t) t$settings$name, character(1))
@@ -166,17 +219,27 @@ test_that("Rust + tarpolyglot_map() expands to a compile target and a branch tar
 })
 
 test_that("Rust + plain map() stays a single, self-compiling target", {
-  t <- tar_target_rs_raw("rs_c", rs_file(), inputs = c(x = "vals"),
-    post_script = "post.R", pattern = quote(map(vals)))
+  t <- tar_target_rs_raw(
+    "rs_c",
+    rs_file(),
+    inputs = c(x = "vals"),
+    post_script = "post.R",
+    pattern = quote(map(vals))
+  )
   expect_s3_class(t, "tar_target")
   expect_match(cmd_txt(t), "run_rs_step\\(")
 })
 
 test_that("Rust + tarpolyglot_map() carries build args onto the compile target", {
-  out <- tar_target_rs_raw("rs_d", rs_file(), inputs = c(x = "vals"),
-    post_script = "post.R", pattern = quote(tarpolyglot_map(vals)),
+  out <- tar_target_rs_raw(
+    "rs_d",
+    rs_file(),
+    inputs = c(x = "vals"),
+    post_script = "post.R",
+    pattern = quote(tarpolyglot_map(vals)),
     toolchain = "stable-x86_64-pc-windows-gnu",
-    dependencies = list(serde_json = "1"))
+    dependencies = list(serde_json = "1")
+  )
   nms <- vapply(out, function(t) t$settings$name, character(1))
   lib <- out[[which(nms == "rs_d_rust_lib")]]
   expect_match(cmd_txt(lib), "stable-x86_64-pc-windows-gnu")
@@ -186,8 +249,13 @@ test_that("Rust + tarpolyglot_map() carries build args onto the compile target",
 test_that("on C++, every helper expands to a compile target + a branch with the plain pattern", {
   for (k in names(.plain_calls)) {
     plain <- .plain_calls[[k]]
-    out <- tar_target_cpp_raw("cpp_h", cpp_file(), inputs = c(x = "a"),
-      post_script = "post.R", pattern = .tp_call(plain))
+    out <- tar_target_cpp_raw(
+      "cpp_h",
+      cpp_file(),
+      inputs = c(x = "a"),
+      post_script = "post.R",
+      pattern = .tp_call(plain)
+    )
     expect_type(out, "list")
     nms <- vapply(out, function(t) t$settings$name, character(1))
     expect_setequal(nms, c("cpp_h_cpp_lib", "cpp_h"))
@@ -198,18 +266,31 @@ test_that("on C++, every helper expands to a compile target + a branch with the 
 })
 
 test_that("C++ compile-once expansion works for a non-map helper (cross)", {
-  out <- tar_target_cpp_raw("cpp_x", cpp_file(), inputs = c(x = "a", y = "b"),
-    post_script = "post.R", pattern = quote(tarpolyglot_cross(a, b)))
+  out <- tar_target_cpp_raw(
+    "cpp_x",
+    cpp_file(),
+    inputs = c(x = "a", y = "b"),
+    post_script = "post.R",
+    pattern = quote(tarpolyglot_cross(a, b))
+  )
   nms <- vapply(out, function(t) t$settings$name, character(1))
   expect_setequal(nms, c("cpp_x_cpp_lib", "cpp_x"))
   br <- out[[which(nms == "cpp_x")]]
-  expect_match(paste(deparse(br$settings$pattern), collapse = " "), "cross\\(a, b\\)")
+  expect_match(
+    paste(deparse(br$settings$pattern), collapse = " "),
+    "cross\\(a, b\\)"
+  )
   expect_true("cpp_x_cpp_lib" %in% br$deps)
 })
 
 test_that("C++ + tarpolyglot_map() expands to a compile target and a branch target", {
-  out <- tar_target_cpp_raw("cpp_b", cpp_file(), inputs = c(x = "vals"),
-    post_script = "post.R", pattern = quote(tarpolyglot_map(vals)))
+  out <- tar_target_cpp_raw(
+    "cpp_b",
+    cpp_file(),
+    inputs = c(x = "vals"),
+    post_script = "post.R",
+    pattern = quote(tarpolyglot_map(vals))
+  )
   expect_type(out, "list")
   expect_false(inherits(out, "tar_target"))
   nms <- vapply(out, function(t) t$settings$name, character(1))
@@ -228,16 +309,26 @@ test_that("C++ + tarpolyglot_map() expands to a compile target and a branch targ
 })
 
 test_that("C++ + plain map() stays a single, self-compiling target", {
-  t <- tar_target_cpp_raw("cpp_c", cpp_file(), inputs = c(x = "vals"),
-    post_script = "post.R", pattern = quote(map(vals)))
+  t <- tar_target_cpp_raw(
+    "cpp_c",
+    cpp_file(),
+    inputs = c(x = "vals"),
+    post_script = "post.R",
+    pattern = quote(map(vals))
+  )
   expect_s3_class(t, "tar_target")
   expect_match(cmd_txt(t), "run_cpp_step\\(")
 })
 
 test_that("C++ + tarpolyglot_map() carries build args (depends) onto the compile target", {
-  out <- tar_target_cpp_raw("cpp_d", cpp_file(), inputs = c(x = "vals"),
-    post_script = "post.R", pattern = quote(tarpolyglot_map(vals)),
-    depends = c("RcppArmadillo"))
+  out <- tar_target_cpp_raw(
+    "cpp_d",
+    cpp_file(),
+    inputs = c(x = "vals"),
+    post_script = "post.R",
+    pattern = quote(tarpolyglot_map(vals)),
+    depends = c("RcppArmadillo")
+  )
   nms <- vapply(out, function(t) t$settings$name, character(1))
   lib <- out[[which(nms == "cpp_d_cpp_lib")]]
   expect_match(cmd_txt(lib), "RcppArmadillo")
@@ -246,8 +337,13 @@ test_that("C++ + tarpolyglot_map() carries build args (depends) onto the compile
 test_that("Python + tarpolyglot_map() degrades to map() in a single target", {
   py <- withr::local_tempfile(fileext = ".py")
   writeLines("result = float(x)", py)
-  t <- tar_target_py_raw("py_b", py, inputs = c(x = "vals"),
-    retrieve = "result", pattern = quote(tarpolyglot_map(vals)))
+  t <- tar_target_py_raw(
+    "py_b",
+    py,
+    inputs = c(x = "vals"),
+    retrieve = "result",
+    pattern = quote(tarpolyglot_map(vals))
+  )
   expect_s3_class(t, "tar_target")
   ptxt <- paste(deparse(t$settings$pattern), collapse = " ")
   expect_match(ptxt, "map\\(vals\\)")
@@ -257,8 +353,13 @@ test_that("Python + tarpolyglot_map() degrades to map() in a single target", {
 test_that("Julia + tarpolyglot_map() degrades to map() in a single target", {
   jl <- withr::local_tempfile(fileext = ".jl")
   writeLines("result = float(x)", jl)
-  t <- tar_target_jl_raw("jl_b", jl, inputs = c(x = "vals"),
-    retrieve = "result", pattern = quote(tarpolyglot_map(vals)))
+  t <- tar_target_jl_raw(
+    "jl_b",
+    jl,
+    inputs = c(x = "vals"),
+    retrieve = "result",
+    pattern = quote(tarpolyglot_map(vals))
+  )
   expect_s3_class(t, "tar_target")
   ptxt <- paste(deparse(t$settings$pattern), collapse = " ")
   expect_match(ptxt, "map\\(vals\\)")

@@ -33,10 +33,20 @@ test_that("run_rs_step forwards dependencies, features and profile to rust_sourc
   skip_if_not_installed("testthat", "3.2.0")
   seen <- NULL
   local_mocked_bindings(
-    rust_source = function(code, env, quiet = TRUE, dependencies = NULL,
-                           features = NULL, profile = NULL) {
-      seen <<- list(code = code, dependencies = dependencies,
-        features = features, profile = profile)
+    rust_source = function(
+      code,
+      env,
+      quiet = TRUE,
+      dependencies = NULL,
+      features = NULL,
+      profile = NULL
+    ) {
+      seen <<- list(
+        code = code,
+        dependencies = dependencies,
+        features = features,
+        profile = profile
+      )
       assign("go", function(v) v, envir = env)
       invisible(NULL)
     },
@@ -74,7 +84,10 @@ test_that("run_rs_step sets RUSTUP_TOOLCHAIN for the build and restores it after
   )
   expect_identical(during, "stable-x86_64-pc-windows-gnu")
   # Unset before the call, so unset again afterwards.
-  expect_identical(Sys.getenv("RUSTUP_TOOLCHAIN", unset = NA_character_), NA_character_)
+  expect_identical(
+    Sys.getenv("RUSTUP_TOOLCHAIN", unset = NA_character_),
+    NA_character_
+  )
 })
 
 test_that("run_rs_step accepts inline source from tar_code()", {
@@ -88,9 +101,15 @@ test_that("run_rs_step accepts inline source from tar_code()", {
     },
     .package = "rextendr"
   )
-  inline <- structure(list(code = "INLINE RUST"), class = c("tp_inline", "tp_source"))
-  out <- run_rs_step(script = inline, inputs = list(x = 14),
-    post_script = write_file("go(x)", ".R"))
+  inline <- structure(
+    list(code = "INLINE RUST"),
+    class = c("tp_inline", "tp_source")
+  )
+  out <- run_rs_step(
+    script = inline,
+    inputs = list(x = 14),
+    post_script = write_file("go(x)", ".R")
+  )
   expect_identical(seen, "INLINE RUST")
   expect_identical(out, 42)
 })
@@ -108,8 +127,14 @@ test_that("compile_rs_lib errors when no extendr library appears after the build
 })
 
 test_that("run_rs_step_prebuilt rejects anything that is not a compiled library", {
-  expect_error(run_rs_step_prebuilt(lib = list()), "must be a compiled library object")
-  expect_error(run_rs_step_prebuilt(lib = NULL), "must be a compiled library object")
+  expect_error(
+    run_rs_step_prebuilt(lib = list()),
+    "must be a compiled library object"
+  )
+  expect_error(
+    run_rs_step_prebuilt(lib = NULL),
+    "must be a compiled library object"
+  )
 })
 
 # ---- C++ ------------------------------------------------------------------
@@ -118,15 +143,20 @@ test_that(".tp_cpp_source_code reads a file, passes inline source through, and a
   f <- write_file("int y = 1;", ".cpp")
   expect_identical(.tp_cpp_source_code(f, NULL), "int y = 1;")
 
-  inline <- structure(list(code = "int z = 2;"), class = c("tp_inline", "tp_source"))
+  inline <- structure(
+    list(code = "int z = 2;"),
+    class = c("tp_inline", "tp_source")
+  )
   expect_identical(.tp_cpp_source_code(inline, NULL), "int z = 2;")
 
   withdep <- .tp_cpp_source_code(f, "RcppArmadillo")
   expect_match(withdep, "// [[Rcpp::depends(RcppArmadillo)]]", fixed = TRUE)
   expect_match(withdep, "int y = 1;", fixed = TRUE)
   # The attribute goes ahead of the user's own source, not instead of it.
-  expect_lt(regexpr("Rcpp::depends", withdep, fixed = TRUE),
-    regexpr("int y = 1;", withdep, fixed = TRUE))
+  expect_lt(
+    regexpr("Rcpp::depends", withdep, fixed = TRUE),
+    regexpr("int y = 1;", withdep, fixed = TRUE)
+  )
 
   multi <- .tp_cpp_source_code(f, c("RcppArmadillo", "RcppEigen"))
   expect_match(multi, "RcppArmadillo", fixed = TRUE)
@@ -171,7 +201,10 @@ test_that("run_cpp_step forwards `depends` into the compiled source", {
 })
 
 test_that("run_cpp_step_prebuilt rejects anything that is not a compiled library", {
-  expect_error(run_cpp_step_prebuilt(lib = list()), "must be a compiled library object")
+  expect_error(
+    run_cpp_step_prebuilt(lib = list()),
+    "must be a compiled library object"
+  )
 })
 
 # compile_cpp_lib() reads back whatever sourceCpp() left in its build
@@ -182,7 +215,8 @@ mock_sourcecpp_build <- function(dir, env = parent.frame()) {
       assign("f", function() 1, envir = env)
       list(buildDirectory = dir, functions = "f")
     },
-    .package = "Rcpp", .env = env
+    .package = "Rcpp",
+    .env = env
   )
 }
 

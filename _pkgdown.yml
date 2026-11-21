@@ -1,6 +1,8 @@
 url: https://pierre9344.github.io/tarpolyglot/
 template:
   bootstrap: 5
+development:
+  mode: auto
 reference:
 - title: Package overview
   contents: tarpolyglot-package
@@ -16,14 +18,22 @@ reference:
   - tar_target_jl_raw
   - tar_target_rs
   - tar_target_rs_raw
-- title: Helpers
+- title: Supplying a step's code
   desc: |
-    Supply a step's code inline, track a script file as a dependency, branch while compiling Rust or C++ once, and a crew controller preconfigured for per-step interpreter isolation.
+    Give a constructor its `script`, `pre_script`, or `post_script`: either inline code written directly in `_targets.R`, or a reference to an upstream `format = "file"` target so that editing the file on disk re-runs the step.
   contents:
   - tar_code
   - tar_target_path
+- title: Parallel execution and logging
+  desc: |
+    A `crew` controller preconfigured for per-step interpreter isolation, and the per-step stdout/stderr logging it carries to every worker it launches. Both are passed to the pipeline rather than to an individual step.
+  contents:
   - polyglot_controller
-  - tar_polyglot_log
+  - polyglot_log
+- title: Diagnostics
+  desc: |
+    Report whether the Python, Julia, Rust, and C++ toolchains are reachable, which versions are installed, and which one each constructor would use. Run at the console, not from a pipeline.
+  contents:
   - toolchain_check
 - title: Branching patterns
   desc: |
@@ -51,7 +61,7 @@ articles:
 - title: Guides
   navbar: ~
   contents:
-  - get_started
+  - tarpolyglot
   - scripts
   - python
   - julia

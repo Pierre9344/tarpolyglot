@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 # `{tarpolyglot}` <img src="man/figures/logo.png" align="right" height="120"/>
 
-`{tarpolyglot}` adds target constructors that run **Python**, **Julia**, **Rust**, and **C++** as first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust), and [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) (C++). Results come back as converted R objects or as files tracked on disk, and everything a normal `{targets}` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
+`{tarpolyglot}` adds target constructors that run **Python**, **Julia**, **Rust**, and **C++** as first-class steps of a [`{targets}`](https://docs.ropensci.org/targets/) pipeline, via [reticulate](https://rstudio.github.io/reticulate/) (Python), [JuliaCall](https://github.com/JuliaInterop/JuliaCall) (Julia), [rextendr](https://extendr.rs/rextendr/) / [extendr](https://extendr.rs/) (Rust), and [Rcpp](https://CRAN.R-project.org/package=Rcpp) (C++). Results come back as converted R objects or as files tracked on disk, and everything a normal `{targets}` step supports works unchanged: dynamic branching, storage formats, resources, cues, `crew` parallelism.
 
 ## Installation
 
@@ -33,7 +33,7 @@ You can install `{tarpolyglot}` from CRAN or GitHub for the development version:
 
 ``` r
 # CRAN
-install.package("tarpolyglot")
+install.packages("tarpolyglot")
 
 # GitHub (development version)
 # install.packages("remotes")
@@ -47,7 +47,7 @@ You also need a working toolchain for whichever language(s) you plan to use: Pyt
 - `tar_target_py()` / `tar_target_py_raw()`: Python, via [reticulate](https://rstudio.github.io/reticulate/).
 - `tar_target_jl()` / `tar_target_jl_raw()`: Julia, via [JuliaCall](https://github.com/JuliaInterop/JuliaCall).
 - `tar_target_rs()` / `tar_target_rs_raw()`: Rust, via [rextendr](https://extendr.rs/rextendr/)/[extendr](https://extendr.rs/).
-- `tar_target_cpp()` / `tar_target_cpp_raw()`: C++, via [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html).
+- `tar_target_cpp()` / `tar_target_cpp_raw()`: C++, via [Rcpp](https://CRAN.R-project.org/package=Rcpp).
 
 Each mirrors `targets::tar_target()` / `targets::tar_target_raw()` and forwards every argument (`pattern`, `format`, `deployment`, `resources`, `cue`, ...), so dynamic branching, storage formats, `crew`-based parallelism, and other `{targets}` features all work as usual.
 
@@ -97,8 +97,50 @@ We can run and inspect it like any `{targets}` pipeline:
 
 ``` r
 targets::tar_make()
-targets::tar_read(py_mean)   # $mean 5  $n 4
-targets::tar_read(report)    # "mean = 5.0 over n = 4"
+targets::tar_read(py_mean)
+targets::tar_read(report)
+```
+
+You can see this pipeline in action next :
+
+```{r py-example, message = FALSE, warning = FALSE}
+suppressWarnings(requireNamespace("targets", quietly = TRUE))
+
+targets::tar_dir({
+  dir.create("scripts")
+  writeLines(
+    "to_py <- list(x = x)   # `x` is bound from inputs = c(x = \"values\")",
+    "scripts/pre.R"
+  )
+  writeLines(
+    c(
+      "# `x` is handed over by the pre-script; assign `result` for R to read.",
+      'result = {"mean": sum(x) / len(x), "n": len(x)}'
+    ),
+    "scripts/mean.py"
+  )
+  targets::tar_script({
+    library(targets)
+    library(tarpolyglot)
+    tar_option_set(controller = polyglot_controller(workers = 1L))
+    list(
+      tar_target(values, c(2, 4, 6, 8)),
+      tar_target_py(
+        name = py_mean,
+        script = "scripts/mean.py",
+        inputs = c(x = "values"),
+        pre_script = "scripts/pre.R",
+        retrieve = "result"
+      ),
+      tar_target(report, sprintf("mean = %.1f over n = %d", py_mean$mean, py_mean$n))
+    )
+  })
+  targets::tar_make()
+  print("Value of py_mean:")
+  print(targets::tar_read(py_mean))
+  print("Value of report:")
+  print(targets::tar_read(report))
+})
 ```
 
 Here the `retrieve` argument is used to extract a value from the python environment using `reticulate` type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the `py` object. It is also possible tu use the `py_get()` helper function to extract some variable. Both are created by the steps constructor.
@@ -183,4 +225,4 @@ Claude Code (Anthropic's Claude Opus 4.8, and then Opus 5) was used as an assist
 
 ## Citation
 
-To cite `{tarpolyglot}`, run `citation("tarpolyglot")` in R, or see the [`CITATION.cff`](CITATION.cff) file (also surfaced by GitHub's "Cite this repository" button).
+To cite `{tarpolyglot}`, run `citation("tarpolyglot")` in R. The repository also carries a `CITATION.cff`, which is what GitHub's "Cite this repository" button reads.

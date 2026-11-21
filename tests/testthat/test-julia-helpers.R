@@ -32,7 +32,10 @@ test_that(".tp_juliaup_home picks the highest version numerically, not lexicogra
 test_that(".tp_juliaup_home errors when no matching version is installed", {
   depot <- fake_depot(character(0))
   withr::local_envvar(JULIA_DEPOT_PATH = depot)
-  expect_error(.tp_juliaup_home("1.11"), "No juliaup Julia matching version '1.11'")
+  expect_error(
+    .tp_juliaup_home("1.11"),
+    "No juliaup Julia matching version '1.11'"
+  )
 })
 
 test_that(".tp_juliaup_home lists what is installed when the requested version is missing", {
@@ -44,8 +47,11 @@ test_that(".tp_juliaup_home lists what is installed when the requested version i
 test_that(".tp_juliaup_home uses only the first entry of a multi-value JULIA_DEPOT_PATH", {
   depot <- fake_depot("julia-1.11.2+0.x64")
   withr::local_envvar(
-    JULIA_DEPOT_PATH = paste(depot, file.path(tempdir(), "tp-second-depot"),
-      sep = .Platform$path.sep)
+    JULIA_DEPOT_PATH = paste(
+      depot,
+      file.path(tempdir(), "tp-second-depot"),
+      sep = .Platform$path.sep
+    )
   )
   expect_match(.tp_juliaup_home("1.11"), "julia-1.11.2", fixed = TRUE)
 })
@@ -67,7 +73,10 @@ test_that(".tp_bind_julia clears an ambient JULIA_PROJECT while binding, then re
 test_that(".tp_bind_julia leaves an unset JULIA_PROJECT alone and returns TRUE", {
   withr::local_envvar(JULIA_PROJECT = NA)
   expect_true(.tp_bind_julia(function() invisible(NULL)))
-  expect_identical(Sys.getenv("JULIA_PROJECT", unset = NA_character_), NA_character_)
+  expect_identical(
+    Sys.getenv("JULIA_PROJECT", unset = NA_character_),
+    NA_character_
+  )
 })
 
 test_that(".tp_resolve_julia sets up Julia and activates a project and packages", {

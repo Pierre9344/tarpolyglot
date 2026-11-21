@@ -41,8 +41,11 @@ test_that("polyglot_controller reports an unusable crew TLS layer", {
     crew_tls = function(...) stop("9 | Not supported"),
     .package = "crew"
   )
-  expect_error(polyglot_controller(), "could not create a `crew` controller",
-    fixed = TRUE)
+  expect_error(
+    polyglot_controller(),
+    "could not create a `crew` controller",
+    fixed = TRUE
+  )
   # the underlying cause is kept, not swallowed
   expect_error(polyglot_controller(), "Not supported")
 })

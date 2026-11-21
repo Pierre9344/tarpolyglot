@@ -2,18 +2,27 @@
 
 # Resolve a Julia version (e.g. "1.11") to a juliaup install's bin directory. juliaup keeps versions under <depot>/juliaup/julia-<version>+<build>/bin, where <depot> is $JULIA_DEPOT_PATH or ~/.julia. Returns the highest match.
 .tp_juliaup_home <- function(version) {
-  depot <- Sys.getenv("JULIA_DEPOT_PATH",
-    unset = file.path(.tp_user_home(), ".julia"))
+  depot <- Sys.getenv(
+    "JULIA_DEPOT_PATH",
+    unset = file.path(.tp_user_home(), ".julia")
+  )
   # JULIA_DEPOT_PATH may be a list; take the first entry.
   depot <- strsplit(depot, .Platform$path.sep, fixed = TRUE)[[1]][1]
   root <- file.path(depot, "juliaup")
   hits <- Sys.glob(file.path(root, paste0("julia-", version, "*"), "bin"))
   if (length(hits) == 0L) {
     installed <- basename(dirname(Sys.glob(file.path(root, "julia-*", "bin"))))
-    stop("No juliaup Julia matching version '", version, "' under ", root,
+    stop(
+      "No juliaup Julia matching version '",
+      version,
+      "' under ",
+      root,
       if (length(installed)) paste0(". Installed: ", paste0(installed)) else "",
-      ". Install it with `juliaup add ", version, "`, or set `julia_home` explicitly.",
-      call. = FALSE)
+      ". Install it with `juliaup add ",
+      version,
+      "`, or set `julia_home` explicitly.",
+      call. = FALSE
+    )
   }
   # Pick the highest matching version numerically (lexicographic sort would rank e.g. julia-1.9 above julia-1.12). Dir names look like "julia-1.12.6+0.x64.w64.mingw32"; extract the x.y.z part for ordering.
   vers <- sub("^julia-([0-9]+(\\.[0-9]+)*).*$", "\\1", basename(dirname(hits)))
@@ -43,10 +52,12 @@
 #                  Julia's default global environment (@v#.#) is used (an ambient
 #                  JULIA_PROJECT is cleared first; see .tp_bind_julia).
 # julia_packages : character vector of packages to `using` before the script.
-.tp_resolve_julia <- function(julia_version = NULL,
-                              julia_home = NULL,
-                              julia_project = NULL,
-                              julia_packages = NULL) {
+.tp_resolve_julia <- function(
+  julia_version = NULL,
+  julia_home = NULL,
+  julia_project = NULL,
+  julia_packages = NULL
+) {
   # The option is read here, at run time, and never by a constructor. Reading it
   # while *building* a target would splice a machine-specific Julia path into
   # the target's command, so the command hash would differ between machines and

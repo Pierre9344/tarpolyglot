@@ -21,7 +21,7 @@ run_cpp_step_prebuilt(
 
 \item{output}{Output mode: \code{"object"} (default) returns a converted R object, \code{"file"} returns a character vector of file paths (and defaults \code{format} to \code{"file"}).}
 
-\item{name}{Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=tar_polyglot_log]{tar_polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call). Note this is the branch name, not \verb{<name>_cpp_lib} -- reloading a pre-compiled library never itself produces output to log.}
+\item{name}{Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=polyglot_log]{polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call). Note this is the branch name, not \verb{<name>_cpp_lib} -- reloading a pre-compiled library never itself produces output to log.}
 }
 \value{
 The value of the post-script (object mode) or a character vector of normalised file paths (file mode).

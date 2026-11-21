@@ -19,7 +19,7 @@ polyglot_controller(
 
 \item{seconds_idle}{Numeric seconds an idle worker waits before shutting down. Default \code{30}.}
 
-\item{log}{Optional \code{\link[=tar_polyglot_log]{tar_polyglot_log()}} object turning on per-step stdout/stderr log files for Python and Julia steps (see that function; Rust is not covered). Default \code{NULL} (no logging, the previous behavior).}
+\item{log}{Optional \code{\link[=polyglot_log]{polyglot_log()}} object turning on per-step stdout/stderr log files for Python and Julia steps (see that function; Rust is not covered). Default \code{NULL} (no logging, the previous behavior).}
 
 \item{...}{Further arguments passed to \code{\link[crew:crew_controller_local]{crew::crew_controller_local()}}, e.g. \code{seconds_timeout}, \code{garbage_collection}, or \code{reset_globals}.}
 }
@@ -58,5 +58,5 @@ if (!inherits(controller, "try-error")) {
 }
 }
 \seealso{
-\code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}, \code{\link[=tar_polyglot_log]{tar_polyglot_log()}}
+\code{\link[=tar_target_py]{tar_target_py()}}, \code{\link[=tar_target_jl]{tar_target_jl()}}, \code{\link[=polyglot_log]{polyglot_log()}}
 }

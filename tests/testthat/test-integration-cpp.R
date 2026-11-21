@@ -11,48 +11,67 @@ skip_if_not_installed("Rcpp")
 
 test_that("run_cpp_step compiles // [[Rcpp::export]] fns and returns via post-script", {
   script <- withr::local_tempfile(fileext = ".cpp")
-  writeLines(c(
-    "#include <Rcpp.h>",
-    "// [[Rcpp::export]]",
-    "double vsum(std::vector<double> x) { double s = 0; for (double v : x) s += v; return s; }"
-  ), script)
+  writeLines(
+    c(
+      "#include <Rcpp.h>",
+      "// [[Rcpp::export]]",
+      "double vsum(std::vector<double> x) { double s = 0; for (double v : x) s += v; return s; }"
+    ),
+    script
+  )
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("list(sum = vsum(x), n = length(x))", post)
 
-  res <- run_cpp_step(script, post_script = post, inputs = list(x = c(1, 2, 3, 4)))
+  res <- run_cpp_step(
+    script,
+    post_script = post,
+    inputs = list(x = c(1, 2, 3, 4))
+  )
   expect_equal(res$sum, 10)
   expect_equal(res$n, 4)
 })
 
 test_that("multiple // [[Rcpp::export]] functions in one script are all exposed", {
   script <- withr::local_tempfile(fileext = ".cpp")
-  writeLines(c(
-    "#include <Rcpp.h>",
-    "// [[Rcpp::export]]",
-    "double inc(double x) { return x + 1.0; }",
-    "// [[Rcpp::export]]",
-    "double tentimes(double x) { return x * 10.0; }"
-  ), script)
+  writeLines(
+    c(
+      "#include <Rcpp.h>",
+      "// [[Rcpp::export]]",
+      "double inc(double x) { return x + 1.0; }",
+      "// [[Rcpp::export]]",
+      "double tentimes(double x) { return x * 10.0; }"
+    ),
+    script
+  )
   lib <- compile_cpp_lib(script)
   expect_true(all(c("inc", "tentimes") %in% lib$objs_names))
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("c(inc(x), tentimes(x))", post)
-  expect_equal(run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 5)),
-    c(6, 50))
+  expect_equal(
+    run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 5)),
+    c(6, 50)
+  )
 })
 
 test_that("depends = 'RcppArmadillo' compiles and links successfully", {
   skip_if_not_installed("RcppArmadillo")
   script <- withr::local_tempfile(fileext = ".cpp")
-  writeLines(c(
-    "#include <RcppArmadillo.h>",
-    "// [[Rcpp::export]]",
-    "double arma_sum(arma::vec x) { return arma::sum(x); }"
-  ), script)
+  writeLines(
+    c(
+      "#include <RcppArmadillo.h>",
+      "// [[Rcpp::export]]",
+      "double arma_sum(arma::vec x) { return arma::sum(x); }"
+    ),
+    script
+  )
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("arma_sum(x)", post)
-  res <- run_cpp_step(script, post_script = post, inputs = list(x = c(1, 2, 3)),
-    depends = "RcppArmadillo")
+  res <- run_cpp_step(
+    script,
+    post_script = post,
+    inputs = list(x = c(1, 2, 3)),
+    depends = "RcppArmadillo"
+  )
   expect_equal(res, 6)
 })
 
@@ -68,30 +87,44 @@ test_that("two libraries sharing the sourceCpp module name do not collide", {
     callr::r(function(s) tarpolyglot::compile_cpp_lib(s), args = list(script))
   }
   lib_a <- compile_fresh(c(
-    "#include <Rcpp.h>", "// [[Rcpp::export]]",
+    "#include <Rcpp.h>",
+    "// [[Rcpp::export]]",
     "double f(double x) { return x + 1.0; }"
   ))
   lib_b <- compile_fresh(c(
-    "#include <Rcpp.h>", "// [[Rcpp::export]]",
+    "#include <Rcpp.h>",
+    "// [[Rcpp::export]]",
     "double f(double x) { return x + 100.0; }"
   ))
-  expect_identical(lib_a$basename, lib_b$basename)  # same module name => collision risk
+  expect_identical(lib_a$basename, lib_b$basename) # same module name => collision risk
 
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("f(x)", post)
   # Hot-swap must give each library its own behaviour, in both directions.
-  expect_equal(run_cpp_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)), 6)
-  expect_equal(run_cpp_step_prebuilt(lib_b, post_script = post, inputs = list(x = 5)), 105)
-  expect_equal(run_cpp_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)), 6)
+  expect_equal(
+    run_cpp_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)),
+    6
+  )
+  expect_equal(
+    run_cpp_step_prebuilt(lib_b, post_script = post, inputs = list(x = 5)),
+    105
+  )
+  expect_equal(
+    run_cpp_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)),
+    6
+  )
 })
 
 test_that("compile_cpp_lib() builds a reusable bundle that run_cpp_step_prebuilt reloads", {
   script <- withr::local_tempfile(fileext = ".cpp")
-  writeLines(c(
-    "#include <Rcpp.h>",
-    "// [[Rcpp::export]]",
-    "double square(double x) { return x * x; }"
-  ), script)
+  writeLines(
+    c(
+      "#include <Rcpp.h>",
+      "// [[Rcpp::export]]",
+      "double square(double x) { return x * x; }"
+    ),
+    script
+  )
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("square(x)", post)
 
@@ -103,19 +136,31 @@ test_that("compile_cpp_lib() builds a reusable bundle that run_cpp_step_prebuilt
 
   # Reuse it several times with different inputs (this is what each branch
   # does), with no further compilation.
-  expect_equal(run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 10)), 100)
-  expect_equal(run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 20)), 400)
-  expect_equal(run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 30)), 900)
+  expect_equal(
+    run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 10)),
+    100
+  )
+  expect_equal(
+    run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 20)),
+    400
+  )
+  expect_equal(
+    run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = 30)),
+    900
+  )
 })
 
 test_that("compile_cpp_lib() bundle reloads correctly in a genuinely different process", {
   skip_if_not_installed("callr")
   script <- withr::local_tempfile(fileext = ".cpp")
-  writeLines(c(
-    "#include <Rcpp.h>",
-    "// [[Rcpp::export]]",
-    "double cube(double x) { return x * x * x; }"
-  ), script)
+  writeLines(
+    c(
+      "#include <Rcpp.h>",
+      "// [[Rcpp::export]]",
+      "double cube(double x) { return x * x * x; }"
+    ),
+    script
+  )
   lib <- compile_cpp_lib(script)
 
   post <- withr::local_tempfile(fileext = ".R")
@@ -126,7 +171,11 @@ test_that("compile_cpp_lib() bundle reloads correctly in a genuinely different p
   # wrapper-source re-evaluation path, not just in-process reuse.
   res <- callr::r(
     function(lib, post_script, x) {
-      tarpolyglot::run_cpp_step_prebuilt(lib, post_script = post_script, inputs = list(x = x))
+      tarpolyglot::run_cpp_step_prebuilt(
+        lib,
+        post_script = post_script,
+        inputs = list(x = x)
+      )
     },
     args = list(lib = lib, post_script = post, x = 4)
   )
@@ -147,18 +196,21 @@ test_that("everything together: extension package + R-callback + compile-once br
   skip_if_not_installed("callr")
 
   script <- withr::local_tempfile(fileext = ".cpp")
-  writeLines(c(
-    "// [[Rcpp::depends(RcppArmadillo)]]",
-    "#include <RcppArmadillo.h>",
-    "// [[Rcpp::export]]",
-    "double combo_stat(arma::vec x, Rcpp::Function agg) {",
-    "  double s = arma::sum(x);",
-    "  double m = arma::mean(x);",
-    "  Rcpp::NumericVector agg_result = agg(Rcpp::wrap(x));",
-    "  double agg_val = agg_result[0];",
-    "  return s + m + agg_val;",
-    "}"
-  ), script)
+  writeLines(
+    c(
+      "// [[Rcpp::depends(RcppArmadillo)]]",
+      "#include <RcppArmadillo.h>",
+      "// [[Rcpp::export]]",
+      "double combo_stat(arma::vec x, Rcpp::Function agg) {",
+      "  double s = arma::sum(x);",
+      "  double m = arma::mean(x);",
+      "  Rcpp::NumericVector agg_result = agg(Rcpp::wrap(x));",
+      "  double agg_val = agg_result[0];",
+      "  return s + m + agg_val;",
+      "}"
+    ),
+    script
+  )
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("combo_stat(x, agg)", post)
 
@@ -171,12 +223,20 @@ test_that("everything together: extension package + R-callback + compile-once br
   # "Branches": same library, different x, same R-callback each time.
   # x = c(1,2,3): sum=6, mean=2, agg=mean*2=4 -> 12
   expect_equal(
-    run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = c(1, 2, 3), agg = double_mean)),
+    run_cpp_step_prebuilt(
+      lib,
+      post_script = post,
+      inputs = list(x = c(1, 2, 3), agg = double_mean)
+    ),
     12
   )
   # x = c(4,5,6): sum=15, mean=5, agg=10 -> 30
   expect_equal(
-    run_cpp_step_prebuilt(lib, post_script = post, inputs = list(x = c(4, 5, 6), agg = double_mean)),
+    run_cpp_step_prebuilt(
+      lib,
+      post_script = post,
+      inputs = list(x = c(4, 5, 6), agg = double_mean)
+    ),
     30
   )
 
@@ -186,9 +246,18 @@ test_that("everything together: extension package + R-callback + compile-once br
   # x = c(7,8,9): sum=24, mean=8, agg=16 -> 48
   res_fresh <- callr::r(
     function(lib, post_script, x, agg) {
-      tarpolyglot::run_cpp_step_prebuilt(lib, post_script = post_script, inputs = list(x = x, agg = agg))
+      tarpolyglot::run_cpp_step_prebuilt(
+        lib,
+        post_script = post_script,
+        inputs = list(x = x, agg = agg)
+      )
     },
-    args = list(lib = lib, post_script = post, x = c(7, 8, 9), agg = double_mean)
+    args = list(
+      lib = lib,
+      post_script = post,
+      x = c(7, 8, 9),
+      agg = double_mean
+    )
   )
   expect_equal(res_fresh, 48)
 
@@ -197,8 +266,11 @@ test_that("everything together: extension package + R-callback + compile-once br
   # anything, mirroring the plain-script cross-step-reuse test above.
   # x = c(100,200,300): sum=600, mean=200, agg=sum=600 -> 1400
   expect_equal(
-    run_cpp_step_prebuilt(lib, post_script = post,
-      inputs = list(x = c(100, 200, 300), agg = sum)),
+    run_cpp_step_prebuilt(
+      lib,
+      post_script = post,
+      inputs = list(x = c(100, 200, 300), agg = sum)
+    ),
     1400
   )
 })

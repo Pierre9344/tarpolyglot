@@ -20,7 +20,7 @@ test_that("the addin wrappers delegate to toolchain_check() with the right toolc
   expect_null(rstudio_addin_toolchain_check_cpp())
 
   expect_length(seen, 5L)
-  expect_length(seen[[1L]], 0L)             # "all" passes no toolchain argument
+  expect_length(seen[[1L]], 0L) # "all" passes no toolchain argument
   expect_identical(seen[[2L]][[1L]], "py")
   expect_identical(seen[[3L]][[1L]], "jl")
   expect_identical(seen[[4L]][[1L]], "rs")

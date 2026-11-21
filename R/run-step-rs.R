@@ -13,19 +13,28 @@
   old_rhome <- Sys.getenv("R_HOME", unset = NA)
   old_path <- Sys.getenv("PATH")
   restore <- function() {
-    if (is.na(old_rhome)) Sys.unsetenv("R_HOME") else Sys.setenv(R_HOME = old_rhome)
+    if (is.na(old_rhome)) {
+      Sys.unsetenv("R_HOME")
+    } else {
+      Sys.setenv(R_HOME = old_rhome)
+    }
     Sys.setenv(PATH = old_path)
   }
 
-  if (is.na(old_rhome) || !nzchar(old_rhome)) Sys.setenv(R_HOME = R.home())
+  if (is.na(old_rhome) || !nzchar(old_rhome)) {
+    Sys.setenv(R_HOME = R.home())
+  }
 
   add <- c(R.home("bin"), file.path(R.home("bin"), "x64"))
   cargo <- file.path(.tp_user_home(), ".cargo", "bin")
   add <- c(add, cargo)
   if (.Platform$OS.type == "windows") {
     rt <- Sys.getenv("RTOOLS45_HOME", unset = "")
-    for (d in c(if (nzchar(rt)) file.path(rt, "usr", "bin"),
-                "C:/rtools45/usr/bin", "C:/rtools44/usr/bin")) {
+    for (d in c(
+      if (nzchar(rt)) file.path(rt, "usr", "bin"),
+      "C:/rtools45/usr/bin",
+      "C:/rtools44/usr/bin"
+    )) {
       if (dir.exists(d)) {
         add <- c(add, d)
         break
@@ -71,19 +80,23 @@
 #'     )
 #'   })
 #' }
-run_rs_step <- function(script,
-                        post_script = NULL,
-                        inputs = list(),
-                        output = "object",
-                        dependencies = NULL,
-                        features = NULL,
-                        profile = NULL,
-                        toolchain = NULL) {
+run_rs_step <- function(
+  script,
+  post_script = NULL,
+  inputs = list(),
+  output = "object",
+  dependencies = NULL,
+  features = NULL,
+  profile = NULL,
+  toolchain = NULL
+) {
   output <- .tp_match_output(output)
   .tp_assert_script(script, "script", must_exist = TRUE)
 
   e <- new.env(parent = globalenv())
-  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
+  for (nm in names(inputs)) {
+    assign(nm, inputs[[nm]], envir = e)
+  }
 
   # Make sure the extendr build can find R and the toolchain (restored after).
   restore_env <- .tp_with_rust_build_env()
@@ -93,19 +106,34 @@ run_rs_step <- function(script,
   if (!is.null(toolchain)) {
     old_tc <- Sys.getenv("RUSTUP_TOOLCHAIN", unset = NA)
     Sys.setenv(RUSTUP_TOOLCHAIN = as.character(toolchain))
-    on.exit({
-      if (is.na(old_tc)) Sys.unsetenv("RUSTUP_TOOLCHAIN") else
-        Sys.setenv(RUSTUP_TOOLCHAIN = old_tc)
-    }, add = TRUE)
+    on.exit(
+      {
+        if (is.na(old_tc)) {
+          Sys.unsetenv("RUSTUP_TOOLCHAIN")
+        } else {
+          Sys.setenv(RUSTUP_TOOLCHAIN = old_tc)
+        }
+      },
+      add = TRUE
+    )
   }
 
   # 1. Compile the #[extendr] functions and expose them in `e`. We pass the Rust as `code=` (rextendr's `file=` path does not wrap the module / wrapper generator the way `code=` does), so a plain script of `#[extendr]` functions works and the extendr prelude is added for you. The source is either read from the script file or supplied inline via tar_code().
-  code <- if (inherits(script, "tp_source")) script$code else
+  code <- if (inherits(script, "tp_source")) {
+    script$code
+  } else {
     paste(readLines(script, warn = FALSE), collapse = "\n")
+  }
   args <- list(code = code, env = e, quiet = TRUE)
-  if (!is.null(dependencies)) args$dependencies <- dependencies
-  if (!is.null(features)) args$features <- features
-  if (!is.null(profile)) args$profile <- profile
+  if (!is.null(dependencies)) {
+    args$dependencies <- dependencies
+  }
+  if (!is.null(features)) {
+    args$features <- features
+  }
+  if (!is.null(profile)) {
+    args$profile <- profile
+  }
   do.call(rextendr::rust_source, args)
 
   # 2. Post-R script uses the compiled functions (and inputs) to build the value.
@@ -118,21 +146,28 @@ run_rs_step <- function(script,
 .tp_rs_finish <- function(e, post_script, output) {
   if (identical(output, "file")) {
     if (is.null(post_script)) {
-      stop("output = \"file\" needs a `post_script` returning paths.",
-        call. = FALSE)
+      stop(
+        "output = \"file\" needs a `post_script` returning paths.",
+        call. = FALSE
+      )
     }
     .tp_assert_script(post_script, "post_script", must_exist = TRUE)
     paths <- .tp_eval_script(post_script, e)
     if (is.null(paths)) {
-      stop("output = \"file\" needs a `post_script` returning paths.",
-        call. = FALSE)
+      stop(
+        "output = \"file\" needs a `post_script` returning paths.",
+        call. = FALSE
+      )
     }
     return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
   }
 
   if (is.null(post_script)) {
-    stop("output = \"object\" needs a `post_script` that calls the compiled Rust ",
-      "function(s) and returns a value.", call. = FALSE)
+    stop(
+      "output = \"object\" needs a `post_script` that calls the compiled Rust ",
+      "function(s) and returns a value.",
+      call. = FALSE
+    )
   }
   .tp_assert_script(post_script, "post_script", must_exist = TRUE)
   .tp_eval_script(post_script, e)
@@ -162,11 +197,13 @@ run_rs_step <- function(script,
 #'     class(lib)
 #'   })
 #' }
-compile_rs_lib <- function(script,
-                           dependencies = NULL,
-                           features = NULL,
-                           profile = NULL,
-                           toolchain = NULL) {
+compile_rs_lib <- function(
+  script,
+  dependencies = NULL,
+  features = NULL,
+  profile = NULL,
+  toolchain = NULL
+) {
   .tp_assert_script(script, "script", must_exist = TRUE)
 
   restore_env <- .tp_with_rust_build_env()
@@ -175,24 +212,43 @@ compile_rs_lib <- function(script,
   if (!is.null(toolchain)) {
     old_tc <- Sys.getenv("RUSTUP_TOOLCHAIN", unset = NA)
     Sys.setenv(RUSTUP_TOOLCHAIN = as.character(toolchain))
-    on.exit({
-      if (is.na(old_tc)) Sys.unsetenv("RUSTUP_TOOLCHAIN") else
-        Sys.setenv(RUSTUP_TOOLCHAIN = old_tc)
-    }, add = TRUE)
+    on.exit(
+      {
+        if (is.na(old_tc)) {
+          Sys.unsetenv("RUSTUP_TOOLCHAIN")
+        } else {
+          Sys.setenv(RUSTUP_TOOLCHAIN = old_tc)
+        }
+      },
+      add = TRUE
+    )
   }
 
-  code <- if (inherits(script, "tp_source")) script$code else
+  code <- if (inherits(script, "tp_source")) {
+    script$code
+  } else {
     paste(readLines(script, warn = FALSE), collapse = "\n")
+  }
 
   # Note which DLLs are already loaded, so we can single out the one rust_source
   # is about to build (its path is a fresh temp file).
-  loaded_before <- vapply(getLoadedDLLs(), function(d) d[["path"]], character(1))
+  loaded_before <- vapply(
+    getLoadedDLLs(),
+    function(d) d[["path"]],
+    character(1)
+  )
 
   e <- new.env(parent = globalenv())
   args <- list(code = code, env = e, quiet = TRUE)
-  if (!is.null(dependencies)) args$dependencies <- dependencies
-  if (!is.null(features)) args$features <- features
-  if (!is.null(profile)) args$profile <- profile
+  if (!is.null(dependencies)) {
+    args$dependencies <- dependencies
+  }
+  if (!is.null(features)) {
+    args$features <- features
+  }
+  if (!is.null(profile)) {
+    args$profile <- profile
+  }
   do.call(rextendr::rust_source, args)
 
   # Locate the freshly compiled extendr library. rextendr names it `rextendr<N>`
@@ -207,8 +263,10 @@ compile_rs_lib <- function(script,
     !(paths %in% loaded_before)
   hits <- which(is_extendr)
   if (!length(hits)) {
-    stop("Could not locate the compiled extendr library after rust_source().",
-      call. = FALSE)
+    stop(
+      "Could not locate the compiled extendr library after rust_source().",
+      call. = FALSE
+    )
   }
   dll_path <- paths[[hits[length(hits)]]]
 
@@ -247,14 +305,18 @@ compile_rs_lib <- function(script,
 #'     run_rs_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "post.R")
 #'   })
 #' }
-run_rs_step_prebuilt <- function(lib,
-                                 post_script = NULL,
-                                 inputs = list(),
-                                 output = "object") {
+run_rs_step_prebuilt <- function(
+  lib,
+  post_script = NULL,
+  inputs = list(),
+  output = "object"
+) {
   output <- .tp_match_output(output)
   if (!inherits(lib, "tp_rust_lib")) {
-    stop("`lib` must be a compiled library object from compile_rs_lib().",
-      call. = FALSE)
+    stop(
+      "`lib` must be a compiled library object from compile_rs_lib().",
+      call. = FALSE
+    )
   }
 
   # Materialise the embedded library and dyn.load it so its wrappers resolve. Its
@@ -290,8 +352,12 @@ run_rs_step_prebuilt <- function(lib,
   }
 
   e <- new.env(parent = globalenv())
-  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
-  for (nm in names(lib$objs)) assign(nm, lib$objs[[nm]], envir = e)
+  for (nm in names(inputs)) {
+    assign(nm, inputs[[nm]], envir = e)
+  }
+  for (nm in names(lib$objs)) {
+    assign(nm, lib$objs[[nm]], envir = e)
+  }
 
   .tp_rs_finish(e, post_script, output)
 }

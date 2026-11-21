@@ -7,7 +7,10 @@ test_that(".tp_resolve_env_path passes NULL and non-existent names through untou
   expect_null(.tp_resolve_env_path(NULL))
   # A bare name that is not a directory is a named-environment lookup, not a
   # path, so it must not be rewritten.
-  expect_identical(.tp_resolve_env_path("tp-not-a-directory-xyz"), "tp-not-a-directory-xyz")
+  expect_identical(
+    .tp_resolve_env_path("tp-not-a-directory-xyz"),
+    "tp-not-a-directory-xyz"
+  )
 })
 
 test_that(".tp_resolve_env_path normalises an existing directory to an absolute path", {
@@ -49,11 +52,17 @@ test_that(".tp_bind clears an ambient RETICULATE_PYTHON while binding, then rest
 test_that(".tp_bind leaves an unset RETICULATE_PYTHON alone", {
   withr::local_envvar(RETICULATE_PYTHON = NA)
   expect_error(.tp_bind(function() stop("boom")), "boom")
-  expect_identical(Sys.getenv("RETICULATE_PYTHON", unset = NA_character_), NA_character_)
+  expect_identical(
+    Sys.getenv("RETICULATE_PYTHON", unset = NA_character_),
+    NA_character_
+  )
 })
 
 test_that(".tp_resolve_python rejects an unknown env_manager", {
-  expect_error(.tp_resolve_python(env_manager = "not-a-manager"), "'arg' should be one of")
+  expect_error(
+    .tp_resolve_python(env_manager = "not-a-manager"),
+    "'arg' should be one of"
+  )
 })
 
 test_that(".tp_resolve_python rejects `env` combined with env_manager = 'system'", {
@@ -101,7 +110,8 @@ mock_reticulate <- function(env = parent.frame()) {
       invisible(NULL)
     },
     py_config = function(...) list(python = "/tp/fake/python"),
-    .package = "reticulate", .env = env
+    .package = "reticulate",
+    .env = env
   )
   calls
 }
@@ -167,7 +177,10 @@ test_that(".tp_resolve_python warns that python_version is ignored when an env i
   # The warning fires before the (here deliberately failing) bind, so both the
   # warning branch and the missing-`env` branch are exercised in one call.
   expect_warning(
-    expect_error(.tp_resolve_python(python_version = "3.12", env_manager = "virtualenv")),
+    expect_error(.tp_resolve_python(
+      python_version = "3.12",
+      env_manager = "virtualenv"
+    )),
     "python_version` is ignored when an environment is selected"
   )
 })

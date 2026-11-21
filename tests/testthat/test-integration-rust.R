@@ -10,33 +10,49 @@ skip_if(
 skip_if_not_installed("rextendr")
 
 cargo_ok <- nzchar(Sys.which("cargo")) ||
-  file.exists(file.path(Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
-    ".cargo", "bin", "cargo.exe"))
+  file.exists(file.path(
+    Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
+    ".cargo",
+    "bin",
+    "cargo.exe"
+  ))
 skip_if_not(cargo_ok, "cargo not available")
 
 test_that("run_rs_step compiles #[extendr] fns and returns via post-script", {
   script <- withr::local_tempfile(fileext = ".rs")
-  writeLines("#[extendr]\nfn vsum(x: Vec<f64>) -> f64 { x.iter().sum() }", script)
+  writeLines(
+    "#[extendr]\nfn vsum(x: Vec<f64>) -> f64 { x.iter().sum() }",
+    script
+  )
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("list(sum = vsum(x), n = length(x))", post)
 
-  res <- run_rs_step(script, post_script = post, inputs = list(x = c(1, 2, 3, 4)))
+  res <- run_rs_step(
+    script,
+    post_script = post,
+    inputs = list(x = c(1, 2, 3, 4))
+  )
   expect_equal(res$sum, 10)
   expect_equal(res$n, 4)
 })
 
 test_that("multiple #[extendr] functions in one script are all exposed", {
   script <- withr::local_tempfile(fileext = ".rs")
-  writeLines(c(
-    "#[extendr] fn inc(x: f64) -> f64 { x + 1.0 }",
-    "#[extendr] fn tentimes(x: f64) -> f64 { x * 10.0 }"
-  ), script)
+  writeLines(
+    c(
+      "#[extendr] fn inc(x: f64) -> f64 { x + 1.0 }",
+      "#[extendr] fn tentimes(x: f64) -> f64 { x * 10.0 }"
+    ),
+    script
+  )
   lib <- compile_rs_lib(script)
   expect_true(all(c("inc", "tentimes") %in% names(lib$objs)))
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("c(inc(x), tentimes(x))", post)
-  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 5)),
-    c(6, 50))
+  expect_equal(
+    run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 5)),
+    c(6, 50)
+  )
 })
 
 test_that("two libraries sharing the rextendr module name do not collide", {
@@ -52,14 +68,23 @@ test_that("two libraries sharing the rextendr module name do not collide", {
   }
   lib_a <- compile_fresh("#[extendr] fn f(x: f64) -> f64 { x + 1.0 }")
   lib_b <- compile_fresh("#[extendr] fn f(x: f64) -> f64 { x + 100.0 }")
-  expect_identical(lib_a$basename, lib_b$basename)  # same module name => collision risk
+  expect_identical(lib_a$basename, lib_b$basename) # same module name => collision risk
 
   post <- withr::local_tempfile(fileext = ".R")
   writeLines("f(x)", post)
   # Hot-swap must give each library its own behaviour, in both directions.
-  expect_equal(run_rs_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)), 6)
-  expect_equal(run_rs_step_prebuilt(lib_b, post_script = post, inputs = list(x = 5)), 105)
-  expect_equal(run_rs_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)), 6)
+  expect_equal(
+    run_rs_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)),
+    6
+  )
+  expect_equal(
+    run_rs_step_prebuilt(lib_b, post_script = post, inputs = list(x = 5)),
+    105
+  )
+  expect_equal(
+    run_rs_step_prebuilt(lib_a, post_script = post, inputs = list(x = 5)),
+    6
+  )
 })
 
 test_that("compile_rs_lib() builds a reusable bundle that run_rs_step_prebuilt reloads", {
@@ -76,7 +101,16 @@ test_that("compile_rs_lib() builds a reusable bundle that run_rs_step_prebuilt r
 
   # Reuse it several times with different inputs (this is what each branch does),
   # with no further compilation.
-  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 10)), 100)
-  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 20)), 400)
-  expect_equal(run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 30)), 900)
+  expect_equal(
+    run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 10)),
+    100
+  )
+  expect_equal(
+    run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 20)),
+    400
+  )
+  expect_equal(
+    run_rs_step_prebuilt(lib, post_script = post, inputs = list(x = 30)),
+    900
+  )
 })

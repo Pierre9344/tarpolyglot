@@ -74,47 +74,56 @@
 #'     retrieve = "result"
 #'   )
 #' )
-tar_target_jl_raw <- function(name,
-                              script,
-                              pre_script = NULL,
-                              post_script = NULL,
-                              inputs = NULL,
-                              output = "object",
-                              retrieve = NULL,
-                              files = NULL,
-                              julia_version = NULL,
-                              julia_home = NULL,
-                              julia_project = NULL,
-                              julia_packages = NULL,
-                              pattern = NULL,
-                              packages = targets::tar_option_get("packages"),
-                              library = targets::tar_option_get("library"),
-                              deps = NULL,
-                              string = NULL,
-                              format = NULL,
-                              repository = targets::tar_option_get("repository"),
-                              iteration = targets::tar_option_get("iteration"),
-                              error = targets::tar_option_get("error"),
-                              memory = targets::tar_option_get("memory"),
-                              garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
-                              deployment = targets::tar_option_get("deployment"),
-                              priority = targets::tar_option_get("priority"),
-                              resources = targets::tar_option_get("resources"),
-                              storage = targets::tar_option_get("storage"),
-                              retrieval = targets::tar_option_get("retrieval"),
-                              cue = targets::tar_option_get("cue"),
-                              description = targets::tar_option_get("description")) {
+tar_target_jl_raw <- function(
+  name,
+  script,
+  pre_script = NULL,
+  post_script = NULL,
+  inputs = NULL,
+  output = "object",
+  retrieve = NULL,
+  files = NULL,
+  julia_version = NULL,
+  julia_home = NULL,
+  julia_project = NULL,
+  julia_packages = NULL,
+  pattern = NULL,
+  packages = targets::tar_option_get("packages"),
+  library = targets::tar_option_get("library"),
+  deps = NULL,
+  string = NULL,
+  format = NULL,
+  repository = targets::tar_option_get("repository"),
+  iteration = targets::tar_option_get("iteration"),
+  error = targets::tar_option_get("error"),
+  memory = targets::tar_option_get("memory"),
+  garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
+  deployment = targets::tar_option_get("deployment"),
+  priority = targets::tar_option_get("priority"),
+  resources = targets::tar_option_get("resources"),
+  storage = targets::tar_option_get("storage"),
+  retrieval = targets::tar_option_get("retrieval"),
+  cue = targets::tar_option_get("cue"),
+  description = targets::tar_option_get("description")
+) {
   if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
     stop("`name` must be a single non-empty string.", call. = FALSE)
   }
   output <- .tp_match_output(output)
   .tp_assert_script(script, "script")
   if (inherits(script, "tp_expr")) {
-    stop("`script` cannot be an R `tar_code({ ... })` block; the Julia `script` ",
-      "must be source code (a `tar_code(\"...\")` string) or a path.", call. = FALSE)
+    stop(
+      "`script` cannot be an R `tar_code({ ... })` block; the Julia `script` ",
+      "must be source code (a `tar_code(\"...\")` string) or a path.",
+      call. = FALSE
+    )
   }
-  if (!is.null(pre_script)) .tp_assert_script(pre_script, "pre_script")
-  if (!is.null(post_script)) .tp_assert_script(post_script, "post_script")
+  if (!is.null(pre_script)) {
+    .tp_assert_script(pre_script, "pre_script")
+  }
+  if (!is.null(post_script)) {
+    .tp_assert_script(post_script, "post_script")
+  }
   inputs_call <- .tp_inputs_call(inputs)
 
   command <- bquote(
@@ -236,36 +245,38 @@ tar_target_jl_raw <- function(name,
 #'     retrieve = "result"
 #'   )
 #' )
-tar_target_jl <- function(name,
-                          script,
-                          pre_script = NULL,
-                          post_script = NULL,
-                          inputs = NULL,
-                          output = "object",
-                          retrieve = NULL,
-                          files = NULL,
-                          julia_version = NULL,
-                          julia_home = NULL,
-                          julia_project = NULL,
-                          julia_packages = NULL,
-                          pattern = NULL,
-                          packages = targets::tar_option_get("packages"),
-                          library = targets::tar_option_get("library"),
-                          deps = NULL,
-                          string = NULL,
-                          format = NULL,
-                          repository = targets::tar_option_get("repository"),
-                          iteration = targets::tar_option_get("iteration"),
-                          error = targets::tar_option_get("error"),
-                          memory = targets::tar_option_get("memory"),
-                          garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
-                          deployment = targets::tar_option_get("deployment"),
-                          priority = targets::tar_option_get("priority"),
-                          resources = targets::tar_option_get("resources"),
-                          storage = targets::tar_option_get("storage"),
-                          retrieval = targets::tar_option_get("retrieval"),
-                          cue = targets::tar_option_get("cue"),
-                          description = targets::tar_option_get("description")) {
+tar_target_jl <- function(
+  name,
+  script,
+  pre_script = NULL,
+  post_script = NULL,
+  inputs = NULL,
+  output = "object",
+  retrieve = NULL,
+  files = NULL,
+  julia_version = NULL,
+  julia_home = NULL,
+  julia_project = NULL,
+  julia_packages = NULL,
+  pattern = NULL,
+  packages = targets::tar_option_get("packages"),
+  library = targets::tar_option_get("library"),
+  deps = NULL,
+  string = NULL,
+  format = NULL,
+  repository = targets::tar_option_get("repository"),
+  iteration = targets::tar_option_get("iteration"),
+  error = targets::tar_option_get("error"),
+  memory = targets::tar_option_get("memory"),
+  garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
+  deployment = targets::tar_option_get("deployment"),
+  priority = targets::tar_option_get("priority"),
+  resources = targets::tar_option_get("resources"),
+  storage = targets::tar_option_get("storage"),
+  retrieval = targets::tar_option_get("retrieval"),
+  cue = targets::tar_option_get("cue"),
+  description = targets::tar_option_get("description")
+) {
   name <- .tp_name(substitute(name))
   pattern <- substitute(pattern)
   tar_target_jl_raw(

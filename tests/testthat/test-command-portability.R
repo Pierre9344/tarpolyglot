@@ -29,8 +29,12 @@ in_project <- function(code) {
 test_that("a Python step's command does not depend on where the project lives", {
   build <- function() {
     tar_target_py(
-      name = py_step, script = "py/step.py", pre_script = "pre.R",
-      inputs = c(x = "up"), env = ".venv", env_manager = "uv",
+      name = py_step,
+      script = "py/step.py",
+      pre_script = "pre.R",
+      inputs = c(x = "up"),
+      env = ".venv",
+      env_manager = "uv",
       retrieve = "result"
     )
   }
@@ -44,8 +48,11 @@ test_that("an existing relative `env` is not absolutised into the command", {
   # `.venv` exists in the project, which is exactly the case
   # .tp_resolve_env_path() absolutises -- but it must only do so at run time.
   t <- in_project(tar_target_py(
-    name = py_step, script = "py/step.py",
-    env = ".venv", env_manager = "uv", retrieve = "result"
+    name = py_step,
+    script = "py/step.py",
+    env = ".venv",
+    env_manager = "uv",
+    retrieve = "result"
   ))
   txt <- paste(deparse(t$command$expr), collapse = " ")
   expect_match(txt, 'env = ".venv"', fixed = TRUE)
@@ -55,19 +62,27 @@ test_that("a Julia step's command does not depend on tarpolyglot.julia_home", {
   build <- function(home) {
     withr::with_options(list(tarpolyglot.julia_home = home), {
       in_project(tar_target_jl(
-        name = jl_step, script = "jl/step.jl", retrieve = "result"
+        name = jl_step,
+        script = "jl/step.jl",
+        retrieve = "result"
       ))
     })
   }
   # Two machines with different Julia installs, and one with the option unset.
-  expect_identical(cmd_hash(build("/volume2/@appstore/julia/bin")),
-    cmd_hash(build("C:/Users/someone/.julia/juliaup/bin")))
-  expect_identical(cmd_hash(build("/volume2/@appstore/julia/bin")),
-    cmd_hash(build(NULL)))
+  expect_identical(
+    cmd_hash(build("/volume2/@appstore/julia/bin")),
+    cmd_hash(build("C:/Users/someone/.julia/juliaup/bin"))
+  )
+  expect_identical(
+    cmd_hash(build("/volume2/@appstore/julia/bin")),
+    cmd_hash(build(NULL))
+  )
 
   # And the path must not be visible in the command text at all.
-  txt <- paste(deparse(build("/volume2/@appstore/julia/bin")$command$expr),
-    collapse = " ")
+  txt <- paste(
+    deparse(build("/volume2/@appstore/julia/bin")$command$expr),
+    collapse = " "
+  )
   expect_false(grepl("volume2", txt, fixed = TRUE))
 })
 
