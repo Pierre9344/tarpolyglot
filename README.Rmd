@@ -225,4 +225,4 @@ Claude Code (Anthropic's Claude Opus 4.8, and then Opus 5) was used as an assist
 
 ## Citation
 
-To cite `{tarpolyglot}`, run `citation("tarpolyglot")` in R, or see the [`CITATION.cff`](CITATION.cff) file (also surfaced by GitHub's "Cite this repository" button).
+To cite `{tarpolyglot}`, run `citation("tarpolyglot")` in R. The repository also carries a `CITATION.cff`, which is what GitHub's "Cite this repository" button reads.

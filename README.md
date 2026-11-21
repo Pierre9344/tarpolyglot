@@ -128,10 +128,10 @@ targets::tar_dir({
 #> + values dispatched
 #> ✔ values completed [16ms, 58 B]
 #> + py_mean dispatched
-#> ✔ py_mean completed [875ms, 94 B]
+#> ✔ py_mean completed [906ms, 94 B]
 #> + report dispatched
-#> ✔ report completed [15ms, 71 B]
-#> ✔ ended pipeline [3.3s, 3 completed, 0 skipped]
+#> ✔ report completed [0ms, 71 B]
+#> ✔ ended pipeline [3.4s, 3 completed, 0 skipped]
 #> Warning messages:
 #> 1: package 'targets' was built under R version 4.6.2 
 #> 2: 1 targets produced warnings. Run targets::tar_meta(fields = warnings, complete_only = TRUE) for the messages. 
@@ -227,4 +227,4 @@ Claude Code (Anthropic's Claude Opus 4.8, and then Opus 5) was used as an assist
 
 ## Citation
 
-To cite `{tarpolyglot}`, run `citation("tarpolyglot")` in R, or see the [`CITATION.cff`](CITATION.cff) file (also surfaced by GitHub's "Cite this repository" button).
+To cite `{tarpolyglot}`, run `citation("tarpolyglot")` in R. The repository also carries a `CITATION.cff`, which is what GitHub's "Cite this repository" button reads.
