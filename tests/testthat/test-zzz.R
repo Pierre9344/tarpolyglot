@@ -12,7 +12,7 @@ test_that(".onLoad seeds tarpolyglot.julia_home from JULIA_HOME", {
   old <- getOption("tarpolyglot.julia_home")
   withr::defer(options(tarpolyglot.julia_home = old))
 
-  options(tarpolyglot.julia_home = NULL)   # assigning NULL removes the option
+  options(tarpolyglot.julia_home = NULL) # assigning NULL removes the option
   onload("lib", "tarpolyglot")
   expect_identical(getOption("tarpolyglot.julia_home"), "/tp/fake/julia/bin")
 })

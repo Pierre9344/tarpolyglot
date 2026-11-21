@@ -62,8 +62,11 @@ tar_code <- function(x) {
   # literal, a variable holding a string, or any expression yielding one.
   value <- x
   if (!is.character(value) || length(value) != 1L || is.na(value)) {
-    stop("`tar_code()` expects inline code: an R `{ }` block, or a single string ",
-      "of source code.", call. = FALSE)
+    stop(
+      "`tar_code()` expects inline code: an R `{ }` block, or a single string ",
+      "of source code.",
+      call. = FALSE
+    )
   }
   .tp_inline_source(.tp_dedent(value))
 }
@@ -90,10 +93,14 @@ tar_code <- function(x) {
 # differs in tabs-vs-spaces simply shortens the common prefix (matching textwrap.dedent).
 .tp_dedent <- function(code) {
   lines <- strsplit(code, "\n", fixed = TRUE)[[1L]]
-  if (length(lines) == 0L) return("")
+  if (length(lines) == 0L) {
+    return("")
+  }
   is_blank <- grepl("^[[:space:]]*$", lines)
   keep <- which(!is_blank)
-  if (length(keep) == 0L) return("")
+  if (length(keep) == 0L) {
+    return("")
+  }
   lines <- lines[keep[1L]:keep[length(keep)]]
   is_blank <- is_blank[keep[1L]:keep[length(keep)]]
 
@@ -107,17 +114,29 @@ tar_code <- function(x) {
   }
 
   n <- nchar(common)
-  out <- vapply(seq_along(lines), function(i) {
-    if (is_blank[i]) return("")
-    if (n > 0L && startsWith(lines[i], common)) substring(lines[i], n + 1L) else lines[i]
-  }, character(1L))
+  out <- vapply(
+    seq_along(lines),
+    function(i) {
+      if (is_blank[i]) {
+        return("")
+      }
+      if (n > 0L && startsWith(lines[i], common)) {
+        substring(lines[i], n + 1L)
+      } else {
+        lines[i]
+      }
+    },
+    character(1L)
+  )
   paste(out, collapse = "\n")
 }
 
 # Longest common character prefix of two strings.
 .tp_common_prefix <- function(a, b) {
   m <- min(nchar(a), nchar(b))
-  if (m == 0L) return("")
+  if (m == 0L) {
+    return("")
+  }
   ca <- substring(a, seq_len(m), seq_len(m))
   cb <- substring(b, seq_len(m), seq_len(m))
   diff <- which(ca != cb)

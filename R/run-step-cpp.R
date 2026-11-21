@@ -17,8 +17,11 @@
   add <- c(R.home("bin"), file.path(R.home("bin"), "x64"))
   if (.Platform$OS.type == "windows") {
     rt <- Sys.getenv("RTOOLS45_HOME", unset = "")
-    for (d in c(if (nzchar(rt)) file.path(rt, "usr", "bin"),
-                "C:/rtools45/usr/bin", "C:/rtools44/usr/bin")) {
+    for (d in c(
+      if (nzchar(rt)) file.path(rt, "usr", "bin"),
+      "C:/rtools45/usr/bin",
+      "C:/rtools44/usr/bin"
+    )) {
       if (dir.exists(d)) {
         add <- c(add, d)
         break
@@ -41,21 +44,28 @@
 .tp_cpp_finish <- function(e, post_script, output) {
   if (identical(output, "file")) {
     if (is.null(post_script)) {
-      stop("output = \"file\" needs a `post_script` returning paths.",
-        call. = FALSE)
+      stop(
+        "output = \"file\" needs a `post_script` returning paths.",
+        call. = FALSE
+      )
     }
     .tp_assert_script(post_script, "post_script", must_exist = TRUE)
     paths <- .tp_eval_script(post_script, e)
     if (is.null(paths)) {
-      stop("output = \"file\" needs a `post_script` returning paths.",
-        call. = FALSE)
+      stop(
+        "output = \"file\" needs a `post_script` returning paths.",
+        call. = FALSE
+      )
     }
     return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
   }
 
   if (is.null(post_script)) {
-    stop("output = \"object\" needs a `post_script` that calls the compiled C++ ",
-      "function(s) and returns a value.", call. = FALSE)
+    stop(
+      "output = \"object\" needs a `post_script` that calls the compiled C++ ",
+      "function(s) and returns a value.",
+      call. = FALSE
+    )
   }
   .tp_assert_script(post_script, "post_script", must_exist = TRUE)
   .tp_eval_script(post_script, e)
@@ -98,17 +108,21 @@
 #'     )
 #'   })
 #' }
-run_cpp_step <- function(script,
-                         post_script = NULL,
-                         inputs = list(),
-                         output = "object",
-                         depends = NULL,
-                         name = NULL) {
+run_cpp_step <- function(
+  script,
+  post_script = NULL,
+  inputs = list(),
+  output = "object",
+  depends = NULL,
+  name = NULL
+) {
   output <- .tp_match_output(output)
   .tp_assert_script(script, "script", must_exist = TRUE)
 
   e <- new.env(parent = globalenv())
-  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
+  for (nm in names(inputs)) {
+    assign(nm, inputs[[nm]], envir = e)
+  }
 
   restore_env <- .tp_with_cpp_build_env()
   on.exit(restore_env(), add = TRUE)
@@ -121,7 +135,9 @@ run_cpp_step <- function(script,
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {
     .tp_log_write_header(
-      log_paths$stdout, name = name, toolchain = "C++",
+      log_paths$stdout,
+      name = name,
+      toolchain = "C++",
       version = paste0("Rcpp ", as.character(utils::packageVersion("Rcpp"))),
       tool_path = R.home("bin"),
       env_info = .tp_cpp_env_info(depends)
@@ -139,8 +155,11 @@ run_cpp_step <- function(script,
 # ahead of the user's own code, so it augments rather than replaces any
 # `Rcpp::depends()` attribute already written in the script itself.
 .tp_cpp_source_code <- function(script, depends) {
-  code <- if (inherits(script, "tp_source")) script$code else
+  code <- if (inherits(script, "tp_source")) {
+    script$code
+  } else {
     paste(readLines(script, warn = FALSE), collapse = "\n")
+  }
   if (is.null(depends) || !length(depends)) {
     return(code)
   }
@@ -187,17 +206,35 @@ compile_cpp_lib <- function(script, depends = NULL) {
   e <- new.env(parent = globalenv())
   res <- Rcpp::sourceCpp(code = code, env = e, verbose = FALSE)
 
-  dll_path <- list.files(res$buildDirectory, pattern = "\\.(dll|so|dylib)$",
-    full.names = TRUE, recursive = TRUE)
+  dll_path <- list.files(
+    res$buildDirectory,
+    pattern = "\\.(dll|so|dylib)$",
+    full.names = TRUE,
+    recursive = TRUE
+  )
   if (length(dll_path) != 1L) {
-    stop("Expected exactly one compiled library in the sourceCpp() build ",
-      "directory, found ", length(dll_path), ".", call. = FALSE)
+    stop(
+      "Expected exactly one compiled library in the sourceCpp() build ",
+      "directory, found ",
+      length(dll_path),
+      ".",
+      call. = FALSE
+    )
   }
-  r_path <- list.files(res$buildDirectory, pattern = "\\.cpp\\.R$",
-    full.names = TRUE, recursive = TRUE)
+  r_path <- list.files(
+    res$buildDirectory,
+    pattern = "\\.cpp\\.R$",
+    full.names = TRUE,
+    recursive = TRUE
+  )
   if (length(r_path) != 1L) {
-    stop("Expected exactly one generated wrapper .cpp.R file in the sourceCpp() ",
-      "build directory, found ", length(r_path), ".", call. = FALSE)
+    stop(
+      "Expected exactly one generated wrapper .cpp.R file in the sourceCpp() ",
+      "build directory, found ",
+      length(r_path),
+      ".",
+      call. = FALSE
+    )
   }
 
   dll_path <- normalizePath(dll_path, winslash = "/", mustWork = TRUE)
@@ -248,15 +285,19 @@ compile_cpp_lib <- function(script, depends = NULL) {
 #'     run_cpp_step_prebuilt(lib = lib, inputs = list(x = 21), post_script = "post.R")
 #'   })
 #' }
-run_cpp_step_prebuilt <- function(lib,
-                                  post_script = NULL,
-                                  inputs = list(),
-                                  output = "object",
-                                  name = NULL) {
+run_cpp_step_prebuilt <- function(
+  lib,
+  post_script = NULL,
+  inputs = list(),
+  output = "object",
+  name = NULL
+) {
   output <- .tp_match_output(output)
   if (!inherits(lib, "tp_cpp_lib")) {
-    stop("`lib` must be a compiled library object from compile_cpp_lib().",
-      call. = FALSE)
+    stop(
+      "`lib` must be a compiled library object from compile_cpp_lib().",
+      call. = FALSE
+    )
   }
 
   # sourceCpp() names each freshly compiled library `sourceCpp_<N>` from a
@@ -303,15 +344,21 @@ run_cpp_step_prebuilt <- function(lib,
   }
 
   e <- new.env(parent = globalenv())
-  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
-  for (nm in names(cached$objs)) assign(nm, cached$objs[[nm]], envir = e)
+  for (nm in names(inputs)) {
+    assign(nm, inputs[[nm]], envir = e)
+  }
+  for (nm in names(cached$objs)) {
+    assign(nm, cached$objs[[nm]], envir = e)
+  }
 
   # Per-step Rcout/Rcerr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {
     .tp_log_write_header(
-      log_paths$stdout, name = name, toolchain = "C++",
+      log_paths$stdout,
+      name = name,
+      toolchain = "C++",
       version = paste0("Rcpp ", as.character(utils::packageVersion("Rcpp"))),
       tool_path = R.home("bin"),
       env_info = "reused a pre-compiled library (tarpolyglot_map() compile-once), not recompiled"

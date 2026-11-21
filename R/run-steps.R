@@ -35,35 +35,46 @@
 #'     )
 #'   })
 #' }
-run_py_step <- function(script,
-                        pre_script = NULL,
-                        post_script = NULL,
-                        inputs = list(),
-                        output = "object",
-                        retrieve = NULL,
-                        files = NULL,
-                        python_version = NULL,
-                        env = NULL,
-                        env_manager = "system",
-                        python = NULL,
-                        name = NULL) {
+run_py_step <- function(
+  script,
+  pre_script = NULL,
+  post_script = NULL,
+  inputs = list(),
+  output = "object",
+  retrieve = NULL,
+  files = NULL,
+  python_version = NULL,
+  env = NULL,
+  env_manager = "system",
+  python = NULL,
+  name = NULL
+) {
   output <- .tp_match_output(output)
   .tp_assert_script(script, "script", must_exist = TRUE)
 
   e <- new.env(parent = globalenv())
-  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
+  for (nm in names(inputs)) {
+    assign(nm, inputs[[nm]], envir = e)
+  }
 
   # 1. Configure the interpreter before any Python call.
-  cfg <- .tp_resolve_python(python_version = python_version, env = env,
-    env_manager = env_manager, python = python)
+  cfg <- .tp_resolve_python(
+    python_version = python_version,
+    env = env,
+    env_manager = env_manager,
+    python = python
+  )
 
   # 1b. Per-step stdout/stderr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {
     .tp_log_write_header(
-      log_paths$stdout, name = name, toolchain = "Python",
-      version = cfg$version, tool_path = cfg$python,
+      log_paths$stdout,
+      name = name,
+      toolchain = "Python",
+      version = cfg$version,
+      tool_path = cfg$python,
       env_info = .tp_py_env_info(python_version, env, env_manager, python)
     )
   }
@@ -75,7 +86,9 @@ run_py_step <- function(script,
     if (exists("to_py", envir = e, inherits = FALSE)) {
       to_py <- get("to_py", envir = e)
       main <- reticulate::import_main(convert = TRUE)
-      for (nm in names(to_py)) main[[nm]] <- to_py[[nm]]
+      for (nm in names(to_py)) {
+        main[[nm]] <- to_py[[nm]]
+      }
     }
   }
 
@@ -103,8 +116,10 @@ run_py_step <- function(script,
       files
     }
     if (is.null(paths)) {
-      stop("output = \"file\" needs a `post_script` returning paths, or `files`.",
-        call. = FALSE)
+      stop(
+        "output = \"file\" needs a `post_script` returning paths, or `files`.",
+        call. = FALSE
+      )
     }
     return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
   }
@@ -116,11 +131,15 @@ run_py_step <- function(script,
   }
   if (!is.null(retrieve)) {
     vals <- lapply(retrieve, function(n) reticulate::py_to_r(py[[n]]))
-    if (length(retrieve) == 1L) return(vals[[1L]])
+    if (length(retrieve) == 1L) {
+      return(vals[[1L]])
+    }
     return(stats::setNames(vals, retrieve))
   }
-  stop("output = \"object\" needs either a `post_script` or `retrieve`.",
-    call. = FALSE)
+  stop(
+    "output = \"object\" needs either a `post_script` or `retrieve`.",
+    call. = FALSE
+  )
 }
 
 #' Execute a Julia step (worker behind tar_target_jl)
@@ -158,34 +177,44 @@ run_py_step <- function(script,
 #'     )
 #'   })
 #' }
-run_jl_step <- function(script,
-                        pre_script = NULL,
-                        post_script = NULL,
-                        inputs = list(),
-                        output = "object",
-                        retrieve = NULL,
-                        files = NULL,
-                        julia_version = NULL,
-                        julia_home = NULL,
-                        julia_project = NULL,
-                        julia_packages = NULL,
-                        name = NULL) {
+run_jl_step <- function(
+  script,
+  pre_script = NULL,
+  post_script = NULL,
+  inputs = list(),
+  output = "object",
+  retrieve = NULL,
+  files = NULL,
+  julia_version = NULL,
+  julia_home = NULL,
+  julia_project = NULL,
+  julia_packages = NULL,
+  name = NULL
+) {
   output <- .tp_match_output(output)
   .tp_assert_script(script, "script", must_exist = TRUE)
 
   e <- new.env(parent = globalenv())
-  for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
+  for (nm in names(inputs)) {
+    assign(nm, inputs[[nm]], envir = e)
+  }
 
   # 1. Configure Julia before any call.
-  .tp_resolve_julia(julia_version = julia_version, julia_home = julia_home,
-    julia_project = julia_project, julia_packages = julia_packages)
+  .tp_resolve_julia(
+    julia_version = julia_version,
+    julia_home = julia_home,
+    julia_project = julia_project,
+    julia_packages = julia_packages
+  )
 
   # 1b. Per-step stdout/stderr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {
     .tp_log_write_header(
-      log_paths$stdout, name = name, toolchain = "Julia",
+      log_paths$stdout,
+      name = name,
+      toolchain = "Julia",
       version = JuliaCall::julia_eval("string(VERSION)"),
       tool_path = JuliaCall::julia_eval("Sys.BINDIR"),
       env_info = .tp_jl_env_info(julia_project)
@@ -198,7 +227,9 @@ run_jl_step <- function(script,
     .tp_eval_script(pre_script, e)
     if (exists("to_jl", envir = e, inherits = FALSE)) {
       to_jl <- get("to_jl", envir = e)
-      for (nm in names(to_jl)) JuliaCall::julia_assign(nm, to_jl[[nm]])
+      for (nm in names(to_jl)) {
+        JuliaCall::julia_assign(nm, to_jl[[nm]])
+      }
     }
   }
 
@@ -228,8 +259,10 @@ run_jl_step <- function(script,
       files
     }
     if (is.null(paths)) {
-      stop("output = \"file\" needs a `post_script` returning paths, or `files`.",
-        call. = FALSE)
+      stop(
+        "output = \"file\" needs a `post_script` returning paths, or `files`.",
+        call. = FALSE
+      )
     }
     return(normalizePath(as.character(paths), winslash = "/", mustWork = FALSE))
   }
@@ -240,9 +273,13 @@ run_jl_step <- function(script,
   }
   if (!is.null(retrieve)) {
     vals <- lapply(retrieve, JuliaCall::julia_eval)
-    if (length(retrieve) == 1L) return(vals[[1L]])
+    if (length(retrieve) == 1L) {
+      return(vals[[1L]])
+    }
     return(stats::setNames(vals, retrieve))
   }
-  stop("output = \"object\" needs either a `post_script` or `retrieve`.",
-    call. = FALSE)
+  stop(
+    "output = \"object\" needs either a `post_script` or `retrieve`.",
+    call. = FALSE
+  )
 }

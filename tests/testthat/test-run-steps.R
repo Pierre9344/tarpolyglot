@@ -13,14 +13,17 @@ write_file <- function(code, ext) {
 # ---- Python ---------------------------------------------------------------
 
 mock_python <- function(main = list(result = 42), env = parent.frame()) {
-  testthat::local_mocked_bindings(.tp_resolve_python = function(...) invisible(NULL),
-    .env = env)
+  testthat::local_mocked_bindings(
+    .tp_resolve_python = function(...) invisible(NULL),
+    .env = env
+  )
   testthat::local_mocked_bindings(
     import_main = function(...) main,
     py_run_file = function(...) invisible(NULL),
     py_run_string = function(...) invisible(NULL),
     py_to_r = function(x) x,
-    .package = "reticulate", .env = env
+    .package = "reticulate",
+    .env = env
   )
 }
 
@@ -46,7 +49,9 @@ test_that("run_py_step binds inputs and hands `to_py` over from the pre-script",
   # works on it exactly as it does on the real reticulate object, so whatever
   # the worker pushes can be read back afterwards.
   main <- new.env(parent = emptyenv())
-  testthat::local_mocked_bindings(.tp_resolve_python = function(...) invisible(NULL))
+  testthat::local_mocked_bindings(.tp_resolve_python = function(...) {
+    invisible(NULL)
+  })
   testthat::local_mocked_bindings(
     import_main = function(...) main,
     py_run_file = function(...) invisible(NULL),
@@ -103,7 +108,8 @@ mock_julia <- function(values = list(result = 42), env = parent.frame()) {
   testthat::local_mocked_bindings(
     julia_eval = function(name, ...) values[[name]],
     julia_call = function(...) invisible(NULL),
-    .package = "JuliaCall", .env = env
+    .package = "JuliaCall",
+    .env = env
   )
 }
 

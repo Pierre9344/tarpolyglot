@@ -18,10 +18,19 @@ test_that("polyglot_log validates stdout/stderr", {
 })
 
 test_that(".tp_log_set_env / .tp_log_get_config round-trip", {
-  withr::local_envvar(TARPOLYGLOT_LOG_STDOUT = NA, TARPOLYGLOT_LOG_STDERR = NA,
-    TARPOLYGLOT_LOG_APPEND = NA, TARPOLYGLOT_LOG_HEADER = NA)
+  withr::local_envvar(
+    TARPOLYGLOT_LOG_STDOUT = NA,
+    TARPOLYGLOT_LOG_STDERR = NA,
+    TARPOLYGLOT_LOG_APPEND = NA,
+    TARPOLYGLOT_LOG_HEADER = NA
+  )
 
-  .tp_log_set_env(polyglot_log(stdout = "out/", stderr = "err/", append = TRUE, header = FALSE))
+  .tp_log_set_env(polyglot_log(
+    stdout = "out/",
+    stderr = "err/",
+    append = TRUE,
+    header = FALSE
+  ))
   cfg <- .tp_log_get_config()
   expect_equal(cfg$stdout, "out/")
   expect_equal(cfg$stderr, "err/")
@@ -45,9 +54,15 @@ test_that(".tp_log_get_config returns NULL when neither stream is configured", {
 })
 
 test_that("polyglot_controller(log=) sets the env vars a worker would inherit", {
-  withr::local_envvar(TARPOLYGLOT_LOG_STDOUT = NA, TARPOLYGLOT_LOG_STDERR = NA,
-    TARPOLYGLOT_LOG_APPEND = NA, TARPOLYGLOT_LOG_HEADER = NA)
-  ctrl <- polyglot_controller(log = polyglot_log(stdout = "./x", stderr = NULL, append = TRUE))
+  withr::local_envvar(
+    TARPOLYGLOT_LOG_STDOUT = NA,
+    TARPOLYGLOT_LOG_STDERR = NA,
+    TARPOLYGLOT_LOG_APPEND = NA,
+    TARPOLYGLOT_LOG_HEADER = NA
+  )
+  ctrl <- polyglot_controller(
+    log = polyglot_log(stdout = "./x", stderr = NULL, append = TRUE)
+  )
   on.exit(try(ctrl$terminate(), silent = TRUE), add = TRUE)
   expect_equal(Sys.getenv("TARPOLYGLOT_LOG_STDOUT"), "./x")
   expect_equal(Sys.getenv("TARPOLYGLOT_LOG_STDERR"), "")
@@ -80,14 +95,20 @@ test_that(".tp_log_start on a fresh (nonexistent) path just creates it, append o
 
 test_that(".tp_log_prepare returns NULL without a log config or a name", {
   expect_null(.tp_log_prepare(NULL, "step"))
-  expect_null(.tp_log_prepare(list(stdout = "x", stderr = "y", append = FALSE), NULL))
+  expect_null(.tp_log_prepare(
+    list(stdout = "x", stderr = "y", append = FALSE),
+    NULL
+  ))
 })
 
 test_that(".tp_log_prepare builds <name>.out / <name>.err under the configured dirs", {
   dir <- withr::local_tempdir()
   out_dir <- file.path(dir, "out")
   err_dir <- file.path(dir, "err")
-  paths <- .tp_log_prepare(list(stdout = out_dir, stderr = err_dir, append = FALSE), "my_step")
+  paths <- .tp_log_prepare(
+    list(stdout = out_dir, stderr = err_dir, append = FALSE),
+    "my_step"
+  )
   expect_equal(paths$stdout, file.path(out_dir, "my_step.out"))
   expect_equal(paths$stderr, file.path(err_dir, "my_step.err"))
   expect_true(file.exists(paths$stdout))
@@ -96,7 +117,10 @@ test_that(".tp_log_prepare builds <name>.out / <name>.err under the configured d
 
 test_that(".tp_log_prepare honors a NULL stream (disabled independently)", {
   dir <- withr::local_tempdir()
-  paths <- .tp_log_prepare(list(stdout = dir, stderr = NULL, append = FALSE), "s")
+  paths <- .tp_log_prepare(
+    list(stdout = dir, stderr = NULL, append = FALSE),
+    "s"
+  )
   expect_equal(paths$stdout, file.path(dir, "s.out"))
   expect_null(paths$stderr)
 })
@@ -104,14 +128,32 @@ test_that(".tp_log_prepare honors a NULL stream (disabled independently)", {
 test_that(".tp_log_write_header writes the expected fields", {
   path <- withr::local_tempfile()
   file.create(path)
-  .tp_log_write_header(path, name = "my_step", toolchain = "Python",
-    version = "3.12", tool_path = "/usr/bin/python3", env_info = "no (system default)")
+  .tp_log_write_header(
+    path,
+    name = "my_step",
+    toolchain = "Python",
+    version = "3.12",
+    tool_path = "/usr/bin/python3",
+    env_info = "no (system default)"
+  )
   lines <- readLines(path)
   expect_match(lines[[1]], "my_step", fixed = TRUE)
   expect_match(paste(lines, collapse = "\n"), "date:")
-  expect_match(paste(lines, collapse = "\n"), "Python version: 3.12", fixed = TRUE)
-  expect_match(paste(lines, collapse = "\n"), "Python path: /usr/bin/python3", fixed = TRUE)
-  expect_match(paste(lines, collapse = "\n"), "environment: no (system default)", fixed = TRUE)
+  expect_match(
+    paste(lines, collapse = "\n"),
+    "Python version: 3.12",
+    fixed = TRUE
+  )
+  expect_match(
+    paste(lines, collapse = "\n"),
+    "Python path: /usr/bin/python3",
+    fixed = TRUE
+  )
+  expect_match(
+    paste(lines, collapse = "\n"),
+    "environment: no (system default)",
+    fixed = TRUE
+  )
 })
 
 test_that(".tp_log_write_header is a no-op for a NULL path", {
@@ -119,7 +161,10 @@ test_that(".tp_log_write_header is a no-op for a NULL path", {
 })
 
 test_that(".tp_py_env_info describes each selection precedence branch", {
-  expect_match(.tp_py_env_info(NULL, NULL, "system", "/usr/bin/python3"), "explicit interpreter")
+  expect_match(
+    .tp_py_env_info(NULL, NULL, "system", "/usr/bin/python3"),
+    "explicit interpreter"
+  )
   expect_match(.tp_py_env_info(NULL, ".venv", "uv", NULL), "environment")
   expect_match(.tp_py_env_info(NULL, ".venv", "uv", NULL), "uv", fixed = TRUE)
   expect_match(.tp_py_env_info("3.12", NULL, "system", NULL), "version-pinned")
@@ -175,20 +220,36 @@ test_that(".tp_cpp_with_redirect captures cat()/message() output to the configur
     "value"
   })
   expect_equal(result, "value")
-  expect_match(paste(readLines(out_path, warn = FALSE), collapse = "\n"), "to stdout", fixed = TRUE)
-  expect_match(paste(readLines(err_path, warn = FALSE), collapse = "\n"), "to stderr", fixed = TRUE)
+  expect_match(
+    paste(readLines(out_path, warn = FALSE), collapse = "\n"),
+    "to stdout",
+    fixed = TRUE
+  )
+  expect_match(
+    paste(readLines(err_path, warn = FALSE), collapse = "\n"),
+    "to stderr",
+    fixed = TRUE
+  )
 })
 
 test_that(".tp_cpp_with_redirect honors a NULL stream (disabled independently)", {
   out_path <- withr::local_tempfile()
   file.create(out_path)
   .tp_cpp_with_redirect(out_path, NULL, function() cat("only stdout\n"))
-  expect_match(paste(readLines(out_path, warn = FALSE), collapse = "\n"), "only stdout", fixed = TRUE)
+  expect_match(
+    paste(readLines(out_path, warn = FALSE), collapse = "\n"),
+    "only stdout",
+    fixed = TRUE
+  )
 })
 
 test_that(".tp_cpp_env_info describes the depends argument", {
   expect_match(.tp_cpp_env_info(NULL), "no Rcpp::depends", fixed = TRUE)
   expect_match(.tp_cpp_env_info(character(0)), "no Rcpp::depends", fixed = TRUE)
   expect_match(.tp_cpp_env_info("RcppArmadillo"), "RcppArmadillo", fixed = TRUE)
-  expect_match(.tp_cpp_env_info(c("RcppArmadillo", "RcppEigen")), "RcppArmadillo, RcppEigen", fixed = TRUE)
+  expect_match(
+    .tp_cpp_env_info(c("RcppArmadillo", "RcppEigen")),
+    "RcppArmadillo, RcppEigen",
+    fixed = TRUE
+  )
 })

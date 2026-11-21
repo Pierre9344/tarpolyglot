@@ -46,8 +46,11 @@
     head <- x[[1L]]
     # Unwrap `tarpolyglot::tarpolyglot_map` to the bare helper name.
     bare <- head
-    if (is.call(head) && identical(head[[1L]], as.name("::")) &&
-        identical(head[[2L]], as.name("tarpolyglot"))) {
+    if (
+      is.call(head) &&
+        identical(head[[1L]], as.name("::")) &&
+        identical(head[[2L]], as.name("tarpolyglot"))
+    ) {
       bare <- head[[3L]]
     }
     if (is.name(bare)) {
@@ -112,7 +115,9 @@ tarpolyglot_map <- function(...) {
 # in the `pattern` argument, where the constructors read them symbolically.
 .tp_pattern_marker <- function(fn) {
   stop(
-    "`", fn, "()` is only meant to be used unquoted in the `pattern` argument ",
+    "`",
+    fn,
+    "()` is only meant to be used unquoted in the `pattern` argument ",
     "of a tarpolyglot constructor (tar_target_rs() / tar_target_cpp() / ",
     "tar_target_py() / tar_target_jl()); it is not a function to call directly.",
     call. = FALSE

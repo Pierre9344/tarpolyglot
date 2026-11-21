@@ -2,7 +2,9 @@
 
 # Deparse a bare-symbol or string `name` captured with substitute().
 .tp_name <- function(expr) {
-  if (is.character(expr)) return(expr)
+  if (is.character(expr)) {
+    return(expr)
+  }
   deparse(expr)
 }
 
@@ -24,7 +26,11 @@
   if (inherits(x, "tp_expr")) {
     return(eval(x$code, envir = envir))
   }
-  exprs <- if (inherits(x, "tp_source")) parse(text = x$code) else parse(file = x)
+  exprs <- if (inherits(x, "tp_source")) {
+    parse(text = x$code)
+  } else {
+    parse(file = x)
+  }
   value <- NULL
   for (i in seq_along(exprs)) {
     value <- eval(exprs[[i]], envir = envir)
@@ -59,7 +65,9 @@
 #' )
 #' @export
 tar_target_path <- function(name) {
-  if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name)) {
+  if (
+    !is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name)
+  ) {
     stop("`name` must be a single non-empty target-name string.", call. = FALSE)
   }
   structure(name, class = c("tp_target_ref", "character"))
@@ -67,12 +75,20 @@ tar_target_path <- function(name) {
 
 # Turn a script/pre_script/post_script argument into the expression to splice into the target command: a `tar_target_path()` reference becomes a bare symbol (so `targets` records it as a dependency and substitutes the upstream target's value at run time); a `tar_code()` inline marker becomes a self-contained base-R `structure()` call that rebuilds the classed carrier at run time (source string, or R block wrapped in `quote()`), so the code lives in -- and is hashed with -- the command without referencing any tarpolyglot function; anything else (a literal string, or NULL for an absent pre/post-script) passes through unchanged, to be embedded as a constant exactly as before.
 .tp_script_expr <- function(x) {
-  if (inherits(x, "tp_target_ref")) return(as.name(unclass(x)))
+  if (inherits(x, "tp_target_ref")) {
+    return(as.name(unclass(x)))
+  }
   if (inherits(x, "tp_source")) {
-    return(bquote(structure(list(code = .(x$code)), class = c("tp_inline", "tp_source"))))
+    return(bquote(structure(
+      list(code = .(x$code)),
+      class = c("tp_inline", "tp_source")
+    )))
   }
   if (inherits(x, "tp_expr")) {
-    return(bquote(structure(list(code = quote(.(x$code))), class = c("tp_inline", "tp_expr"))))
+    return(bquote(structure(
+      list(code = quote(.(x$code))),
+      class = c("tp_inline", "tp_expr")
+    )))
   }
   x
 }
@@ -86,12 +102,24 @@ tar_target_path <- function(name) {
   if (inherits(path, "tp_inline")) {
     return(invisible(TRUE))
   }
-  if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
-    stop("`", arg, "` must be a single non-empty file path, or a tar_target_path() reference.",
-      call. = FALSE)
+  if (
+    !is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path)
+  ) {
+    stop(
+      "`",
+      arg,
+      "` must be a single non-empty file path, or a tar_target_path() reference.",
+      call. = FALSE
+    )
   }
   if (must_exist && !file.exists(path)) {
-    stop("`", arg, "` points to a file that does not exist: ", path, call. = FALSE)
+    stop(
+      "`",
+      arg,
+      "` points to a file that does not exist: ",
+      path,
+      call. = FALSE
+    )
   }
   invisible(TRUE)
 }
@@ -104,9 +132,11 @@ tar_target_path <- function(name) {
   inputs <- unlist(inputs, use.names = TRUE)
   nms <- names(inputs)
   if (is.null(nms) || !all(nzchar(nms))) {
-    stop("`inputs` must be a *named* character vector/list mapping ",
+    stop(
+      "`inputs` must be a *named* character vector/list mapping ",
       "in-session names to upstream target names, e.g. c(x = \"up_target\").",
-      call. = FALSE)
+      call. = FALSE
+    )
   }
   syms <- lapply(unname(inputs), as.name)
   as.call(c(list(as.name("list")), stats::setNames(syms, nms)))

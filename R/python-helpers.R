@@ -12,14 +12,22 @@
 .tp_poetry_venv <- function(project = ".") {
   poetry <- getOption("tarpolyglot.poetry", "poetry")
   path <- tryCatch(
-    system2(poetry, c("-C", project, "env", "info", "-p"),
-      stdout = TRUE, stderr = TRUE),
+    system2(
+      poetry,
+      c("-C", project, "env", "info", "-p"),
+      stdout = TRUE,
+      stderr = TRUE
+    ),
     error = function(e) character(0)
   )
   path <- path[nzchar(path)]
   if (length(path) == 0L || !dir.exists(path[[length(path)]])) {
-    stop("Could not resolve a poetry virtualenv for project '", project,
-      "'. Is poetry installed and the project initialised?", call. = FALSE)
+    stop(
+      "Could not resolve a poetry virtualenv for project '",
+      project,
+      "'. Is poetry installed and the project initialised?",
+      call. = FALSE
+    )
   }
   path[[length(path)]]
 }
@@ -48,10 +56,12 @@
 # env            : venv/virtualenv name/path, conda env name, or poetry project dir.
 # env_manager    : how to interpret `env`.
 # python         : explicit interpreter path.
-.tp_resolve_python <- function(python_version = NULL,
-                               env = NULL,
-                               env_manager = "system",
-                               python = NULL) {
+.tp_resolve_python <- function(
+  python_version = NULL,
+  env = NULL,
+  env_manager = "system",
+  python = NULL
+) {
   env_manager <- match.arg(
     env_manager,
     c("system", "virtualenv", "venv", "conda", "uv", "poetry")
@@ -60,8 +70,10 @@
   # 1. Explicit interpreter path wins.
   if (!is.null(python)) {
     if (!is.null(python_version)) {
-      warning("`python_version` is ignored when an explicit `python` path is set.",
-        call. = FALSE)
+      warning(
+        "`python_version` is ignored when an explicit `python` path is set.",
+        call. = FALSE
+      )
     }
     return(.tp_bind(function() reticulate::use_python(python, required = TRUE)))
   }
@@ -69,34 +81,54 @@
   # 2. A concrete environment (any non-system manager, or an `env` value).
   if (!identical(env_manager, "system") || !is.null(env)) {
     if (identical(env_manager, "system")) {
-      stop("`env` was supplied but `env_manager` is 'system'. Set `env_manager` ",
-        "to one of 'virtualenv', 'venv', 'conda', 'uv', 'poetry'.", call. = FALSE)
+      stop(
+        "`env` was supplied but `env_manager` is 'system'. Set `env_manager` ",
+        "to one of 'virtualenv', 'venv', 'conda', 'uv', 'poetry'.",
+        call. = FALSE
+      )
     }
     if (!is.null(python_version)) {
-      warning("`python_version` is ignored when an environment is selected; the ",
-        "environment determines the Python version.", call. = FALSE)
+      warning(
+        "`python_version` is ignored when an environment is selected; the ",
+        "environment determines the Python version.",
+        call. = FALSE
+      )
     }
     return(.tp_bind(function() {
-      switch(env_manager,
+      switch(
+        env_manager,
         # virtualenv, venv and uv all produce standard virtualenvs (whether made by `python -m venv`, the virtualenv tool, uv, or renv::use_python()), so they resolve the same way.
         virtualenv = ,
         venv = ,
         uv = {
           if (is.null(env)) {
-            stop("`env` (virtualenv name or path) is required for ",
-              "env_manager = '", env_manager, "'.", call. = FALSE)
+            stop(
+              "`env` (virtualenv name or path) is required for ",
+              "env_manager = '",
+              env_manager,
+              "'.",
+              call. = FALSE
+            )
           }
           reticulate::use_virtualenv(.tp_resolve_env_path(env), required = TRUE)
         },
         conda = {
           if (is.null(env)) {
-            stop("`env` (conda environment name) is required for ",
-              "env_manager = 'conda'.", call. = FALSE)
+            stop(
+              "`env` (conda environment name) is required for ",
+              "env_manager = 'conda'.",
+              call. = FALSE
+            )
           }
           reticulate::use_condaenv(env, required = TRUE)
         },
         poetry = {
-          reticulate::use_virtualenv(.tp_poetry_venv(.tp_resolve_env_path(if (is.null(env)) "." else env)), required = TRUE)
+          reticulate::use_virtualenv(
+            .tp_poetry_venv(.tp_resolve_env_path(
+              if (is.null(env)) "." else env
+            )),
+            required = TRUE
+          )
         }
       )
     }))

@@ -38,11 +38,13 @@
 #'   )
 #'   targets::tar_option_reset()
 #' }
-polyglot_controller <- function(workers = 2L,
-                                tasks_max = 1L,
-                                seconds_idle = 30,
-                                log = NULL,
-                                ...) {
+polyglot_controller <- function(
+  workers = 2L,
+  tasks_max = 1L,
+  seconds_idle = 30,
+  log = NULL,
+  ...
+) {
   .tp_log_set_env(log)
   tryCatch(
     crew::crew_controller_local(
@@ -55,7 +57,11 @@ polyglot_controller <- function(workers = 2L,
       if (.tp_crew_tls_available()) {
         stop(e)
       }
-      stop("polyglot_controller() could not create a `crew` controller: ", conditionMessage(e), call. = FALSE)
+      stop(
+        "polyglot_controller() could not create a `crew` controller: ",
+        conditionMessage(e),
+        call. = FALSE
+      )
     }
   )
 }
@@ -70,8 +76,11 @@ polyglot_controller <- function(workers = 2L,
 # controller can be created. Nothing in tarpolyglot can work around it, so we
 # probe for it.
 .tp_crew_tls_available <- function() {
-  isTRUE(tryCatch({
-    crew::crew_tls()
-    TRUE
-  }, error = function(e) FALSE))
+  isTRUE(tryCatch(
+    {
+      crew::crew_tls()
+      TRUE
+    },
+    error = function(e) FALSE
+  ))
 }

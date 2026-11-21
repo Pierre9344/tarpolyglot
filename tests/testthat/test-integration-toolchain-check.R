@@ -10,7 +10,10 @@ skip_if_not_installed("callr")
 
 test_that("toolchain_check('py') finds a reachable Python in a fresh worker", {
   skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_available(initialize = TRUE), "no Python available")
+  skip_if_not(
+    reticulate::py_available(initialize = TRUE),
+    "no Python available"
+  )
 
   res <- toolchain_check("py", quiet = TRUE)
   expect_setequal(res$toolchain, "py")
@@ -22,10 +25,13 @@ test_that("toolchain_check('py') finds a reachable Python in a fresh worker", {
 
 test_that("toolchain_check('jl') finds a reachable Julia in a fresh worker", {
   skip_if_not_installed("JuliaCall")
-  julia_ok <- tryCatch({
-    JuliaCall::julia_setup(installJulia = FALSE, verbose = FALSE)
-    TRUE
-  }, error = function(e) FALSE)
+  julia_ok <- tryCatch(
+    {
+      JuliaCall::julia_setup(installJulia = FALSE, verbose = FALSE)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
   skip_if_not(julia_ok, "no Julia available")
 
   res <- toolchain_check("jl", quiet = TRUE)
@@ -38,10 +44,13 @@ test_that("toolchain_check('jl') finds a reachable Julia in a fresh worker", {
 
 test_that("toolchain_check('jl') confirms Pkg.activate() works in a fresh worker", {
   skip_if_not_installed("JuliaCall")
-  julia_ok <- tryCatch({
-    JuliaCall::julia_setup(installJulia = FALSE, verbose = FALSE)
-    TRUE
-  }, error = function(e) FALSE)
+  julia_ok <- tryCatch(
+    {
+      JuliaCall::julia_setup(installJulia = FALSE, verbose = FALSE)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
   skip_if_not(julia_ok, "no Julia available")
 
   res <- toolchain_check("jl", quiet = TRUE)
@@ -54,8 +63,12 @@ test_that("toolchain_check('jl') confirms Pkg.activate() works in a fresh worker
 test_that("toolchain_check('rs') compiles successfully in a fresh worker (deep = TRUE)", {
   skip_if_not_installed("rextendr")
   cargo_ok <- nzchar(Sys.which("cargo")) ||
-    file.exists(file.path(Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
-      ".cargo", "bin", "cargo.exe"))
+    file.exists(file.path(
+      Sys.getenv("USERPROFILE", Sys.getenv("HOME")),
+      ".cargo",
+      "bin",
+      "cargo.exe"
+    ))
   skip_if_not(cargo_ok, "cargo not available")
 
   res <- toolchain_check("rs", deep = TRUE, quiet = TRUE)
@@ -89,7 +102,10 @@ test_that("at most one Python version is marked (default)", {
   res <- toolchain_check("py", quiet = TRUE, deep = FALSE)
   row <- res[res$check == "Python versions", ]
   skip_if(nrow(row) == 0L, "uv not available; nothing to enumerate")
-  n_default <- lengths(regmatches(row$detail, gregexpr("\\(default\\)", row$detail)))
+  n_default <- lengths(regmatches(
+    row$detail,
+    gregexpr("\\(default\\)", row$detail)
+  ))
   expect_lte(n_default, 1L)
 })
 
@@ -97,7 +113,10 @@ test_that("at most one Julia version is marked (default)", {
   res <- toolchain_check("jl", quiet = TRUE, deep = FALSE)
   row <- res[res$check == "Julia versions", ]
   skip_if(nrow(row) == 0L, "juliaup not available; nothing to enumerate")
-  n_default <- lengths(regmatches(row$detail, gregexpr("\\(default\\)", row$detail)))
+  n_default <- lengths(regmatches(
+    row$detail,
+    gregexpr("\\(default\\)", row$detail)
+  ))
   expect_lte(n_default, 1L)
 })
 

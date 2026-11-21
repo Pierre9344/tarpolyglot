@@ -17,8 +17,12 @@ test_that("tar_target_py_raw returns a targets target", {
 })
 
 test_that("command calls run_py_step and wires inputs as symbols", {
-  t <- tar_target_py_raw("demo", py_file(),
-    inputs = c(x = "up1", y = "up2"), retrieve = "result")
+  t <- tar_target_py_raw(
+    "demo",
+    py_file(),
+    inputs = c(x = "up1", y = "up2"),
+    retrieve = "result"
+  )
   txt <- paste(deparse(cmd_of(t)), collapse = " ")
   expect_match(txt, "run_py_step")
   # upstream targets appear as bare symbols -> dependencies
@@ -34,8 +38,13 @@ test_that("format defaults: rds for object, file for output = 'file'", {
 })
 
 test_that("explicit format overrides the file-mode default", {
-  t <- tar_target_py_raw("c", py_file(), output = "file",
-    files = "x.txt", format = "rds")
+  t <- tar_target_py_raw(
+    "c",
+    py_file(),
+    output = "file",
+    files = "x.txt",
+    format = "rds"
+  )
   expect_identical(t$settings$format, "rds")
 })
 
@@ -56,23 +65,36 @@ test_that("tar_target_py (NSE) deparses a bare name", {
 })
 
 test_that("pattern is forwarded (dynamic branching)", {
-  t <- tar_target_py_raw("f", py_file(), inputs = c(x = "up"),
-    retrieve = "result", pattern = quote(map(up)))
+  t <- tar_target_py_raw(
+    "f",
+    py_file(),
+    inputs = c(x = "up"),
+    retrieve = "result",
+    pattern = quote(map(up))
+  )
   expect_false(is.null(t$settings$pattern))
 })
 
 test_that("tar_target_path() on script/pre_script/post_script wires them as dependencies", {
-  t <- tar_target_py_raw("h", tar_target_path("up_script"),
+  t <- tar_target_py_raw(
+    "h",
+    tar_target_path("up_script"),
     pre_script = tar_target_path("up_pre"),
     post_script = tar_target_path("up_post"),
-    retrieve = "result")
+    retrieve = "result"
+  )
   vars <- all.vars(cmd_of(t))
   expect_true(all(c("up_script", "up_pre", "up_post") %in% vars))
 })
 
 test_that("tar_target_path() on script does not affect a literal pre_script/post_script", {
-  t <- tar_target_py_raw("i", tar_target_path("up_script"),
-    pre_script = py_file(), post_script = py_file(), retrieve = "result")
+  t <- tar_target_py_raw(
+    "i",
+    tar_target_path("up_script"),
+    pre_script = py_file(),
+    post_script = py_file(),
+    retrieve = "result"
+  )
   txt <- paste(deparse(cmd_of(t)), collapse = " ")
   expect_true("up_script" %in% all.vars(cmd_of(t)))
   # the literal pre/post-script paths are embedded as quoted string constants,
@@ -93,8 +115,12 @@ test_that("a literal string script is unaffected (backward compatible, untracked
 arg_obj <- function(target, arg) eval(cmd_of(target)[[arg]])
 
 test_that("tar_code() inline script embeds source (single line) not a path/dependency", {
-  t <- tar_target_py_raw("k1", tar_code("result = float(sum(x))"),
-    inputs = c(x = "up"), retrieve = "result")
+  t <- tar_target_py_raw(
+    "k1",
+    tar_code("result = float(sum(x))"),
+    inputs = c(x = "up"),
+    retrieve = "result"
+  )
   obj <- arg_obj(t, "script")
   expect_s3_class(obj, "tp_source")
   expect_identical(obj$code, "result = float(sum(x))")
@@ -103,20 +129,34 @@ test_that("tar_code() inline script embeds source (single line) not a path/depen
 })
 
 test_that("tar_code() inline script embeds dedented multiline source", {
-  t <- tar_target_py_raw("k2", tar_code("
+  t <- tar_target_py_raw(
+    "k2",
+    tar_code(
+      "
       import numpy as np
       result = float(np.sum(x))
-    "), inputs = c(x = "up"), retrieve = "result")
+    "
+    ),
+    inputs = c(x = "up"),
+    retrieve = "result"
+  )
   obj <- arg_obj(t, "script")
   expect_s3_class(obj, "tp_source")
   expect_identical(obj$code, "import numpy as np\nresult = float(np.sum(x))")
 })
 
 test_that("tar_code({}) inline R pre/post embed as an R-expression carrier", {
-  t <- tar_target_py_raw("k3", py_file(),
-    pre_script = tar_code({ to_py <- list(x = x) }),
-    post_script = tar_code({ py_get("result") }),
-    inputs = c(x = "up"))
+  t <- tar_target_py_raw(
+    "k3",
+    py_file(),
+    pre_script = tar_code({
+      to_py <- list(x = x)
+    }),
+    post_script = tar_code({
+      py_get("result")
+    }),
+    inputs = c(x = "up")
+  )
   pre <- arg_obj(t, "pre_script")
   expect_s3_class(pre, "tp_expr")
   expect_true("to_py" %in% all.vars(pre$code))
@@ -125,14 +165,26 @@ test_that("tar_code({}) inline R pre/post embed as an R-expression carrier", {
 
 test_that("an R { } block is rejected as the foreign script", {
   expect_error(
-    tar_target_py_raw("k4", tar_code({ 1 + 1 }), retrieve = "result"),
+    tar_target_py_raw(
+      "k4",
+      tar_code({
+        1 + 1
+      }),
+      retrieve = "result"
+    ),
     "cannot be an R"
   )
 })
 
 test_that("python_version and env selection are carried into the command", {
-  t <- tar_target_py_raw("g", py_file(), retrieve = "result",
-    python_version = "3.12", env_manager = "uv", env = ".venv")
+  t <- tar_target_py_raw(
+    "g",
+    py_file(),
+    retrieve = "result",
+    python_version = "3.12",
+    env_manager = "uv",
+    env = ".venv"
+  )
   txt <- paste(deparse(cmd_of(t)), collapse = " ")
   expect_match(txt, 'python_version = "3.12"')
   expect_match(txt, 'env_manager = "uv"')

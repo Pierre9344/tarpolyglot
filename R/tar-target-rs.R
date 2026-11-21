@@ -55,43 +55,50 @@
 #'   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
 #'   post_script = tarpolyglot::tar_code({ one() })
 #' )
-tar_target_rs_raw <- function(name,
-                              script,
-                              post_script = NULL,
-                              inputs = NULL,
-                              output = "object",
-                              dependencies = NULL,
-                              features = NULL,
-                              profile = NULL,
-                              toolchain = NULL,
-                              pattern = NULL,
-                              packages = targets::tar_option_get("packages"),
-                              library = targets::tar_option_get("library"),
-                              deps = NULL,
-                              string = NULL,
-                              format = NULL,
-                              repository = targets::tar_option_get("repository"),
-                              iteration = targets::tar_option_get("iteration"),
-                              error = targets::tar_option_get("error"),
-                              memory = targets::tar_option_get("memory"),
-                              garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
-                              deployment = targets::tar_option_get("deployment"),
-                              priority = targets::tar_option_get("priority"),
-                              resources = targets::tar_option_get("resources"),
-                              storage = targets::tar_option_get("storage"),
-                              retrieval = targets::tar_option_get("retrieval"),
-                              cue = targets::tar_option_get("cue"),
-                              description = targets::tar_option_get("description")) {
+tar_target_rs_raw <- function(
+  name,
+  script,
+  post_script = NULL,
+  inputs = NULL,
+  output = "object",
+  dependencies = NULL,
+  features = NULL,
+  profile = NULL,
+  toolchain = NULL,
+  pattern = NULL,
+  packages = targets::tar_option_get("packages"),
+  library = targets::tar_option_get("library"),
+  deps = NULL,
+  string = NULL,
+  format = NULL,
+  repository = targets::tar_option_get("repository"),
+  iteration = targets::tar_option_get("iteration"),
+  error = targets::tar_option_get("error"),
+  memory = targets::tar_option_get("memory"),
+  garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
+  deployment = targets::tar_option_get("deployment"),
+  priority = targets::tar_option_get("priority"),
+  resources = targets::tar_option_get("resources"),
+  storage = targets::tar_option_get("storage"),
+  retrieval = targets::tar_option_get("retrieval"),
+  cue = targets::tar_option_get("cue"),
+  description = targets::tar_option_get("description")
+) {
   if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
     stop("`name` must be a single non-empty string.", call. = FALSE)
   }
   output <- .tp_match_output(output)
   .tp_assert_script(script, "script")
   if (inherits(script, "tp_expr")) {
-    stop("`script` cannot be an R `tar_code({ ... })` block; the Rust `script` ",
-      "must be source code (a `tar_code(\"...\")` string) or a path.", call. = FALSE)
+    stop(
+      "`script` cannot be an R `tar_code({ ... })` block; the Rust `script` ",
+      "must be source code (a `tar_code(\"...\")` string) or a path.",
+      call. = FALSE
+    )
   }
-  if (!is.null(post_script)) .tp_assert_script(post_script, "post_script")
+  if (!is.null(post_script)) {
+    .tp_assert_script(post_script, "post_script")
+  }
   inputs_call <- .tp_inputs_call(inputs)
   pinfo <- .tp_pattern(pattern)
 
@@ -107,15 +114,32 @@ tar_target_rs_raw <- function(name,
   # `<name>_rust_lib` target, then reuse it across the branches of `<name>`.
   if (isTRUE(pinfo$compile_once)) {
     return(.tp_rs_compile_once(
-      name = name, script = script, post_script = post_script,
-      inputs_call = inputs_call, output = output,
-      dependencies = dependencies, features = features, profile = profile,
-      toolchain = toolchain, pattern = pinfo$pattern, packages = packages,
-      library = library, deps = deps, string = string, format = format,
-      repository = repository, iteration = iteration, error = error,
-      memory = memory, garbage_collection = garbage_collection,
-      deployment = deployment, priority = priority, resources = resources,
-      storage = storage, retrieval = retrieval, cue = cue,
+      name = name,
+      script = script,
+      post_script = post_script,
+      inputs_call = inputs_call,
+      output = output,
+      dependencies = dependencies,
+      features = features,
+      profile = profile,
+      toolchain = toolchain,
+      pattern = pinfo$pattern,
+      packages = packages,
+      library = library,
+      deps = deps,
+      string = string,
+      format = format,
+      repository = repository,
+      iteration = iteration,
+      error = error,
+      memory = memory,
+      garbage_collection = garbage_collection,
+      deployment = deployment,
+      priority = priority,
+      resources = resources,
+      storage = storage,
+      retrieval = retrieval,
+      cue = cue,
       description = description
     ))
   }
@@ -162,12 +186,35 @@ tar_target_rs_raw <- function(name,
 #   * `<name>_rust_lib`: compiles the extendr crate once (not branched);
 #   * `<name>`: branches over `pattern`, reusing the compiled library.
 # Returns a list of both targets (targets flattens nested target lists).
-.tp_rs_compile_once <- function(name, script, post_script, inputs_call, output,
-                                dependencies, features, profile, toolchain,
-                                pattern, packages, library, deps, string, format,
-                                repository, iteration, error, memory,
-                                garbage_collection, deployment, priority,
-                                resources, storage, retrieval, cue, description) {
+.tp_rs_compile_once <- function(
+  name,
+  script,
+  post_script,
+  inputs_call,
+  output,
+  dependencies,
+  features,
+  profile,
+  toolchain,
+  pattern,
+  packages,
+  library,
+  deps,
+  string,
+  format,
+  repository,
+  iteration,
+  error,
+  memory,
+  garbage_collection,
+  deployment,
+  priority,
+  resources,
+  storage,
+  retrieval,
+  cue,
+  description
+) {
   lib_name <- paste0(name, "_rust_lib")
 
   lib_command <- bquote(
@@ -180,8 +227,9 @@ tar_target_rs_raw <- function(name,
     )
   )
 
-  lib_description <- if (length(description) && !is.na(description) &&
-      nzchar(description)) {
+  lib_description <- if (
+    length(description) && !is.na(description) && nzchar(description)
+  ) {
     paste0(description, " (Rust crate compiled once)")
   } else {
     paste0("Compile the Rust crate once for ", name)
@@ -292,33 +340,35 @@ tar_target_rs_raw <- function(name,
 #'   script = tarpolyglot::tar_code("#[extendr] fn one() -> f64 { 1.0 }"),
 #'   post_script = tarpolyglot::tar_code({ one() })
 #' )
-tar_target_rs <- function(name,
-                          script,
-                          post_script = NULL,
-                          inputs = NULL,
-                          output = "object",
-                          dependencies = NULL,
-                          features = NULL,
-                          profile = NULL,
-                          toolchain = NULL,
-                          pattern = NULL,
-                          packages = targets::tar_option_get("packages"),
-                          library = targets::tar_option_get("library"),
-                          deps = NULL,
-                          string = NULL,
-                          format = NULL,
-                          repository = targets::tar_option_get("repository"),
-                          iteration = targets::tar_option_get("iteration"),
-                          error = targets::tar_option_get("error"),
-                          memory = targets::tar_option_get("memory"),
-                          garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
-                          deployment = targets::tar_option_get("deployment"),
-                          priority = targets::tar_option_get("priority"),
-                          resources = targets::tar_option_get("resources"),
-                          storage = targets::tar_option_get("storage"),
-                          retrieval = targets::tar_option_get("retrieval"),
-                          cue = targets::tar_option_get("cue"),
-                          description = targets::tar_option_get("description")) {
+tar_target_rs <- function(
+  name,
+  script,
+  post_script = NULL,
+  inputs = NULL,
+  output = "object",
+  dependencies = NULL,
+  features = NULL,
+  profile = NULL,
+  toolchain = NULL,
+  pattern = NULL,
+  packages = targets::tar_option_get("packages"),
+  library = targets::tar_option_get("library"),
+  deps = NULL,
+  string = NULL,
+  format = NULL,
+  repository = targets::tar_option_get("repository"),
+  iteration = targets::tar_option_get("iteration"),
+  error = targets::tar_option_get("error"),
+  memory = targets::tar_option_get("memory"),
+  garbage_collection = isTRUE(targets::tar_option_get("garbage_collection")),
+  deployment = targets::tar_option_get("deployment"),
+  priority = targets::tar_option_get("priority"),
+  resources = targets::tar_option_get("resources"),
+  storage = targets::tar_option_get("storage"),
+  retrieval = targets::tar_option_get("retrieval"),
+  cue = targets::tar_option_get("cue"),
+  description = targets::tar_option_get("description")
+) {
   name <- .tp_name(substitute(name))
   pattern <- substitute(pattern)
   tar_target_rs_raw(
