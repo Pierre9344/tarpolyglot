@@ -43,3 +43,4 @@
 ^codecov\.yml$
 ^CONTRIBUTING\.md$
 ^PATCH-.*\.md$
+^air\.toml$
