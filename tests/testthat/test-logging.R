@@ -195,6 +195,54 @@ test_that(".tp_jl_source_with_redirect falls back to plain julia_source() when l
   expect_equal(called_with, "some/script.jl")
 })
 
+test_that(".tp_jl_source_with_redirect wraps only the stream that is configured", {
+  # One stream at a time: the wrapper must open the configured log and leave the other on
+  # Julia's own stdout/stderr, or a step logging just one stream would lose the other.
+  # Stubbing julia_source() gives us the generated Julia source to assert on, with no Julia.
+  wrapper <- NULL
+  testthat::local_mocked_bindings(
+    julia_source = function(path) {
+      wrapper <<- readLines(path, warn = FALSE)
+    },
+    .package = "JuliaCall"
+  )
+  script <- withr::local_tempfile(fileext = ".jl")
+  writeLines("println(\"hi\")", script)
+  out_path <- withr::local_tempfile()
+  err_path <- withr::local_tempfile()
+  file.create(out_path, err_path)
+
+  .tp_jl_source_with_redirect(script, out_path, NULL)
+  body <- paste(wrapper, collapse = "\n")
+  expect_match(
+    body,
+    "redirect_stdio(stdout=out_io, stderr=stderr)",
+    fixed = TRUE
+  )
+  expect_match(body, "do out_io", fixed = TRUE)
+  expect_false(grepl("err_io", body, fixed = TRUE))
+
+  .tp_jl_source_with_redirect(script, NULL, err_path)
+  body <- paste(wrapper, collapse = "\n")
+  expect_match(
+    body,
+    "redirect_stdio(stdout=stdout, stderr=err_io)",
+    fixed = TRUE
+  )
+  expect_match(body, "do err_io", fixed = TRUE)
+  expect_false(grepl("out_io", body, fixed = TRUE))
+
+  # Both streams: one open() nested inside the other, and the include() wrapped by both.
+  .tp_jl_source_with_redirect(script, out_path, err_path)
+  body <- paste(wrapper, collapse = "\n")
+  expect_match(
+    body,
+    "redirect_stdio(stdout=out_io, stderr=err_io)",
+    fixed = TRUE
+  )
+  expect_match(body, "include(raw\"", fixed = TRUE)
+})
+
 test_that(".tp_cpp_with_redirect is a transparent passthrough when logging is off", {
   called <- FALSE
   out <- .tp_cpp_with_redirect(NULL, NULL, function() {
