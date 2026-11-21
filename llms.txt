@@ -171,12 +171,12 @@ targets::tar_dir({
   print(targets::tar_read(report))
 })
 #> + values dispatched
-#> ✔ values completed [16ms, 58 B]
+#> ✔ values completed [0ms, 58 B]
 #> + py_mean dispatched
-#> ✔ py_mean completed [906ms, 94 B]
+#> ✔ py_mean completed [1.1s, 94 B]
 #> + report dispatched
 #> ✔ report completed [0ms, 71 B]
-#> ✔ ended pipeline [3.4s, 3 completed, 0 skipped]
+#> ✔ ended pipeline [3.7s, 3 completed, 0 skipped]
 #> Warning messages:
 #> 1: package 'targets' was built under R version 4.6.2 
 #> 2: 1 targets produced warnings. Run targets::tar_meta(fields = warnings, complete_only = TRUE) for the messages. 

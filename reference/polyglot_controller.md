@@ -4,8 +4,8 @@ Returns a
 [`crew::crew_controller_local()`](https://wlandau.github.io/crew/reference/crew_controller_local.html)
 tuned for pipelines that run Python or Julia steps. Because reticulate
 and JuliaCall embed a **single interpreter per process** (see
-[`vignette("get_started", package = "tarpolyglot")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.html)),
-the only way to get a fresh interpreter per target, and to use different
+`vignette("get_started", package = "tarpolyglot")`), the only way to get
+a fresh interpreter per target, and to use different
 environments/versions across targets, is process-level isolation.
 Passing this controller to
 [`targets::tar_option_set()`](https://docs.ropensci.org/targets/reference/tar_option_set.html)
