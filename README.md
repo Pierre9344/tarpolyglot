@@ -17,7 +17,7 @@ You can install `{tarpolyglot}` from CRAN or GitHub for the development version:
 
 ``` r
 # CRAN
-install.package("tarpolyglot")
+install.packages("tarpolyglot")
 
 # GitHub (development version)
 # install.packages("remotes")
@@ -81,8 +81,69 @@ We can run and inspect it like any `{targets}` pipeline:
 
 ``` r
 targets::tar_make()
-targets::tar_read(py_mean)   # $mean 5  $n 4
-targets::tar_read(report)    # "mean = 5.0 over n = 4"
+targets::tar_read(py_mean)
+targets::tar_read(report)
+```
+
+You can see this pipeline in action next :
+
+``` r
+suppressWarnings(requireNamespace("targets", quietly = TRUE))
+
+targets::tar_dir({
+  dir.create("scripts")
+  writeLines(
+    "to_py <- list(x = x)   # `x` is bound from inputs = c(x = \"values\")",
+    "scripts/pre.R"
+  )
+  writeLines(
+    c(
+      "# `x` is handed over by the pre-script; assign `result` for R to read.",
+      'result = {"mean": sum(x) / len(x), "n": len(x)}'
+    ),
+    "scripts/mean.py"
+  )
+  targets::tar_script({
+    library(targets)
+    library(tarpolyglot)
+    tar_option_set(controller = polyglot_controller(workers = 1L))
+    list(
+      tar_target(values, c(2, 4, 6, 8)),
+      tar_target_py(
+        name = py_mean,
+        script = "scripts/mean.py",
+        inputs = c(x = "values"),
+        pre_script = "scripts/pre.R",
+        retrieve = "result"
+      ),
+      tar_target(report, sprintf("mean = %.1f over n = %d", py_mean$mean, py_mean$n))
+    )
+  })
+  targets::tar_make()
+  print("Value of py_mean:")
+  print(targets::tar_read(py_mean))
+  print("Value of report:")
+  print(targets::tar_read(report))
+})
+#> + values dispatched
+#> ✔ values completed [15ms, 58 B]
+#> + py_mean dispatched
+#> ✔ py_mean completed [891ms, 94 B]
+#> + report dispatched
+#> ✔ report completed [0ms, 71 B]
+#> ✔ ended pipeline [3.3s, 3 completed, 0 skipped]
+#> Warning messages:
+#> 1: package 'targets' was built under R version 4.6.2 
+#> 2: 1 targets produced warnings. Run targets::tar_meta(fields = warnings, complete_only = TRUE) for the messages. 
+#> [1] "Value of py_mean:"
+#> $mean
+#> [1] 5
+#> 
+#> $n
+#> [1] 4
+#> 
+#> [1] "Value of report:"
+#> [1] "mean = 5.0 over n = 4"
 ```
 
 Here the `retrieve` argument is used to extract a value from the python environment using `reticulate` type conversion. It is also possible to use a post-python R script to extract one or more values from the python session (e.g. save multiple object as a list, or format the output in R). In the post script, the python session is represented by the `py` object. It is also possible tu use the `py_get()` helper function to extract some variable. Both are created by the steps constructor.

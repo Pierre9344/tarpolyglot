@@ -1,6 +1,8 @@
 url: https://pierre9344.github.io/tarpolyglot/
 template:
   bootstrap: 5
+development:
+  mode: auto
 reference:
 - title: Package overview
   contents: tarpolyglot-package
@@ -51,7 +53,7 @@ articles:
 - title: Guides
   navbar: ~
   contents:
-  - get_started
+  - tarpolyglot
   - scripts
   - python
   - julia
