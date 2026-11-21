@@ -178,9 +178,12 @@ test_that(".tp_which_check reports a present tool whose --version prints nothing
   local_fake_tool("tp-fake-silent-tool")
   row <- .tp_which_check("py", "silent", "tp-fake-silent-tool", quiet = TRUE)
   expect_identical(row$status, "ok")
-  # The version parenthetical is dropped rather than left empty.
+  # The detail is the path and nothing else: the version parenthetical is dropped rather than
+  # left empty. Compared against Sys.which() rather than against the tool's name, because on
+  # a Windows machine with 8.3 name generation on (the GitHub runner's temp directory) that
+  # path comes back shortened, e.g. TP-FAK~1.CMD.
+  expect_identical(row$detail, unname(Sys.which("tp-fake-silent-tool")))
   expect_false(grepl("()", row$detail, fixed = TRUE))
-  expect_match(row$detail, "tp-fake-silent-tool")
 })
 
 # --------------------------------------------------------------------------
@@ -330,7 +333,8 @@ test_that(".tp_check_cpp reports a compiler that prints no version", {
   res <- .tp_check_cpp(deep = FALSE, quiet = TRUE)
   row <- res[grepl("^C\\+\\+ compiler", res$check), ]
   expect_identical(row$status, "ok")
-  expect_match(row$detail, "tp-fake-cxx", fixed = TRUE)
+  # As in the .tp_which_check() test above: the path as Sys.which() reports it, no version.
+  expect_identical(row$detail, unname(Sys.which("tp-fake-cxx")))
   expect_false(grepl("()", row$detail, fixed = TRUE))
 })
 
