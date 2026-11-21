@@ -589,14 +589,14 @@ The libraries are loaded one at a time (see "Current limitations"), so call them
 - **A pattern helper adds a companion target.** `tarpolyglot_map()` (and the other helpers) create a `<name>_cpp_lib` compile target alongside the branched target. This is intentional, it is what makes compile once work, and it shows up in `tar_visnetwork()`.
 - **RcppParallel and `crew` worker oversubscription.** See "Parallel computing with RcppParallel" above: a worker has full access to every core, so several workers each running their own full width thread pool at once can oversubscribe the machine. Use `deployment = "main"` on the parallel-heavy step, or cap `numThreads` per step, to avoid it.
 
-## Step output and tar_polyglot_log()
+## Step output and polyglot_log()
 
-C++ steps are covered by [tar_polyglot_log()](tar_polyglot_log.html), with one caveat: `Rcpp::Rcout` and `Rcpp::Rcerr`, the idiomatic Rcpp printing calls, route through R's own output connection system, so they are captured the same way `cat()` output is. Raw `std::cout` / `std::cerr` / `printf()` write straight to the OS file descriptor and bypass that system entirely, so they are **not** captured, use `Rcpp::Rcout` / `Rcpp::Rcerr` in compiled code instead of raw C++ streams if you want step output in these logs:
+C++ steps are covered by [polyglot_log()](polyglot_log.html), with one caveat: `Rcpp::Rcout` and `Rcpp::Rcerr`, the idiomatic Rcpp printing calls, route through R's own output connection system, so they are captured the same way `cat()` output is. Raw `std::cout` / `std::cerr` / `printf()` write straight to the OS file descriptor and bypass that system entirely, so they are **not** captured, use `Rcpp::Rcout` / `Rcpp::Rcerr` in compiled code instead of raw C++ streams if you want step output in these logs:
 
 ``` r
 tar_option_set(
   controller = polyglot_controller(
-    log = tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+    log = polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
   )
 )
 ```
@@ -620,4 +620,4 @@ Because a C++ step compiles rather than using a live interpreter:
 - **No interpreter per session or global state issues.** Each step compiles and loads its own library, so different steps can freely use different extension packages in the same session.
 - **Compilation cost instead of interpreter start up.** The first build compiles your code (a few seconds); to avoid recompiling in every branch, use a `tarpolyglot_*()` pattern helper (compile once across branches); to avoid recompiling across steps, compile once with `compile_cpp_lib()` and reuse it with `run_cpp_step_prebuilt()` (see the sections above).
 
-See `?tar_target_cpp` and `?run_cpp_step` for the full argument reference, `?tarpolyglot_map`, `?compile_cpp_lib`, and `?run_cpp_step_prebuilt` for compile once and library reuse, `?tar_polyglot_log` for step logging, and `vignette("get_started")` for how C++ steps fit alongside Python/Julia/Rust and `crew`.
+See `?tar_target_cpp` and `?run_cpp_step` for the full argument reference, `?tarpolyglot_map`, `?compile_cpp_lib`, and `?run_cpp_step_prebuilt` for compile once and library reuse, `?polyglot_log` for step logging, and `vignette("get_started")` for how C++ steps fit alongside Python/Julia/Rust and `crew`.

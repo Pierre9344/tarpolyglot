@@ -12,7 +12,7 @@
 #' @param pre_script Optional path to an R script run before the Julia script. See [run_jl_step()]; assign a named list `to_jl` to hand objects to Julia. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param post_script Optional path to an R script run after the Julia script. See [run_jl_step()]; helpers `jl_get()` and `jl_call()` are available, and its last expression (object mode) or returned paths (file mode) become the value. Accepts a literal path, a [tar_target_path()] reference, or inline code from [tar_code()]; see the "Script options" section below.
 #' @param julia_version Optional Julia version to select (e.g. `"1.11"`), used when `julia_home` is not given; resolved to a juliaup-managed install. Forwarded to [run_jl_step()]. Default `NULL` uses the computer/global Julia.
-#' @param julia_home,julia_project,julia_packages Julia environment selection, forwarded to [run_jl_step()]. `julia_home` is the directory containing the julia executable (defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`). `julia_project` is a Julia project environment to `Pkg.activate()`. `julia_packages` is a character vector of packages to `using` before the script.
+#' @param julia_home,julia_project,julia_packages Julia environment selection, forwarded to [run_jl_step()]. `julia_home` is the directory containing the julia executable. Default `NULL` falls back to `getOption("tarpolyglot.julia_home")` **when the step runs**, not when the target is built, so the option's machine-specific value never enters the target's command (see [run_jl_step()]); when the option is unset too and no `julia_version` is given, JuliaCall discovers Julia on `PATH`. `julia_project` is a Julia project environment to `Pkg.activate()`. `julia_packages` is a character vector of packages to `using` before the script.
 #'
 #' @return A `targets` target object.
 #' @seealso [tar_target_jl()], [run_jl_step()], [tar_target_py_raw()]
@@ -83,7 +83,7 @@ tar_target_jl_raw <- function(name,
                               retrieve = NULL,
                               files = NULL,
                               julia_version = NULL,
-                              julia_home = getOption("tarpolyglot.julia_home"),
+                              julia_home = NULL,
                               julia_project = NULL,
                               julia_packages = NULL,
                               pattern = NULL,
@@ -245,7 +245,7 @@ tar_target_jl <- function(name,
                           retrieve = NULL,
                           files = NULL,
                           julia_version = NULL,
-                          julia_home = getOption("tarpolyglot.julia_home"),
+                          julia_home = NULL,
                           julia_project = NULL,
                           julia_packages = NULL,
                           pattern = NULL,

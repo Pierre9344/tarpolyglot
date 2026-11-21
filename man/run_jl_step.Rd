@@ -13,7 +13,7 @@ run_jl_step(
   retrieve = NULL,
   files = NULL,
   julia_version = NULL,
-  julia_home = getOption("tarpolyglot.julia_home"),
+  julia_home = NULL,
   julia_project = NULL,
   julia_packages = NULL,
   name = NULL
@@ -36,9 +36,9 @@ run_jl_step(
 
 \item{julia_version}{Optional Julia version to select (e.g. \code{"1.11"}), used when \code{julia_home} is not given. Resolved to a \href{https://github.com/JuliaLang/juliaup}{juliaup}-managed install. Default \code{NULL} uses the computer/global default Julia.}
 
-\item{julia_home, julia_project, julia_packages}{Julia environment selection. \code{julia_home} is the directory containing the julia executable (defaults to \code{getOption("tarpolyglot.julia_home")}; when unset and no \code{julia_version}, JuliaCall discovers Julia on \code{PATH}). \code{julia_project} is a Julia project environment (folder with \code{Project.toml} / \code{Manifest.toml}) to \code{Pkg.activate()}; when \code{NULL}, Julia's default global environment (\verb{@v#.#}) is used. \code{julia_packages} is a character vector of packages to \code{using} before the script. The requested environment takes priority over an ambient \code{JULIA_PROJECT} environment variable (e.g. one set by an RStudio project config and inherited by \code{crew} workers): it is cleared for the duration of the Julia binding, so an explicit \code{julia_project} (or the global environment you get when none is given) wins over it, rather than \code{JULIA_PROJECT} silently selecting a different project. (\code{JULIA_HOME} is not cleared: it is a supported way to point at the default Julia.)}
+\item{julia_home, julia_project, julia_packages}{Julia environment selection. \code{julia_home} is the directory containing the julia executable. Default \code{NULL} falls back to \code{getOption("tarpolyglot.julia_home")}, read here at run time rather than when a target is constructed: a constructor that resolved the option would splice this machine's Julia path into the target's command, making the command hash machine-specific so that a store moved to another computer shows every Julia step as outdated. When the option is unset too and no \code{julia_version} is given, JuliaCall discovers Julia on \code{PATH}. \code{julia_project} is a Julia project environment (folder with \code{Project.toml} / \code{Manifest.toml}) to \code{Pkg.activate()}; when \code{NULL}, Julia's default global environment (\verb{@v#.#}) is used. \code{julia_packages} is a character vector of packages to \code{using} before the script. The requested environment takes priority over an ambient \code{JULIA_PROJECT} environment variable (e.g. one set by an RStudio project config and inherited by \code{crew} workers): it is cleared for the duration of the Julia binding, so an explicit \code{julia_project} (or the global environment you get when none is given) wins over it, rather than \code{JULIA_PROJECT} silently selecting a different project. (\code{JULIA_HOME} is not cleared: it is a supported way to point at the default Julia.)}
 
-\item{name}{Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=tar_polyglot_log]{tar_polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call).}
+\item{name}{Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=polyglot_log]{polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call).}
 }
 \value{
 The converted R object (object mode) or a character vector of normalised file paths (file mode).

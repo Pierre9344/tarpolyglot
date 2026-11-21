@@ -24,7 +24,7 @@ run_cpp_step(
 
 \item{depends}{Optional character vector of extension packages (e.g. \code{c("RcppArmadillo", "RcppEigen")}), passed straight through as \verb{// [[Rcpp::depends(...)]]} would be. Usually unnecessary: declaring \verb{// [[Rcpp::depends(pkgname)]]} directly in the C++ source (the normal Rcpp convention) already works, so this argument is only useful if you would rather not repeat that in the source itself.}
 
-\item{name}{Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=tar_polyglot_log]{tar_polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call). Only \code{Rcpp::Rcout}/\code{Rcpp::Rcerr} output from the post-script's calls into compiled code is captured; see \code{\link[=tar_polyglot_log]{tar_polyglot_log()}}.}
+\item{name}{Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when \code{\link[=polyglot_controller]{polyglot_controller()}} was given a \code{\link[=polyglot_log]{polyglot_log()}} (\code{NULL} -- the default -- disables logging for a direct call). Only \code{Rcpp::Rcout}/\code{Rcpp::Rcerr} output from the post-script's calls into compiled code is captured; see \code{\link[=polyglot_log]{polyglot_log()}}.}
 }
 \value{
 The value of the post-script (object mode) or a character vector of normalised file paths (file mode).

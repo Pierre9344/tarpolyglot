@@ -72,7 +72,7 @@
 #' @param script Path to the C++ script containing `// [[Rcpp::export]]` functions (required). Accepts a file path or an inline [tar_code()] carrier; see the "Script arguments" section below.
 #' @param post_script Path to an R script evaluated after compilation. The compiled C++ functions and the named `inputs` are in scope; its last expression is the target value (object mode), or it returns a character vector of file paths (file mode). Required for object mode. Accepts a file path or an inline [tar_code()] carrier; see the "Script arguments" section below.
 #' @param depends Optional character vector of extension packages (e.g. `c("RcppArmadillo", "RcppEigen")`), passed straight through as `// [[Rcpp::depends(...)]]` would be. Usually unnecessary: declaring `// [[Rcpp::depends(pkgname)]]` directly in the C++ source (the normal Rcpp convention) already works, so this argument is only useful if you would rather not repeat that in the source itself.
-#' @param name Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when [polyglot_controller()] was given a [tar_polyglot_log()] (`NULL` -- the default -- disables logging for a direct call). Only `Rcpp::Rcout`/`Rcpp::Rcerr` output from the post-script's calls into compiled code is captured; see [tar_polyglot_log()].
+#' @param name Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when [polyglot_controller()] was given a [polyglot_log()] (`NULL` -- the default -- disables logging for a direct call). Only `Rcpp::Rcout`/`Rcpp::Rcerr` output from the post-script's calls into compiled code is captured; see [polyglot_log()].
 #'
 #' @return The value of the post-script (object mode) or a character vector of normalised file paths (file mode).
 #' @seealso [tar_target_cpp()], [run_py_step()], [run_jl_step()], [run_rs_step()]
@@ -116,7 +116,7 @@ run_cpp_step <- function(script,
   code <- .tp_cpp_source_code(script, depends)
   Rcpp::sourceCpp(code = code, env = e, verbose = FALSE)
 
-  # Per-step Rcout/Rcerr logging (see tar_polyglot_log(), polyglot_controller()).
+  # Per-step Rcout/Rcerr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {
@@ -225,7 +225,7 @@ compile_cpp_lib <- function(script, depends = NULL) {
 #' @inheritParams run_cpp_step
 #' @inheritSection tarpolyglot-shared-params Script arguments
 #' @param lib A `tp_cpp_lib` bundle from [compile_cpp_lib()] (supplied by the companion `<name>_cpp_lib` target).
-#' @param name Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when [polyglot_controller()] was given a [tar_polyglot_log()] (`NULL` -- the default -- disables logging for a direct call). Note this is the branch name, not `<name>_cpp_lib` -- reloading a pre-compiled library never itself produces output to log.
+#' @param name Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when [polyglot_controller()] was given a [polyglot_log()] (`NULL` -- the default -- disables logging for a direct call). Note this is the branch name, not `<name>_cpp_lib` -- reloading a pre-compiled library never itself produces output to log.
 #'
 #' @return The value of the post-script (object mode) or a character vector of normalised file paths (file mode).
 #' @seealso [tarpolyglot_map()], [compile_cpp_lib()], [run_cpp_step()]
@@ -306,7 +306,7 @@ run_cpp_step_prebuilt <- function(lib,
   for (nm in names(inputs)) assign(nm, inputs[[nm]], envir = e)
   for (nm in names(cached$objs)) assign(nm, cached$objs[[nm]], envir = e)
 
-  # Per-step Rcout/Rcerr logging (see tar_polyglot_log(), polyglot_controller()).
+  # Per-step Rcout/Rcerr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {

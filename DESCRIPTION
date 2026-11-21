@@ -53,4 +53,4 @@ SystemRequirements: The external language toolchains are optional and each is
     match R's ABI), and a C++ compiler reachable by R (e.g. via Rtools on
     Windows) for tar_target_cpp(). A pipeline that uses a single language needs
     only that language's toolchain.
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

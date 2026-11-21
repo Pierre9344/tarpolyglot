@@ -1,4 +1,4 @@
-# Live round-trips for per-step logging (tar_polyglot_log() / polyglot_controller(log=)),
+# Live round-trips for per-step logging (polyglot_log() / polyglot_controller(log=)),
 # through real run_py_step()/run_jl_step() calls. Gated behind an env var (see
 # test-integration-python.R). Logging config is applied the same way
 # polyglot_controller(log=) applies it (environment variables), just via
@@ -33,7 +33,7 @@ py_print_script <- function() {
 
 test_that("run_py_step writes a header + the script's stdout/stderr to per-step files", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
 
   out <- run_py_step(py_print_script(), retrieve = "result", name = "py_log_step")
   expect_equal(out, 1)
@@ -59,7 +59,7 @@ test_that("run_py_step writes a header + the script's stdout/stderr to per-step 
 
 test_that("run_py_step overwrites the log by default (append = FALSE)", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
 
   run_py_step(py_print_script(), retrieve = "result", name = "py_overwrite")
   first_size <- file.info(file.path(dir, "out", "py_overwrite.out"))$size
@@ -72,7 +72,7 @@ test_that("run_py_step overwrites the log by default (append = FALSE)", {
 
 test_that("run_py_step append = TRUE accumulates with a two-blank-line separator", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL, append = TRUE))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = NULL, append = TRUE))
 
   run_py_step(py_print_script(), retrieve = "result", name = "py_append")
   run_py_step(py_print_script(), retrieve = "result", name = "py_append")
@@ -87,7 +87,7 @@ test_that("run_py_step append = TRUE accumulates with a two-blank-line separator
 
 test_that("run_py_step header = FALSE omits the header block", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL, header = FALSE))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = NULL, header = FALSE))
 
   run_py_step(py_print_script(), retrieve = "result", name = "py_noheader")
   txt <- paste(readLines(file.path(dir, "out", "py_noheader.out"), warn = FALSE), collapse = "\n")
@@ -124,7 +124,7 @@ jl_print_script <- function() {
 test_that("run_jl_step writes a header + the script's stdout to a per-step file", {
   skip_if_not(julia_ok, "no Julia available")
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
 
   out <- run_jl_step(jl_print_script(), retrieve = "result", name = "jl_log_step")
   expect_equal(out, 1)
@@ -178,7 +178,7 @@ cpp_loud_post <- function() {
 
 test_that("run_cpp_step writes a header + Rcout/Rcerr to per-step files", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = file.path(dir, "err")))
 
   out <- run_cpp_step(cpp_loud_script(), post_script = cpp_loud_post(),
     inputs = list(x = -3), name = "cpp_log_step")
@@ -200,7 +200,7 @@ test_that("run_cpp_step writes a header + Rcout/Rcerr to per-step files", {
 
 test_that("run_cpp_step does not capture raw std::cout (only Rcout/Rcerr)", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
 
   script <- tar_code("
     #include <Rcpp.h>
@@ -230,7 +230,7 @@ test_that("run_cpp_step writes nothing when no log config is set", {
 
 test_that("run_cpp_step_prebuilt writes Rcout output through the reloaded, re-bound closures", {
   dir <- withr::local_tempdir()
-  local_log_env(tar_polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
+  local_log_env(polyglot_log(stdout = file.path(dir, "out"), stderr = NULL))
 
   lib <- compile_cpp_lib(cpp_loud_script())
   out <- run_cpp_step_prebuilt(lib, post_script = cpp_loud_post(), inputs = list(x = 6),

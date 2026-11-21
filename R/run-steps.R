@@ -12,7 +12,7 @@
 #' @param inputs Named list of upstream target values, bound by name into the step environment. Supplied automatically by the constructor.
 #' @param python_version Optional Python version to select (e.g. `"3.12"` or `">=3.11"`), used only when no environment and no explicit `python` path are given. reticulate fetches/selects it (via its uv-backed ephemeral environment) with [reticulate::py_require()]. Default `NULL` uses the computer/global default Python. Use this when you only care about the interpreter *version* and are happy for reticulate to build a *throwaway* environment; for a *pinned, reproducible* environment use `env` / `env_manager` (or `python`) instead.
 #' @param env,env_manager,python Python environment selection: the reproducible alternatives to `python_version`. Use `env` + `env_manager` to point at an existing environment built by a known tool, or `python` for one explicit interpreter path. `env_manager` is one of `"system"`, `"virtualenv"`, `"venv"`, `"conda"`, `"uv"`, `"poetry"`; `env` is the corresponding virtualenv/conda name or path (or poetry project directory); `python` is an explicit interpreter path. Precedence: `python` > environment (`env`/`env_manager`) > `python_version` > default. (`"virtualenv"`, `"venv"` and `"uv"` all point at a standard virtualenv, including one created by `renv::use_python()`, and behave identically.) For `"virtualenv"`/`"venv"`/`"uv"`/`"poetry"`, an `env` that is an already-existing directory (relative to the working directory, or absolute) is resolved to an absolute path before use, so a relative venv path (e.g. `".venv"`, created with `uv venv .venv`) works as expected; otherwise `reticulate::use_virtualenv()` would misread a separator-less relative path as the *name* of an environment under its own virtualenv root instead of a path on disk. A bare name that does not correspond to an existing directory is passed through unchanged, so a genuine named environment (one already registered under that root) still resolves. When `python` or an environment is given, the selection also takes priority over an ambient `RETICULATE_PYTHON` environment variable (e.g. one set by the RStudio project Python config and inherited by `crew` workers), which reticulate would otherwise let silently override the request.
-#' @param name Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when [polyglot_controller()] was given a [tar_polyglot_log()] (`NULL` -- the default -- disables logging for a direct call).
+#' @param name Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when [polyglot_controller()] was given a [polyglot_log()] (`NULL` -- the default -- disables logging for a direct call).
 #'
 #' @return The converted R object (object mode) or a character vector of normalised file paths (file mode).
 #' @seealso [run_jl_step()], [tar_target_py()]
@@ -57,7 +57,7 @@ run_py_step <- function(script,
   cfg <- .tp_resolve_python(python_version = python_version, env = env,
     env_manager = env_manager, python = python)
 
-  # 1b. Per-step stdout/stderr logging (see tar_polyglot_log(), polyglot_controller()).
+  # 1b. Per-step stdout/stderr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {
@@ -135,8 +135,8 @@ run_py_step <- function(script,
 #' @param post_script Optional path to an R script run after the Julia script. It is evaluated in the same environment, which now also holds `jl_get(name)` and `jl_call(fn, ...)`. In `output = "object"` mode the value of its last expression becomes the target value; in `output = "file"` mode it must return a character vector of file paths. Accepts a file path or an inline [tar_code()] carrier; see the "Script arguments" section below.
 #' @param inputs Named list of upstream target values, bound by name into the step environment. Supplied automatically by the constructor.
 #' @param julia_version Optional Julia version to select (e.g. `"1.11"`), used when `julia_home` is not given. Resolved to a [juliaup](https://github.com/JuliaLang/juliaup)-managed install. Default `NULL` uses the computer/global default Julia.
-#' @param julia_home,julia_project,julia_packages Julia environment selection. `julia_home` is the directory containing the julia executable (defaults to `getOption("tarpolyglot.julia_home")`; when unset and no `julia_version`, JuliaCall discovers Julia on `PATH`). `julia_project` is a Julia project environment (folder with `Project.toml` / `Manifest.toml`) to `Pkg.activate()`; when `NULL`, Julia's default global environment (`@v#.#`) is used. `julia_packages` is a character vector of packages to `using` before the script. The requested environment takes priority over an ambient `JULIA_PROJECT` environment variable (e.g. one set by an RStudio project config and inherited by `crew` workers): it is cleared for the duration of the Julia binding, so an explicit `julia_project` (or the global environment you get when none is given) wins over it, rather than `JULIA_PROJECT` silently selecting a different project. (`JULIA_HOME` is not cleared: it is a supported way to point at the default Julia.)
-#' @param name Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when [polyglot_controller()] was given a [tar_polyglot_log()] (`NULL` -- the default -- disables logging for a direct call).
+#' @param julia_home,julia_project,julia_packages Julia environment selection. `julia_home` is the directory containing the julia executable. Default `NULL` falls back to `getOption("tarpolyglot.julia_home")`, read here at run time rather than when a target is constructed: a constructor that resolved the option would splice this machine's Julia path into the target's command, making the command hash machine-specific so that a store moved to another computer shows every Julia step as outdated. When the option is unset too and no `julia_version` is given, JuliaCall discovers Julia on `PATH`. `julia_project` is a Julia project environment (folder with `Project.toml` / `Manifest.toml`) to `Pkg.activate()`; when `NULL`, Julia's default global environment (`@v#.#`) is used. `julia_packages` is a character vector of packages to `using` before the script. The requested environment takes priority over an ambient `JULIA_PROJECT` environment variable (e.g. one set by an RStudio project config and inherited by `crew` workers): it is cleared for the duration of the Julia binding, so an explicit `julia_project` (or the global environment you get when none is given) wins over it, rather than `JULIA_PROJECT` silently selecting a different project. (`JULIA_HOME` is not cleared: it is a supported way to point at the default Julia.)
+#' @param name Character string, the step's target name. Supplied automatically by the constructor; used only to name this step's log files when [polyglot_controller()] was given a [polyglot_log()] (`NULL` -- the default -- disables logging for a direct call).
 #'
 #' @return The converted R object (object mode) or a character vector of normalised file paths (file mode).
 #' @seealso [run_py_step()], [tar_target_jl()]
@@ -166,7 +166,7 @@ run_jl_step <- function(script,
                         retrieve = NULL,
                         files = NULL,
                         julia_version = NULL,
-                        julia_home = getOption("tarpolyglot.julia_home"),
+                        julia_home = NULL,
                         julia_project = NULL,
                         julia_packages = NULL,
                         name = NULL) {
@@ -180,7 +180,7 @@ run_jl_step <- function(script,
   .tp_resolve_julia(julia_version = julia_version, julia_home = julia_home,
     julia_project = julia_project, julia_packages = julia_packages)
 
-  # 1b. Per-step stdout/stderr logging (see tar_polyglot_log(), polyglot_controller()).
+  # 1b. Per-step stdout/stderr logging (see polyglot_log(), polyglot_controller()).
   log_cfg <- .tp_log_get_config()
   log_paths <- .tp_log_prepare(log_cfg, name)
   if (!is.null(log_paths) && isTRUE(log_cfg$header)) {

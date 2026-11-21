@@ -1,4 +1,4 @@
-# Per-step stdout/stderr logging for Python and Julia steps (see tar_polyglot_log() /
+# Per-step stdout/stderr logging for Python and Julia steps (see polyglot_log() /
 # polyglot_controller()). crew launches worker processes before it knows
 # which target they will run, so the *configuration* (directories, append,
 # header) is stashed as environment variables by polyglot_controller() --
@@ -25,9 +25,9 @@
 #' @seealso [polyglot_controller()]
 #' @export
 #' @examples
-#' # tar_polyglot_log() only builds a configuration object; nothing is written
+#' # polyglot_log() only builds a configuration object; nothing is written
 #' # and no directory is created until a step actually runs.
-#' log <- tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+#' log <- polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
 #' str(log)
 #'
 #' # It is passed to polyglot_controller(), which every Python/Julia/C++ step
@@ -37,7 +37,7 @@
 #' if (!inherits(controller, "try-error")) {
 #'   inherits(controller, "crew_class_controller")
 #' }
-tar_polyglot_log <- function(stdout = "./logs/out",
+polyglot_log <- function(stdout = "./logs/out",
                              stderr = "./logs/err",
                              append = FALSE,
                              header = TRUE) {
@@ -55,7 +55,7 @@ tar_polyglot_log <- function(stdout = "./logs/out",
   )
 }
 
-# Stash a tar_polyglot_log() config as environment variables, so every worker process
+# Stash a polyglot_log() config as environment variables, so every worker process
 # polyglot_controller() spawns from here on inherits it (processx, which
 # crew's local launcher uses, inherits the current process environment by
 # default at spawn time). Called from polyglot_controller(); a NULL `log`
@@ -63,7 +63,7 @@ tar_polyglot_log <- function(stdout = "./logs/out",
 .tp_log_set_env <- function(log) {
   if (is.null(log)) return(invisible(NULL))
   if (!inherits(log, "tp_log")) {
-    stop("`log` must be created with tarpolyglot::tar_polyglot_log().", call. = FALSE)
+    stop("`log` must be created with tarpolyglot::polyglot_log().", call. = FALSE)
   }
   Sys.setenv(
     TARPOLYGLOT_LOG_STDOUT = if (is.null(log$stdout)) "" else log$stdout,

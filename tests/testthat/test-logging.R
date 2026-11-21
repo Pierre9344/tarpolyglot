@@ -1,9 +1,9 @@
-# Fast/structural tests for tar_polyglot_log() and the per-step logging machinery
+# Fast/structural tests for polyglot_log() and the per-step logging machinery
 # (see R/log.R). No reticulate/JuliaCall/live interpreter needed here -- see
 # test-integration-logging.R for real run_py_step()/run_jl_step() round-trips.
 
-test_that("tar_polyglot_log returns a tp_log list with the documented defaults", {
-  log <- tar_polyglot_log()
+test_that("polyglot_log returns a tp_log list with the documented defaults", {
+  log <- polyglot_log()
   expect_s3_class(log, "tp_log")
   expect_equal(log$stdout, "./logs/out")
   expect_equal(log$stderr, "./logs/err")
@@ -11,17 +11,17 @@ test_that("tar_polyglot_log returns a tp_log list with the documented defaults",
   expect_true(log$header)
 })
 
-test_that("tar_polyglot_log validates stdout/stderr", {
-  expect_error(tar_polyglot_log(stdout = c("a", "b")), "single string")
-  expect_error(tar_polyglot_log(stderr = 1), "single string")
-  expect_s3_class(tar_polyglot_log(stdout = NULL, stderr = NULL), "tp_log")
+test_that("polyglot_log validates stdout/stderr", {
+  expect_error(polyglot_log(stdout = c("a", "b")), "single string")
+  expect_error(polyglot_log(stderr = 1), "single string")
+  expect_s3_class(polyglot_log(stdout = NULL, stderr = NULL), "tp_log")
 })
 
 test_that(".tp_log_set_env / .tp_log_get_config round-trip", {
   withr::local_envvar(TARPOLYGLOT_LOG_STDOUT = NA, TARPOLYGLOT_LOG_STDERR = NA,
     TARPOLYGLOT_LOG_APPEND = NA, TARPOLYGLOT_LOG_HEADER = NA)
 
-  .tp_log_set_env(tar_polyglot_log(stdout = "out/", stderr = "err/", append = TRUE, header = FALSE))
+  .tp_log_set_env(polyglot_log(stdout = "out/", stderr = "err/", append = TRUE, header = FALSE))
   cfg <- .tp_log_get_config()
   expect_equal(cfg$stdout, "out/")
   expect_equal(cfg$stderr, "err/")
@@ -36,7 +36,7 @@ test_that(".tp_log_set_env(NULL) leaves the environment untouched", {
 })
 
 test_that(".tp_log_set_env rejects non-tp_log input", {
-  expect_error(.tp_log_set_env(list(stdout = "x")), "tar_polyglot_log")
+  expect_error(.tp_log_set_env(list(stdout = "x")), "polyglot_log")
 })
 
 test_that(".tp_log_get_config returns NULL when neither stream is configured", {
@@ -47,7 +47,7 @@ test_that(".tp_log_get_config returns NULL when neither stream is configured", {
 test_that("polyglot_controller(log=) sets the env vars a worker would inherit", {
   withr::local_envvar(TARPOLYGLOT_LOG_STDOUT = NA, TARPOLYGLOT_LOG_STDERR = NA,
     TARPOLYGLOT_LOG_APPEND = NA, TARPOLYGLOT_LOG_HEADER = NA)
-  ctrl <- polyglot_controller(log = tar_polyglot_log(stdout = "./x", stderr = NULL, append = TRUE))
+  ctrl <- polyglot_controller(log = polyglot_log(stdout = "./x", stderr = NULL, append = TRUE))
   on.exit(try(ctrl$terminate(), silent = TRUE), add = TRUE)
   expect_equal(Sys.getenv("TARPOLYGLOT_LOG_STDOUT"), "./x")
   expect_equal(Sys.getenv("TARPOLYGLOT_LOG_STDERR"), "")

@@ -33,19 +33,29 @@
 
 # julia_version  : e.g. "1.11"; resolved to a juliaup bin dir when `julia_home`
 #                  is not given. Lets you pick among juliaup-managed versions.
-# julia_home     : directory containing the julia executable. Defaults to
-#                  getOption("tarpolyglot.julia_home") (settable per-project or
-#                  via the JULIA_HOME env var; see zzz.R). When NULL (and no
-#                  julia_version), JuliaCall's own discovery is used (Julia on PATH).
+# julia_home     : directory containing the julia executable. NULL means "not
+#                  requested" and falls back to getOption("tarpolyglot.julia_home")
+#                  below (settable per-project or via the JULIA_HOME env var; see
+#                  zzz.R). When that is unset too (and no julia_version),
+#                  JuliaCall's own discovery is used (Julia on PATH).
 # julia_project  : path to a Julia project environment (folder with
 #                  Project.toml / Manifest.toml) to Pkg.activate(). When NULL,
 #                  Julia's default global environment (@v#.#) is used (an ambient
 #                  JULIA_PROJECT is cleared first; see .tp_bind_julia).
 # julia_packages : character vector of packages to `using` before the script.
 .tp_resolve_julia <- function(julia_version = NULL,
-                              julia_home = getOption("tarpolyglot.julia_home"),
+                              julia_home = NULL,
                               julia_project = NULL,
                               julia_packages = NULL) {
+  # The option is read here, at run time, and never by a constructor. Reading it
+  # while *building* a target would splice a machine-specific Julia path into
+  # the target's command, so the command hash would differ between machines and
+  # a store moved to another computer would show every Julia step as outdated.
+  # NULL therefore means "not requested", and only this function decides what
+  # that falls back to.
+  if (is.null(julia_home)) {
+    julia_home <- getOption("tarpolyglot.julia_home")
+  }
   if ((is.null(julia_home) || !nzchar(julia_home)) && !is.null(julia_version)) {
     julia_home <- .tp_juliaup_home(julia_version)
   }
