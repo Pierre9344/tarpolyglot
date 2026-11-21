@@ -5,6 +5,7 @@
 
 [![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Pierre9344/tarpolyglot/actions/workflows/R-CMD-check.yaml) [![CRAN status](https://www.r-pkg.org/badges/version/tarpolyglot)](https://CRAN.R-project.org/package=tarpolyglot) [![CRAN checks](https://badges.cranchecks.info/worst/tarpolyglot.svg)](https://cran.r-project.org/web/checks/check_results_tarpolyglot.html) [![downloads](https://cranlogs.r-pkg.org/badges/tarpolyglot)](https://cran.r-project.org/package=tarpolyglot)
 [![Codecov test coverage](https://codecov.io/gh/Pierre9344/tarpolyglot/graph/badge.svg)](https://app.codecov.io/gh/Pierre9344/tarpolyglot)
+[![Status at rOpenSci Software Peer Review](https://badges.ropensci.org/805_status.svg)](https://github.com/ropensci/software-review/issues/805)
 <!-- badges: end -->
 
 # `{tarpolyglot}` <img src="man/figures/logo.png" align="right" height="120"/>
@@ -126,12 +127,12 @@ targets::tar_dir({
   print(targets::tar_read(report))
 })
 #> + values dispatched
-#> ✔ values completed [16ms, 58 B]
+#> ✔ values completed [0ms, 58 B]
 #> + py_mean dispatched
-#> ✔ py_mean completed [906ms, 94 B]
+#> ✔ py_mean completed [1.1s, 94 B]
 #> + report dispatched
 #> ✔ report completed [0ms, 71 B]
-#> ✔ ended pipeline [3.4s, 3 completed, 0 skipped]
+#> ✔ ended pipeline [3.7s, 3 completed, 0 skipped]
 #> Warning messages:
 #> 1: package 'targets' was built under R version 4.6.2 
 #> 2: 1 targets produced warnings. Run targets::tar_meta(fields = warnings, complete_only = TRUE) for the messages. 
