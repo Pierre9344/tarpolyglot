@@ -30,11 +30,12 @@ use inside targets factories.
 - [`tar_target_rs_raw()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs_raw.md)
   : Target that runs a Rust script (raw / factory form)
 
-## Helpers
+## Supplying a step’s code
 
-Supply a step’s code inline, track a script file as a dependency, branch
-while compiling Rust or C++ once, and a crew controller preconfigured
-for per-step interpreter isolation.
+Give a constructor its `script`, `pre_script`, or `post_script`: either
+inline code written directly in `_targets.R`, or a reference to an
+upstream `format = "file"` target so that editing the file on disk
+re-runs the step.
 
 - [`tar_code()`](https://pierre9344.github.io/tarpolyglot/reference/tar_code.md)
   : Inline code for a tarpolyglot step
@@ -44,11 +45,23 @@ for per-step interpreter isolation.
 
   Track a script argument as a `targets` dependency
 
+## Parallel execution and logging
+
+A `crew` controller preconfigured for per-step interpreter isolation,
+and the per-step stdout/stderr logging it carries to every worker it
+launches. Both are passed to the pipeline rather than to an individual
+step.
+
 - [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
   : A crew controller preconfigured for polyglot isolation
-
-- [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+- [`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
   : Configure per-step stdout/stderr logging
+
+## Diagnostics
+
+Report whether the Python, Julia, Rust, and C++ toolchains are
+reachable, which versions are installed, and which one each constructor
+would use. Run at the console, not from a pipeline.
 
 - [`toolchain_check()`](https://pierre9344.github.io/tarpolyglot/reference/toolchain_check.md)
   : Diagnose the Python, Julia, Rust, and C++ toolchains

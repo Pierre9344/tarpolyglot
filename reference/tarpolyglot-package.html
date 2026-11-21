@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -15,11 +15,11 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -54,7 +54,7 @@
 <li><p><code><a href="tar_target_rs.html">tar_target_rs()</a></code> / <code><a href="tar_target_rs_raw.html">tar_target_rs_raw()</a></code> for Rust (compiled via rextendr/extendr; see <code><a href="../articles/rust.html">vignette("rust")</a></code>).</p></li>
 </ul><p>The non-<code>_raw</code> forms use non-standard evaluation on <code>name</code>/<code>pattern</code> and are meant for direct use in <code>_targets.R</code>; the <code>_raw</code> forms take a string <code>name</code> and are meant for use inside targets factories. Each constructor returns a single <code>targets</code> target object.</p>
 <p>A Python/Julia step may combine up to three scripts: an optional R <strong>pre-script</strong> (prepare inputs), the required <strong>foreign script</strong>, and an optional R <strong>post-script</strong> (retrieve results). A Rust step has no pre-script: its <code>#[extendr]</code> functions are compiled and then called from the R post-script. Output is returned either as a converted R object or as a character vector of files on disk (<code>output = "file"</code>).</p>
-<p>Start with <code><a href="../articles/get_started.html">vignette("get_started")</a></code> (motivation, limitations, a worked pipeline, and <code>crew</code>-based parallelism/isolation), then the per-language vignettes <code><a href="../articles/python.html">vignette("python")</a></code>, <code><a href="../articles/julia.html">vignette("julia")</a></code>, and <code><a href="../articles/rust.html">vignette("rust")</a></code>.</p>
+<p>Start with <code>vignette("get_started")</code> (motivation, limitations, a worked pipeline, and <code>crew</code>-based parallelism/isolation), then the per-language vignettes <code><a href="../articles/python.html">vignette("python")</a></code>, <code><a href="../articles/julia.html">vignette("julia")</a></code>, and <code><a href="../articles/rust.html">vignette("rust")</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

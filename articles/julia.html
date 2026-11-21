@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,12 +33,12 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+<li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -80,7 +80,7 @@ and project, and the common use cases. It mirrors
 <code><a href="../articles/python.html">vignette("python")</a></code>: the <em>shape</em> of a Julia step is
 identical to a Python one, only the bridge and the environment arguments
 differ. For a gentler tour start with
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code>.</p>
+<code>vignette("get_started")</code>.</p>
 <p>Code blocks are illustrative and <strong>not executed</strong> when
 the vignette builds.</p>
 <div class="section level2">
@@ -381,12 +381,11 @@ pushed from R by the pre-script:</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Run the branches in parallel by setting a <code>crew</code>
-controller (see <code><a href="../articles/get_started.html">vignette("get_started")</a></code>, the “Parallelism
+controller (see <code>vignette("get_started")</code>, the “Parallelism
 and isolation with crew” section, which also covers
-<code>polyglot_controller(log = tar_polyglot_log(...))</code> for
-per-step stdout/stderr log files, including a caveat specific to
-branching there, since every branch of a pattern shares one log
-file).</p>
+<code>polyglot_controller(log = polyglot_log(...))</code> for per-step
+stdout/stderr log files, including a caveat specific to branching there,
+since every branch of a pattern shares one log file).</p>
 </div>
 <div class="section level2">
 <h2 id="parallel-computing-distributed-not-threads">Parallel computing (Distributed, not Threads)<a class="anchor" aria-label="anchor" href="#parallel-computing-distributed-not-threads"></a>
@@ -418,7 +417,7 @@ correctly instead, confirmed both in the main session and inside a real
 <span><span class="op">)</span></span></code></pre></div>
 <p><code>addprocs()</code> spawns genuine separate <code>julia</code>
 processes, so the same oversubscription concern from
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code> applies: a <code>crew</code> worker
+<code>vignette("get_started")</code> applies: a <code>crew</code> worker
 has access to every core on the machine, not a restricted slice of it,
 so several workers each calling <code>addprocs()</code> at once can
 oversubscribe the machine. Put the parallel-heavy step on
@@ -504,7 +503,7 @@ single Julia per R session, so all Julia targets that run in the same
 session share one project and set of loaded packages. To use different
 projects in one pipeline, run those targets on separate
 <code>crew</code> workers (see
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code>).</p>
+<code>vignette("get_started")</code>).</p>
 </blockquote>
 </div>
 </div>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -15,11 +15,11 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -77,7 +77,7 @@
 
 
 <dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
-<dd><p>Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when <code><a href="polyglot_controller.html">polyglot_controller()</a></code> was given a <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code> (<code>NULL</code> – the default – disables logging for a direct call). Note this is the branch name, not <code>&lt;name&gt;_cpp_lib</code> – reloading a pre-compiled library never itself produces output to log.</p></dd>
+<dd><p>Character string, the branch's target name. Supplied automatically by the constructor; used only to name this branch's log files when <code><a href="polyglot_controller.html">polyglot_controller()</a></code> was given a <code><a href="polyglot_log.html">polyglot_log()</a></code> (<code>NULL</code> – the default – disables logging for a direct call). Note this is the branch name, not <code>&lt;name&gt;_cpp_lib</code> – reloading a pre-compiled library never itself produces output to log.</p></dd>
 
 </dl></div>
     <div class="section level2">

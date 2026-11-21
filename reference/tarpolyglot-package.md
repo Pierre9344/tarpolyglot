@@ -37,10 +37,9 @@ pre-script: its `#[extendr]` functions are compiled and then called from
 the R post-script. Output is returned either as a converted R object or
 as a character vector of files on disk (`output = "file"`).
 
-Start with
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
-(motivation, limitations, a worked pipeline, and `crew`-based
-parallelism/isolation), then the per-language vignettes
+Start with `vignette("get_started")` (motivation, limitations, a worked
+pipeline, and `crew`-based parallelism/isolation), then the per-language
+vignettes
 [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md),
 [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md),
 and

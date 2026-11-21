@@ -5,9 +5,8 @@ This vignette is the reference for running **Python** scripts as
 [reticulate](https://rstudio.github.io/reticulate/): every
 [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md)
 argument, how to choose the Python environment, and the common use
-cases. For a gentler tour start with
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md);
-for Julia see
+cases. For a gentler tour start with `vignette("get_started")`; for
+Julia see
 [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md).
 
 Code blocks are illustrative and **not executed** when the vignette
@@ -238,9 +237,9 @@ list(
 ```
 
 Run the branches in parallel by setting a `crew` controller (see
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md),
-the “Parallelism and isolation with crew” section, which also covers
-`polyglot_controller(log = tar_polyglot_log(...))` for per-step
+`vignette("get_started")`, the “Parallelism and isolation with crew”
+section, which also covers
+`polyglot_controller(log = polyglot_log(...))` for per-step
 stdout/stderr log files, including a caveat specific to branching there,
 since every branch of a pattern shares one log file).
 
@@ -288,10 +287,9 @@ tar_target_py(
 )
 ```
 
-The same oversubscription concern from
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
-applies here too: a `crew` worker is a full process with access to every
-core, not a slice of one, so several workers each spawning their own
+The same oversubscription concern from `vignette("get_started")` applies
+here too: a `crew` worker is a full process with access to every core,
+not a slice of one, so several workers each spawning their own
 multiprocessing pool at once can oversubscribe the machine. Put the
 parallel-heavy step on `deployment = "main"` if you have more than one,
 or cap `n_workers` per step, for the same reason described there.
@@ -471,7 +469,7 @@ tar_target_py(
 > R session, so all Python targets that run in the same session share
 > one environment. To use different environments in one pipeline, run
 > those targets on separate `crew` workers (see
-> [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)).
+> `vignette("get_started")`).
 
 ## Tracking scripts as dependencies
 

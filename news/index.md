@@ -20,25 +20,31 @@
   (all languages, or Python/Julia/Rust individually) from the Addins
   menu.
 - New
-  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md),
+  [`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md),
   passed to `polyglot_controller(log = ...)`, turns on per-step
-  stdout/stderr log files **for Python and Julia steps only**
-  (`<step name>.out` / `<step name>.err`). Since `crew` launches worker
-  processes before it knows which target they will run, the
-  configuration is stashed as environment variables that every worker
-  inherits, and
+  stdout/stderr log files (`<step name>.out` / `<step name>.err`) **for
+  Python, Julia and C++ steps**. Since `crew` launches worker processes
+  before it knows which target they will run, the configuration is
+  stashed as environment variables that every worker inherits, and
   [`run_py_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_py_step.md)
   /
   [`run_jl_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_jl_step.md)
+  /
+  [`run_cpp_step()`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step.md)
   do the actual redirection once they know the step name and resolved
   toolchain; `append` controls whether a re-run truncates or accumulates
   (with a two-blank-line separator) the log, and `header` prepends the
   step name, [`date()`](https://rdrr.io/r/base/date.html), interpreter
-  version/path, and whether an explicit environment was used.
-  **Deliberately does not cover
+  version/path, and whether an explicit environment was used. On C++ the
+  capture reaches `Rcpp::Rcout` and `Rcpp::Rcerr`, which route through
+  R’s own output connection system and so are captured the same way
+  [`cat()`](https://rdrr.io/r/base/cat.html) output is, confirmed
+  empirically including from a fresh `crew` worker process; raw
+  `std::cout` / `std::cerr` / `printf()` write straight to the OS file
+  descriptor and are not captured. **Deliberately does not cover
   [`tar_target_rs()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_rs.md)**,
   for two independent reasons: `rextendr`-compiled code writes straight
-  to the OS file descriptor, bypassing the redirection
+  to the OS file descriptor too, bypassing the redirection
   reticulate/JuliaCall provide for their embedded interpreters; and Rust
   steps don’t pay a per-branch interpreter start-up cost the way
   Python/Julia do in the first place, since a Rust library under
@@ -51,9 +57,7 @@
   so there is correspondingly less need for a per-step Rust log. Use
   `crew`’s own `options_local(log_directory = ...)` for Rust step output
   instead (it also covers Python/Julia when `log` is left unset, since
-  tarpolyglot never spawns a subprocess for them). Later extended to
-  [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md),
-  see below.
+  tarpolyglot never spawns a subprocess for them).
 - New
   [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md)
   and
@@ -118,15 +122,6 @@
   configured to use gcc or clang); and, when `deep = TRUE` (the
   default), compiling a trivial `// [[Rcpp::export]]` function in a
   fresh worker. The RStudio addin gained a matching C++ only entry.
-- [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
-  now also covers
-  [`tar_target_cpp()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_cpp.md).
-  Unlike raw `std::cout` / `std::cerr` / `printf()`, which write
-  straight to the OS file descriptor exactly like Rust’s `println!()`
-  and are not captured, `Rcpp::Rcout` and `Rcpp::Rcerr` route through
-  R’s own output connection system, so they are captured the same way
-  [`cat()`](https://rdrr.io/r/base/cat.html) output is, confirmed
-  empirically including from a fresh `crew` worker process.
 
 #### Removal of unused “files” argument (C++ and Rust only)
 
@@ -271,26 +266,24 @@
   directly, extension packages, bringing an R function into C++ with
   `Rcpp::Function`, compile once branching, reusing a compiled library
   across steps, and
-  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+  [`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
   support.
 - Parallel computing under `crew` workers documented for the first time,
   in
   [`vignette("cpp")`](https://pierre9344.github.io/tarpolyglot/articles/cpp.md),
   [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md),
   [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md),
-  and a new item in
-  [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)’s
-  “Limitations to know first”: a `crew` worker has access to every core
-  on the machine, not a restricted slice of it, so the real risk with a
-  step that does internal parallel work (RcppParallel, Python
-  `multiprocessing`, Julia `Distributed`) is several workers
-  oversubscribing the machine by each spawning a full width thread or
-  process pool at once, not lack of access to cores.
-  `deployment = "main"` on the parallel-heavy step is the documented
-  fix, since `targets` only ever builds one `main`-deployed target at a
-  time. Demonstrated with a working `deployment = "main"` target in each
-  of `examples/tarpolyglot_cpp`, `examples/tarpolyglot_py`, and
-  `examples/tarpolyglot_jl`.
+  and a new item in `vignette("get_started")`’s “Limitations to know
+  first”: a `crew` worker has access to every core on the machine, not a
+  restricted slice of it, so the real risk with a step that does
+  internal parallel work (RcppParallel, Python `multiprocessing`, Julia
+  `Distributed`) is several workers oversubscribing the machine by each
+  spawning a full width thread or process pool at once, not lack of
+  access to cores. `deployment = "main"` on the parallel-heavy step is
+  the documented fix, since `targets` only ever builds one
+  `main`-deployed target at a time. Demonstrated with a working
+  `deployment = "main"` target in each of `examples/tarpolyglot_cpp`,
+  `examples/tarpolyglot_py`, and `examples/tarpolyglot_jl`.
 - All eight constructors
   ([`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
   [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
@@ -324,16 +317,16 @@
   straight to a worker therefore does not resolve to a file.
 - Examples no longer use , following the rOpenSci packaging guide.
   Building a target does not run it, so the examples for the eight
-  constructors and for tar_code(), tar_target_path(),
-  tar_polyglot_log(), polyglot_controller() and the tarpolyglot\_*()
-  pattern helpers now execute during R CMD check on any machine, with no
-  toolchain required. The nine topics that genuinely execute foreign
-  code (run_py_step(), run_jl_step(), run_rs_step(), run_cpp_step(), the
-  compile\_*\_lib() / run\_\*\_step_prebuilt() helpers, and
-  toolchain_check()) are gated on Sys.getenv(“TARPOLYGLOT_EXAMPLES”) ==
-  “true” and run inside targets::tar_dir(), mirroring how targets gates
-  its own TAR_EXAMPLES examples. Continuous integration runs those gated
-  examples, one R process per topic.
+  constructors and for tar_code(), tar_target_path(), polyglot_log(),
+  polyglot_controller() and the tarpolyglot\_*() pattern helpers now
+  execute during R CMD check on any machine, with no toolchain required.
+  The nine topics that genuinely execute foreign code (run_py_step(),
+  run_jl_step(), run_rs_step(), run_cpp_step(), the compile\_*\_lib() /
+  run\_\*\_step_prebuilt() helpers, and toolchain_check()) are gated on
+  Sys.getenv(“TARPOLYGLOT_EXAMPLES”) == “true” and run inside
+  targets::tar_dir(), mirroring how targets gates its own TAR_EXAMPLES
+  examples. Continuous integration runs those gated examples, one R
+  process per topic.
 - Parameter documentation shared between constructors is now defined
   once and pulled in with
   [@inheritParams](https://github.com/inheritParams). Seven internal
@@ -393,7 +386,7 @@
   [`vignette("julia")`](https://pierre9344.github.io/tarpolyglot/articles/julia.md),
   “Parallel computing (Distributed, not Threads)”.
 - Every branch of one `pattern` shares a single
-  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+  [`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
   file, for any language: the log file name is fixed to the target’s own
   name before branching happens, and since `append = FALSE` truncates on
   every branch’s run, only the last branch to run leaves output in the
@@ -408,11 +401,8 @@
 - **Upgrading from 0.2.x will cause targets to identify as ‘outdated’
   all steps that are using tarpolyglot constructors.** This release
   modification of the `run_*_step()` function introduce modification in
-  the command hash prompting targets to rebuild the steps.
-
-## tarpolyglot 0.2.1
-
-CRAN release: 2026-09-03
+  the command hash prompting targets to rebuild the steps. \#
+  tarpolyglot 0.2.1
 
 #### Bug fixes
 

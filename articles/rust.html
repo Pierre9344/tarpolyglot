@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,12 +33,12 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+<li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -80,7 +80,7 @@ interpreter</strong>. Instead the <code>#[extendr]</code> functions in
 your script are <em>compiled</em> into a dynamic library and exposed as
 ordinary R functions, which an R <strong>post-script</strong> then
 calls. For a gentler tour start with
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code>.</p>
+<code>vignette("get_started")</code>.</p>
 <p>Code blocks are illustrative and <strong>not executed</strong> when
 the vignette builds (compiling Rust needs a toolchain).</p>
 <div class="section level2">
@@ -675,7 +675,7 @@ steps, compile once with <code><a href="../reference/compile_rs_lib.html">compil
 <p>See <code><a href="../reference/tar_target_rs.html">?tar_target_rs</a></code> and <code><a href="../reference/run_rs_step.html">?run_rs_step</a></code> for the
 full argument reference, <code><a href="../reference/tarpolyglot_map.html">?tarpolyglot_map</a></code>,
 <code><a href="../reference/compile_rs_lib.html">?compile_rs_lib</a></code>, and <code><a href="../reference/run_rs_step_prebuilt.html">?run_rs_step_prebuilt</a></code> for
-compile-once and library reuse, and <code><a href="../articles/get_started.html">vignette("get_started")</a></code>
+compile-once and library reuse, and <code>vignette("get_started")</code>
 for how Rust steps fit alongside Python/Julia and <code>crew</code>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

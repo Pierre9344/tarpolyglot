@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -15,11 +15,11 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -121,9 +121,9 @@
         </dt>
         <dd>Target that runs a Rust script (raw / factory form)</dd>
       </dl></div><div class="section level2">
-      <h2 id="helpers">Helpers<a class="anchor" aria-label="anchor" href="#helpers"></a></h2>
+      <h2 id="supplying-a-step-s-code">Supplying a step’s code<a class="anchor" aria-label="anchor" href="#supplying-a-step-s-code"></a></h2>
 
-      <div class="section-desc"><p>Supply a step’s code inline, track a script file as a dependency, branch while compiling Rust or C++ once, and a crew controller preconfigured for per-step interpreter isolation.</p></div>
+      <div class="section-desc"><p>Give a constructor its <code>script</code>, <code>pre_script</code>, or <code>post_script</code>: either inline code written directly in <code>_targets.R</code>, or a reference to an upstream <code>format = "file"</code> target so that editing the file on disk re-runs the step.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -143,8 +143,17 @@
 
         </dt>
         <dd>Track a script argument as a <code>targets</code> dependency</dd>
+      </dl></div><div class="section level2">
+      <h2 id="parallel-execution-and-logging">Parallel execution and logging<a class="anchor" aria-label="anchor" href="#parallel-execution-and-logging"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>A <code>crew</code> controller preconfigured for per-step interpreter isolation, and the per-step stdout/stderr logging it carries to every worker it launches. Both are passed to the pipeline rather than to an individual step.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="polyglot_controller.html">polyglot_controller()</a></code>
 
@@ -153,12 +162,21 @@
 
         <dt>
 
-          <code><a href="tar_polyglot_log.html">tar_polyglot_log()</a></code>
+          <code><a href="polyglot_log.html">polyglot_log()</a></code>
 
         </dt>
         <dd>Configure per-step stdout/stderr logging</dd>
+      </dl></div><div class="section level2">
+      <h2 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Report whether the Python, Julia, Rust, and C++ toolchains are reachable, which versions are installed, and which one each constructor would use. Run at the console, not from a pipeline.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="toolchain_check.html">toolchain_check()</a></code>
 

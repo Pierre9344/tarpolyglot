@@ -4,7 +4,7 @@ Returns a
 [`crew::crew_controller_local()`](https://wlandau.github.io/crew/reference/crew_controller_local.html)
 tuned for pipelines that run Python or Julia steps. Because reticulate
 and JuliaCall embed a **single interpreter per process** (see
-[`vignette("get_started", package = "tarpolyglot")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)),
+[`vignette("get_started", package = "tarpolyglot")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.html)),
 the only way to get a fresh interpreter per target, and to use different
 environments/versions across targets, is process-level isolation.
 Passing this controller to
@@ -47,7 +47,7 @@ polyglot_controller(
 - log:
 
   Optional
-  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+  [`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
   object turning on per-step stdout/stderr log files for Python and
   Julia steps (see that function; Rust is not covered). Default `NULL`
   (no logging, the previous behavior).
@@ -85,7 +85,7 @@ per-step interpreter isolation described above.
 
 [`tar_target_py()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_py.md),
 [`tar_target_jl()`](https://pierre9344.github.io/tarpolyglot/reference/tar_target_jl.md),
-[`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+[`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
 
 ## Examples
 

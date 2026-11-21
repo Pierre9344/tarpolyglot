@@ -67,7 +67,7 @@ run_cpp_step_prebuilt(
   the constructor; used only to name this branch's log files when
   [`polyglot_controller()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_controller.md)
   was given a
-  [`tar_polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
+  [`polyglot_log()`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
   (`NULL` – the default – disables logging for a direct call). Note this
   is the branch name, not `<name>_cpp_lib` – reloading a pre-compiled
   library never itself produces output to log.

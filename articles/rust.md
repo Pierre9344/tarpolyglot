@@ -6,8 +6,7 @@ This vignette covers running **Rust** as `targets` steps with
 from a Python or Julia one: there is **no live interpreter**. Instead
 the `#[extendr]` functions in your script are *compiled* into a dynamic
 library and exposed as ordinary R functions, which an R **post-script**
-then calls. For a gentler tour start with
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md).
+then calls. For a gentler tour start with `vignette("get_started")`.
 
 Code blocks are illustrative and **not executed** when the vignette
 builds (compiling Rust needs a toolchain).
@@ -631,6 +630,5 @@ for the full argument reference,
 [`?compile_rs_lib`](https://pierre9344.github.io/tarpolyglot/reference/compile_rs_lib.md),
 and
 [`?run_rs_step_prebuilt`](https://pierre9344.github.io/tarpolyglot/reference/run_rs_step_prebuilt.md)
-for compile-once and library reuse, and
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
-for how Rust steps fit alongside Python/Julia and `crew`.
+for compile-once and library reuse, and `vignette("get_started")` for
+how Rust steps fit alongside Python/Julia and `crew`.

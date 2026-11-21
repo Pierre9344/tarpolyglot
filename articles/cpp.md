@@ -12,8 +12,7 @@ into a shared library and exposed as ordinary R functions, which an R
 closely; a C++ step has no live interpreter to reuse either, so most of
 the same ideas apply, with a couple of additions specific to C++ covered
 below (extension packages, and bringing an R function into C++). For a
-gentler tour start with
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md).
+gentler tour start with `vignette("get_started")`.
 
 Code blocks are illustrative and **not executed** when the vignette
 builds (compiling C++ needs a compiler).
@@ -871,10 +870,10 @@ two libraries in the same expression.
   at once can oversubscribe the machine. Use `deployment = "main"` on
   the parallel-heavy step, or cap `numThreads` per step, to avoid it.
 
-## Step output and tar_polyglot_log()
+## Step output and polyglot_log()
 
 C++ steps are covered by
-[tar_polyglot_log()](https://pierre9344.github.io/tarpolyglot/articles/tar_polyglot_log.md),
+[polyglot_log()](https://pierre9344.github.io/tarpolyglot/articles/polyglot_log.md),
 with one caveat: `Rcpp::Rcout` and `Rcpp::Rcerr`, the idiomatic Rcpp
 printing calls, route through R’s own output connection system, so they
 are captured the same way [`cat()`](https://rdrr.io/r/base/cat.html)
@@ -887,7 +886,7 @@ instead of raw C++ streams if you want step output in these logs:
 
 tar_option_set(
   controller = polyglot_controller(
-    log = tar_polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
+    log = polyglot_log(stdout = "./logs/out", stderr = "./logs/err")
   )
 )
 ```
@@ -936,7 +935,6 @@ for the full argument reference,
 and
 [`?run_cpp_step_prebuilt`](https://pierre9344.github.io/tarpolyglot/reference/run_cpp_step_prebuilt.md)
 for compile once and library reuse,
-[`?tar_polyglot_log`](https://pierre9344.github.io/tarpolyglot/reference/tar_polyglot_log.md)
-for step logging, and
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
-for how C++ steps fit alongside Python/Julia/Rust and `crew`.
+[`?polyglot_log`](https://pierre9344.github.io/tarpolyglot/reference/polyglot_log.md)
+for step logging, and `vignette("get_started")` for how C++ steps fit
+alongside Python/Julia/Rust and `crew`.

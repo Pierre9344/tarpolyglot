@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,12 +33,12 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+<li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -77,7 +77,7 @@
 scripts as <code>targets</code> steps with <a href="https://rstudio.github.io/reticulate/" class="external-link">reticulate</a>: every
 <code><a href="../reference/tar_target_py.html">tar_target_py()</a></code> argument, how to choose the Python
 environment, and the common use cases. For a gentler tour start with
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code>; for Julia see
+<code>vignette("get_started")</code>; for Julia see
 <code><a href="../articles/julia.html">vignette("julia")</a></code>.</p>
 <p>Code blocks are illustrative and <strong>not executed</strong> when
 the vignette builds.</p>
@@ -392,12 +392,11 @@ branches them:</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Run the branches in parallel by setting a <code>crew</code>
-controller (see <code><a href="../articles/get_started.html">vignette("get_started")</a></code>, the “Parallelism
+controller (see <code>vignette("get_started")</code>, the “Parallelism
 and isolation with crew” section, which also covers
-<code>polyglot_controller(log = tar_polyglot_log(...))</code> for
-per-step stdout/stderr log files, including a caveat specific to
-branching there, since every branch of a pattern shares one log
-file).</p>
+<code>polyglot_controller(log = polyglot_log(...))</code> for per-step
+stdout/stderr log files, including a caveat specific to branching there,
+since every branch of a pattern shares one log file).</p>
 </div>
 <div class="section level2">
 <h2 id="parallel-computing-multiprocessing">Parallel computing (multiprocessing)<a class="anchor" aria-label="anchor" href="#parallel-computing-multiprocessing"></a>
@@ -439,7 +438,7 @@ Python:</p>
 <span>  retrieve <span class="op">=</span> <span class="st">"result"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The same oversubscription concern from
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code> applies here too: a
+<code>vignette("get_started")</code> applies here too: a
 <code>crew</code> worker is a full process with access to every core,
 not a slice of one, so several workers each spawning their own
 multiprocessing pool at once can oversubscribe the machine. Put the
@@ -644,7 +643,7 @@ the default, uv-managed one):</p>
 single Python per R session, so all Python targets that run in the same
 session share one environment. To use different environments in one
 pipeline, run those targets on separate <code>crew</code> workers (see
-<code><a href="../articles/get_started.html">vignette("get_started")</a></code>).</p>
+<code>vignette("get_started")</code>).</p>
 </blockquote>
 </div>
 </div>

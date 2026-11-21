@@ -9,8 +9,7 @@ use cases. It mirrors
 [`vignette("python")`](https://pierre9344.github.io/tarpolyglot/articles/python.md):
 the *shape* of a Julia step is identical to a Python one, only the
 bridge and the environment arguments differ. For a gentler tour start
-with
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md).
+with `vignette("get_started")`.
 
 Code blocks are illustrative and **not executed** when the vignette
 builds.
@@ -242,9 +241,9 @@ list(
 ```
 
 Run the branches in parallel by setting a `crew` controller (see
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md),
-the “Parallelism and isolation with crew” section, which also covers
-`polyglot_controller(log = tar_polyglot_log(...))` for per-step
+`vignette("get_started")`, the “Parallelism and isolation with crew”
+section, which also covers
+`polyglot_controller(log = polyglot_log(...))` for per-step
 stdout/stderr log files, including a caveat specific to branching there,
 since every branch of a pattern shares one log file).
 
@@ -284,11 +283,10 @@ tar_target_jl(
 ```
 
 `addprocs()` spawns genuine separate `julia` processes, so the same
-oversubscription concern from
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
-applies: a `crew` worker has access to every core on the machine, not a
-restricted slice of it, so several workers each calling `addprocs()` at
-once can oversubscribe the machine. Put the parallel-heavy step on
+oversubscription concern from `vignette("get_started")` applies: a
+`crew` worker has access to every core on the machine, not a restricted
+slice of it, so several workers each calling `addprocs()` at once can
+oversubscribe the machine. Put the parallel-heavy step on
 `deployment = "main"` if you have more than one, or cap `n_workers` per
 step, for the same reason described there.
 
@@ -386,7 +384,7 @@ wins.
 > session, so all Julia targets that run in the same session share one
 > project and set of loaded packages. To use different projects in one
 > pipeline, run those targets on separate `crew` workers (see
-> [`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)).
+> `vignette("get_started")`).
 
 ## Tracking scripts as dependencies
 

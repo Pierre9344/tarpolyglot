@@ -3,7 +3,7 @@
 ### Guides
 
 - [Get started with
-  tarpolyglot](https://pierre9344.github.io/tarpolyglot/articles/get_started.md):
+  tarpolyglot](https://pierre9344.github.io/tarpolyglot/articles/tarpolyglot.md):
 - [Supplying scripts: paths, tracking, and inline
   code](https://pierre9344.github.io/tarpolyglot/articles/scripts.md):
 - [Using Python inside

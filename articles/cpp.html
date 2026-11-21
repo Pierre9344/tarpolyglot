@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tarpolyglot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,12 +33,12 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/tarpolyglot.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/get_started.html">Get started with tarpolyglot</a></li>
-    <li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
+<li><a class="dropdown-item" href="../articles/scripts.html">Supplying scripts: paths, tracking, and inline code</a></li>
     <li><a class="dropdown-item" href="../articles/python.html">Using Python inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/julia.html">Using Julia inside targets</a></li>
     <li><a class="dropdown-item" href="../articles/rust.html">Using Rust inside targets</a></li>
@@ -84,7 +84,7 @@ library and exposed as ordinary R functions, which an R
 closely; a C++ step has no live interpreter to reuse either, so most of
 the same ideas apply, with a couple of additions specific to C++ covered
 below (extension packages, and bringing an R function into C++). For a
-gentler tour start with <code><a href="../articles/get_started.html">vignette("get_started")</a></code>.</p>
+gentler tour start with <code>vignette("get_started")</code>.</p>
 <p>Code blocks are illustrative and <strong>not executed</strong> when
 the vignette builds (compiling C++ needs a compiler).</p>
 <div class="section level2">
@@ -894,9 +894,9 @@ step, or cap <code>numThreads</code> per step, to avoid it.</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="step-output-and-tar_polyglot_log">Step output and tar_polyglot_log()<a class="anchor" aria-label="anchor" href="#step-output-and-tar_polyglot_log"></a>
+<h2 id="step-output-and-polyglot_log">Step output and polyglot_log()<a class="anchor" aria-label="anchor" href="#step-output-and-polyglot_log"></a>
 </h2>
-<p>C++ steps are covered by <a href="tar_polyglot_log.html">tar_polyglot_log()</a>, with one caveat:
+<p>C++ steps are covered by <a href="polyglot_log.html">polyglot_log()</a>, with one caveat:
 <code>Rcpp::Rcout</code> and <code>Rcpp::Rcerr</code>, the idiomatic
 Rcpp printing calls, route through R’s own output connection system, so
 they are captured the same way <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> output is. Raw
@@ -908,7 +908,7 @@ instead of raw C++ streams if you want step output in these logs:</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://docs.ropensci.org/targets/reference/tar_option_set.html" class="external-link">tar_option_set</a></span><span class="op">(</span></span>
 <span>  controller <span class="op">=</span> <span class="fu"><a href="../reference/polyglot_controller.html">polyglot_controller</a></span><span class="op">(</span></span>
-<span>    log <span class="op">=</span> <span class="fu"><a href="../reference/tar_polyglot_log.html">tar_polyglot_log</a></span><span class="op">(</span>stdout <span class="op">=</span> <span class="st">"./logs/out"</span>, stderr <span class="op">=</span> <span class="st">"./logs/err"</span><span class="op">)</span></span>
+<span>    log <span class="op">=</span> <span class="fu"><a href="../reference/polyglot_log.html">polyglot_log</a></span><span class="op">(</span>stdout <span class="op">=</span> <span class="st">"./logs/out"</span>, stderr <span class="op">=</span> <span class="st">"./logs/err"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb38"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
@@ -948,9 +948,9 @@ compile once with <code><a href="../reference/compile_cpp_lib.html">compile_cpp_
 <p>See <code><a href="../reference/tar_target_cpp.html">?tar_target_cpp</a></code> and <code><a href="../reference/run_cpp_step.html">?run_cpp_step</a></code> for
 the full argument reference, <code><a href="../reference/tarpolyglot_map.html">?tarpolyglot_map</a></code>,
 <code><a href="../reference/compile_cpp_lib.html">?compile_cpp_lib</a></code>, and <code><a href="../reference/run_cpp_step_prebuilt.html">?run_cpp_step_prebuilt</a></code>
-for compile once and library reuse, <code><a href="../reference/tar_polyglot_log.html">?tar_polyglot_log</a></code> for
-step logging, and <code><a href="../articles/get_started.html">vignette("get_started")</a></code> for how C++ steps
-fit alongside Python/Julia/Rust and <code>crew</code>.</p>
+for compile once and library reuse, <code><a href="../reference/polyglot_log.html">?polyglot_log</a></code> for step
+logging, and <code>vignette("get_started")</code> for how C++ steps fit
+alongside Python/Julia/Rust and <code>crew</code>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

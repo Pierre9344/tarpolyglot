@@ -403,6 +403,5 @@ for the argument reference,
 [`vignette("rust")`](https://pierre9344.github.io/tarpolyglot/articles/rust.md)
 /
 [`vignette("cpp")`](https://pierre9344.github.io/tarpolyglot/articles/cpp.md)
-for the per-language details, and
-[`vignette("get_started")`](https://pierre9344.github.io/tarpolyglot/articles/get_started.md)
-for how the pieces fit together.
+for the per-language details, and `vignette("get_started")` for how the
+pieces fit together.
